@@ -1,0 +1,37 @@
+name: deploy to kubernetes
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: login to docker
+        run: docker login ghcr.io -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build container image
+        run: |
+          docker build . --tag ghcr.io/callieve/metro-map-editor/metro-map-site:${{ github.sha }}
+          docker image tag ghcr.io/callieve/metro-map-editor/metro-map-site:${{ github.sha }} ghcr.io/callieve/metro-map-editor/metro-map-site:latest
+
+      - name: Push image to Docker Hub
+        run: |
+          docker push ghcr.io/callieve/metro-map-editor/metro-map-site:${{ github.sha }}
+          docker push ghcr.io/callieve/metro-map-editor/metro-map-site:latest
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Deploy to DigitalOcean Kubernetes
+        run: |
+          doctl kubernetes cluster kubeconfig save k8s-okto
+          kubectl -n default set image statefulset/metro-map-site metro-map-site=ghcr.io/callieve/metro-map-editor/metro-map-site:${{ github.sha }}
