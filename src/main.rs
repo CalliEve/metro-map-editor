@@ -11,15 +11,17 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <header>
-            <Navbar/>
-        </header>
-        <div class="h-full flex flex-row justify-start items-center">
-            <div class="h-full flex-none w-1/5 md:w-52">
-                <Sidebar/>
-            </div>
-            <div class="h-full grow">
-                <Canvas/>
+        <div class="flex flex-col h-full">
+            <header>
+                <Navbar/>
+            </header>
+            <div class="grow flex flex-row justify-start">
+                <div class="flex-none self-start self-stretch w-1/5 md:w-52">
+                    <Sidebar/>
+                </div>
+                <div class="grow self-stretch">
+                    <Canvas/>
+                </div>
             </div>
         </div>
     }

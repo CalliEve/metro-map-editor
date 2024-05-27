@@ -5,6 +5,7 @@ WORKDIR /metro_map_site
 ENV RUST_BACKTRACE=1
 
 RUN apt-get update \
+    && curl -sL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y pkg-config libssl-dev nodejs npm \
     && cargo install --locked trunk \
     && rustup toolchain install nightly \

@@ -12,10 +12,10 @@ jobs:
         run: |
           rustup toolchain install nightly
           rustup update
-          rustup component add clippy
           cargo install --locked trunk
           rustup default nightly
           rustup target add wasm32-unknown-unknown
+          rustup component add clippy
       - name: Check
         run: cargo check
       - name: Build
