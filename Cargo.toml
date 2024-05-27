@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 leptos = { version = "0.6.11", features = ["csr", "nightly"] }
+web-sys = { version = "0.3", features = ["HtmlCanvasElement", "CanvasRenderingContext2d", "CssStyleDeclaration", "Element", "Window"] }
+wasm-bindgen = { version = "0.2" }

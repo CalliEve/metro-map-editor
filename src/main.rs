@@ -1,5 +1,6 @@
 use leptos::*;
 
+mod algorithm;
 mod components;
 
 pub use components::*;
@@ -11,7 +12,7 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <div class="flex flex-col h-full">
+        <div class="flex flex-col h-screen max-w-screen">
             <header>
                 <Navbar/>
             </header>
@@ -19,7 +20,7 @@ fn App() -> impl IntoView {
                 <div class="flex-none self-start self-stretch w-1/5 md:w-52">
                     <Sidebar/>
                 </div>
-                <div class="grow self-stretch">
+                <div class="grow flex self-stretch">
                     <Canvas/>
                 </div>
             </div>
