@@ -5,11 +5,12 @@ WORKDIR /metro_map_site
 ENV RUST_BACKTRACE=1
 
 RUN apt-get update \
-    && apt-get install -y pkg-config libssl-dev \
+    && apt-get install -y pkg-config libssl-dev nodejs npm \
     && cargo install --locked trunk \
     && rustup toolchain install nightly \
     && rustup default nightly \
-    && rustup target add wasm32-unknown-unknown 
+    && rustup target add wasm32-unknown-unknown \
+    && npm install -D tailwindcss
 
 COPY . .
 
