@@ -1,17 +1,8 @@
 use leptos::*;
 
-use crate::algorithm::Map;
+mod map;
 
-#[derive(Clone, Debug, Default)]
-pub struct MapState {
-    pub map: Option<Map>,
-}
-
-impl MapState {
-    pub fn new(map: Map) -> Self {
-        Self { map: Some(map) }
-    }
-}
+pub use map::MapState;
 
 #[allow(unused_braces)]
 #[component]
