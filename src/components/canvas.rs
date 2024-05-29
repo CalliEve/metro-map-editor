@@ -2,17 +2,16 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use ev::MouseEvent;
 use leptos::html::Canvas;
-use leptos::logging::log;
 use leptos::*;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 
-use crate::algorithm::{redraw_canvas, Map};
+use crate::algorithm::redraw_canvas;
 use crate::state::MapState;
 
-const DOCUMENT_LOADED: AtomicBool = AtomicBool::new(false);
+static DOCUMENT_LOADED: AtomicBool = AtomicBool::new(false);
 
-fn redraw(canvas_node: &HtmlElement<Canvas>, map: Option<Map>, set_size: WriteSignal<(u32, u32)>) {
+fn calc_canvas_size(set_size: WriteSignal<(u32, u32)>) {
     // To have a canvas resize dynamically, we need to manually adjust its size
     // CSS will NOT work, as it will just make everything blurry
     let doc = document();
@@ -35,7 +34,6 @@ fn redraw(canvas_node: &HtmlElement<Canvas>, map: Option<Map>, set_size: WriteSi
             .trim_end_matches("px")
             .parse::<f64>()
             .expect("height should be an integer")) as u32;
-    canvas_node.set_height(height);
 
     // the sidebar borders its side, so width is `window - sidebar`
     let side = doc
@@ -53,13 +51,8 @@ fn redraw(canvas_node: &HtmlElement<Canvas>, map: Option<Map>, set_size: WriteSi
             .trim_end_matches("px")
             .parse::<f64>()
             .expect("width should be an integer")) as u32;
-    canvas_node.set_width(width);
 
-    set_size((height, width));
-
-    // Now the canvas is the correct size, we can draw it
-    log!("redrawing canvas");
-    redraw_canvas(&*canvas_node, (height, width), map, None);
+    set_size.set((height, width));
 }
 
 fn on_mouse_down(
@@ -69,9 +62,13 @@ fn on_mouse_down(
     ev: MouseEvent,
 ) {
     let mut map_state = map_state_signal.get();
-    let map = map_state.get_map().clone().unwrap();
-    let mouse_pos = map.calc_nearest_grid_node((ev.offset_x(), ev.offset_y()));
+    let map = if let Some(m) = map_state.get_map().clone() {
+        m
+    } else {
+        return;
+    };
 
+    let mouse_pos = map.calc_nearest_grid_node((ev.offset_x(), ev.offset_y()));
     let selected_opt = map.station_at_pos(mouse_pos).map(|s| s.clone_non_ref());
     if selected_opt.is_none() {
         return;
@@ -139,6 +136,9 @@ fn on_mouse_move(
 
     let map = map_state.get_map().clone().unwrap();
     let mouse_pos = map.calc_nearest_grid_node((ev.offset_x(), ev.offset_y()));
+    if mouse_pos == selected.get_pos() {
+        return;
+    }
 
     selected.set_pos(mouse_pos);
     map_state.set_selected_station(selected.clone());
@@ -182,17 +182,23 @@ pub fn Canvas() -> impl IntoView {
     let (size, set_size) = create_signal((0_u32, 0_u32));
 
     create_effect(move |_| {
-        let map = map_state.get().get_map().clone();
-        let canvas_node = canvas_ref.get().expect("should be loaded now");
-
-        redraw(&canvas_node, map.clone(), set_size);
+        calc_canvas_size(set_size);
 
         if !DOCUMENT_LOADED.load(Ordering::Relaxed) {
             DOCUMENT_LOADED.store(true, Ordering::Release);
-            let f = Closure::<dyn Fn()>::new(move || redraw(&canvas_node, map.clone(), set_size));
+            let f = Closure::<dyn Fn()>::new(move || calc_canvas_size(set_size));
             window().set_onresize(Some(f.as_ref().unchecked_ref()));
             f.forget();
         }
+    });
+
+    create_effect(move |_| {
+        let canvas_node = &canvas_ref.get().expect("should be loaded now");
+        let s = size.get();
+        canvas_node.set_height(s.0);
+        canvas_node.set_width(s.1);
+
+        redraw_canvas(&canvas_node, s, map_state.get().get_map().clone(), None);
     });
 
     view! {
