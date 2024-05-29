@@ -1,12 +1,17 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use leptos::html::Canvas;
 use leptos::logging::log;
 use leptos::*;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 
-use crate::algorithm::redraw_canvas;
+use crate::algorithm::{redraw_canvas, Map};
+use crate::state::MapState;
 
-fn redraw(canvas_node: &HtmlElement<Canvas>) {
+const DOCUMENT_LOADED: AtomicBool = AtomicBool::new(false);
+
+fn redraw(canvas_node: &HtmlElement<Canvas>, map: Option<Map>) {
     // To have a canvas resize dynamically, we need to manually adjust its size
     // CSS will NOT work, as it will just make everything blurry
     let doc = window().document().expect("should have document");
@@ -51,21 +56,27 @@ fn redraw(canvas_node: &HtmlElement<Canvas>) {
 
     // Now the canvas is the correct size, we can draw it
     log!("redrawing canvas");
-    redraw_canvas(&*canvas_node, (height, width));
+    redraw_canvas(&*canvas_node, (height, width), map);
 }
 
 #[component]
 pub fn Canvas() -> impl IntoView {
     let canvas_ref = create_node_ref::<Canvas>();
+    let map_state =
+        use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
     create_effect(move |_| {
+        let map = map_state.get().map.clone();
         let canvas_node = canvas_ref.get().expect("should be loaded now");
 
-        redraw(&canvas_node);
+        redraw(&canvas_node, map.clone());
 
-        let f = Closure::<dyn Fn()>::new(move || redraw(&canvas_node));
-        window().set_onresize(Some(f.as_ref().unchecked_ref()));
-        f.forget();
+        if !DOCUMENT_LOADED.load(Ordering::Relaxed) {
+            DOCUMENT_LOADED.store(true, Ordering::Release);
+            let f = Closure::<dyn Fn()>::new(move || redraw(&canvas_node, map.clone()));
+            window().set_onresize(Some(f.as_ref().unchecked_ref()));
+            f.forget();
+        }
     });
 
     view! {

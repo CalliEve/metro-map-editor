@@ -1,7 +1,6 @@
 mod canvas;
 mod navbar;
+mod page;
 mod sidebar;
 
-pub use canvas::Canvas;
-pub use navbar::Navbar;
-pub use sidebar::Sidebar;
+pub use page::Page;
