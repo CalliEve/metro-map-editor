@@ -233,6 +233,7 @@ pub fn Canvas() -> impl IntoView {
                 on:touchmove=move |ev| on_mouse_move(&canvas_ref, &map_state, size, ev.as_ref())
                 on:touchcancel=move |_| on_mouse_out(&canvas_ref, &map_state, size)
                 id="canvas"
+                style="touch-action: none;"
                 class="object-contain"/>
         </div>
     }
