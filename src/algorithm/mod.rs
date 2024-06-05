@@ -11,8 +11,8 @@ pub use objects::*;
 pub fn redraw_canvas(
     canvas: &HtmlCanvasElement,
     size: (u32, u32),
-    map: Option<Map>,
-    hover_station: Option<Station>,
+    map: Option<&Map>,
+    hover_station: Option<&Station>,
 ) {
     let square_size = map.as_ref().map_or(30, |m| m.get_square_size());
 
