@@ -1,9 +1,12 @@
 use leptos::*;
 
-use super::{canvas::Canvas, navbar::Navbar, sidebar::Sidebar};
+use crate::components::{
+    molecules::Canvas,
+    organisms::{Navbar, Sidebar},
+};
 
 #[component]
-pub fn Page() -> impl IntoView {
+pub fn Home() -> impl IntoView {
     view! {
             <header>
                 <Navbar/>

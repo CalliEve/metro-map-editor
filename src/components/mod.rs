@@ -1,6 +1,6 @@
-mod canvas;
-mod navbar;
-mod page;
-mod sidebar;
+mod atoms;
+mod molecules;
+mod organisms;
+mod pages;
 
-pub use page::Page;
+pub use pages::Home;

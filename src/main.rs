@@ -6,7 +6,7 @@ mod algorithm;
 mod components;
 mod state;
 
-use components::Page;
+use components::Home;
 use state::StateProvider;
 
 fn main() {
@@ -21,7 +21,7 @@ fn App() -> impl IntoView {
     view! {
         <div class="flex flex-col h-screen max-w-screen">
             <StateProvider>
-                <Page/>
+                <Home/>
             </StateProvider>
         </div>
     }
