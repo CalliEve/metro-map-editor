@@ -58,6 +58,9 @@ impl Map {
 
 impl Drawable for Map {
     fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
+        for station in self.get_stations() {
+            station.draw(canvas, square_size)
+        }
         for line in self.lines.iter() {
             line.draw(canvas, square_size)
         }

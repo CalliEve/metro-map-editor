@@ -37,5 +37,7 @@ fn testmap() -> Map {
         Station::new((30, 20)),
     ]));
 
+    map.add_line(Line::new(vec![Station::new((7, 5))]));
+
     map
 }

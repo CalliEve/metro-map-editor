@@ -49,6 +49,10 @@ impl Station {
         self.pos.set(pos);
     }
 
+    pub fn get_canvas_pos(&self, square_size: u32) -> (f64, f64) {
+        calc_canvas_loc(self.get_pos(), square_size)
+    }
+
     pub fn clone_non_ref(&self) -> Self {
         Self {
             id: self.id,
@@ -60,7 +64,7 @@ impl Station {
 
 impl Drawable for Station {
     fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32) {
-        let canvas_pos = calc_canvas_loc(self.get_pos(), square_size);
+        let canvas_pos = self.get_canvas_pos(square_size);
 
         canvas.set_line_width(4.0);
         if self.is_ghost {
@@ -72,7 +76,7 @@ impl Drawable for Station {
             .arc(
                 canvas_pos.0,
                 canvas_pos.1,
-                (square_size / 3) as f64,
+                square_size as f64 / 3.0,
                 0.0,
                 2.0 * f64::consts::PI,
             )
