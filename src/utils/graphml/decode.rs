@@ -1,7 +1,5 @@
 use std::i32;
 
-use leptos::logging::log;
-
 use crate::{
     algorithm::{Line, Map, Station},
     utils::calc_grid_loc,
@@ -122,8 +120,6 @@ pub fn graphml_to_map(graph: GraphMlMap, square_size: u32) -> Map {
             _ => {}
         }
     }
-
-    log!("{:?}", map.get_stations());
 
     map
 }

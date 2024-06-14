@@ -1,4 +1,3 @@
-use leptos::logging::log;
 use quick_xml::de::{from_str, DeError};
 
 mod decode;

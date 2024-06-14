@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use ev::UiEvent;
 use leptos::html::Canvas;
-use leptos::logging::log;
 use leptos::*;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -105,7 +104,6 @@ fn on_mouse_up(canvas_ref: &NodeRef<Canvas>, map_state_signal: &RwSignal<MapStat
 
     for station in map.get_stations() {
         if *station == selected {
-            log!("{:?} -> {:?}", station.get_pos(), selected.get_pos());
             station.set_pos(selected.get_pos());
             break;
         }

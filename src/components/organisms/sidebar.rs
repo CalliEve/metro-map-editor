@@ -2,7 +2,7 @@ use leptos::*;
 
 use crate::{
     algorithm::{Line, Map, Station},
-    components::atoms::Button,
+    components::atoms::{Button, NumberInput},
     state::MapState,
 };
 
@@ -12,10 +12,16 @@ pub fn Sidebar() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
     view! {
-        <div id="sidebar" class="h-full w-full flex flex-col bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
+        <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
                 on_click=move |_| map_state.update(|state| state.set_map(testmap()))
                 text="reset map" />
+            <NumberInput
+                text="Set grid size"
+                min=2.0
+                max=u32::MAX as f64
+                default={map_state.get().get_square_size() as f64}
+                on_input=move |n| map_state.update(|state| state.set_square_size(n as u32))/>
         </div>
     }
 }
