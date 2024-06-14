@@ -164,6 +164,24 @@ fn on_mouse_out(canvas_ref: &NodeRef<Canvas>, map_state_signal: &RwSignal<MapSta
     map_state_signal.set(map_state);
 }
 
+fn on_scroll(amount: f64, map_state_signal: &RwSignal<MapState>) {
+    let current = map_state_signal.get().get_square_size();
+
+    let size = if amount > 0.0 {
+        if current >= 100 {
+            return;
+        }
+        current + 5
+    } else {
+        if current <= 5 {
+            return;
+        }
+        current - 5
+    };
+
+    map_state_signal.update(|state| state.set_square_size(size))
+}
+
 #[component]
 pub fn Canvas() -> impl IntoView {
     let canvas_ref = create_node_ref::<Canvas>();
@@ -202,6 +220,7 @@ pub fn Canvas() -> impl IntoView {
                 on:touchend=move |_| on_mouse_up(&canvas_ref, &map_state)
                 on:touchmove=move |ev| on_mouse_move(&canvas_ref, &map_state, ev.as_ref())
                 on:touchcancel=move |_| on_mouse_out(&canvas_ref, &map_state)
+                on:wheel=move |ev| on_scroll(ev.delta_y(), &map_state)
                 id="canvas"
                 style="touch-action: none;"
                 class="object-contain"/>

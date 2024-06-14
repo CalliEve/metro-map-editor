@@ -20,7 +20,7 @@ pub fn Sidebar() -> impl IntoView {
                 text="Set grid size"
                 min=2.0
                 max=u32::MAX as f64
-                default={map_state.get().get_square_size() as f64}
+                value=move || map_state.get().get_square_size() as f64
                 on_input=move |n| map_state.update(|state| state.set_square_size(n as u32))/>
         </div>
     }
