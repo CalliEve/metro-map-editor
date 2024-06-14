@@ -1,11 +1,16 @@
-use leptos::logging::log;
 use leptos::*;
 
-use crate::components::{atoms::Button, molecules::FileModal};
+use crate::{
+    components::{atoms::Button, molecules::FileModal},
+    state::MapState,
+    utils::decode_map,
+};
 
 #[component]
 pub fn Navbar() -> impl IntoView {
     let (show_file_modal, set_show_file_modal) = create_signal(false);
+    let map_state =
+        use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
     view! {
     <nav id="navbar" class="pr-4 max-h-20 relative flex w-full items-center justify-between bg-zinc-100 py-2 shadow-dark-mild shadow-sm dark:shadow-neutral-900 dark:bg-neutral-750 lg:py-4">
@@ -19,6 +24,6 @@ pub fn Navbar() -> impl IntoView {
     <FileModal
         show=show_file_modal
         on_close=move || set_show_file_modal(false)
-        on_submit=move |s| {set_show_file_modal(false); log!("{}", s)} />
+        on_submit=move |s| {set_show_file_modal(false); map_state.update(|state| state.set_map(decode_map(s, state.get_square_size()).unwrap()));} />
     }
 }

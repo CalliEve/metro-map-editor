@@ -8,7 +8,7 @@ use std::{
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
-use crate::algorithm::utils::calc_canvas_loc;
+use crate::utils::calc_canvas_loc;
 
 use super::Drawable;
 
@@ -19,22 +19,25 @@ pub struct Station {
     /// Position of the station
     pos: Rc<Cell<(i32, i32)>>,
     /// ID of the station
-    id: u32,
+    id: String,
     /// If when drawn the station should be greyed out (like when moving)
     is_ghost: bool,
+    /// The station name
+    name: String,
 }
 
 impl Station {
-    pub fn new(pos: (i32, i32)) -> Self {
+    pub fn new(pos: (i32, i32), id: Option<String>) -> Self {
         Self {
             pos: Rc::new(Cell::new(pos)),
-            id: STATION_ID.fetch_add(1, Ordering::SeqCst),
+            id: id.unwrap_or_else(|| STATION_ID.fetch_add(1, Ordering::SeqCst).to_string()),
             is_ghost: false,
+            name: String::new(),
         }
     }
 
-    pub fn get_id(&self) -> u32 {
-        self.id
+    pub fn get_id(&self) -> &str {
+        &self.id
     }
 
     pub fn get_pos(&self) -> (i32, i32) {
@@ -53,11 +56,16 @@ impl Station {
         calc_canvas_loc(self.get_pos(), square_size)
     }
 
+    pub fn set_name(&mut self, name: impl ToString) {
+        self.name = name.to_string();
+    }
+
     pub fn clone_non_ref(&self) -> Self {
         Self {
-            id: self.id,
+            id: self.id.clone(),
             is_ghost: self.is_ghost,
             pos: Rc::new(Cell::new(self.get_pos())),
+            name: self.name.clone(),
         }
     }
 }

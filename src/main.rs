@@ -5,6 +5,7 @@ use leptos::*;
 mod algorithm;
 mod components;
 mod state;
+mod utils;
 
 use components::Home;
 use state::StateProvider;

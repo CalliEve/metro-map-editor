@@ -14,7 +14,7 @@ pub fn Sidebar() -> impl IntoView {
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
-                on_click=move |_| map_state.set(MapState::new(testmap()))
+                on_click=move |_| map_state.update(|state| state.set_map(testmap()))
                 text="reset map" />
         </div>
     }
@@ -23,19 +23,25 @@ pub fn Sidebar() -> impl IntoView {
 fn testmap() -> Map {
     let mut map = Map::new();
 
-    map.add_line(Line::new(vec![
-        Station::new((10, 10)),
-        Station::new((15, 15)),
-        Station::new((20, 25)),
-    ]));
+    map.add_line(Line::new(
+        vec![
+            Station::new((10, 10), None),
+            Station::new((15, 15), None),
+            Station::new((20, 25), None),
+        ],
+        "line 1",
+    ));
 
-    map.add_line(Line::new(vec![
-        Station::new((20, 12)),
-        Station::new((25, 12)),
-        Station::new((30, 20)),
-    ]));
+    map.add_line(Line::new(
+        vec![
+            Station::new((20, 12), None),
+            Station::new((25, 12), None),
+            Station::new((30, 20), None),
+        ],
+        "line 2",
+    ));
 
-    map.add_line(Line::new(vec![Station::new((7, 5))]));
+    map.add_line(Line::new(vec![Station::new((7, 5), None)], "line 3"));
 
     map
 }

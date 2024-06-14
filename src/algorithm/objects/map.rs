@@ -4,7 +4,6 @@ use super::{Drawable, Line, Station};
 pub struct Map {
     stations: Vec<Station>,
     lines: Vec<Line>,
-    square_size: u32,
 }
 
 impl Map {
@@ -12,16 +11,15 @@ impl Map {
         Self {
             stations: Vec::new(),
             lines: Vec::new(),
-            square_size: 30,
         }
     }
 
-    pub fn get_square_size(&self) -> u32 {
-        self.square_size
+    pub fn get_station(&self, id: &str) -> Option<&Station> {
+        self.stations.iter().find(|s| s.get_id() == id)
     }
 
-    pub fn set_square_size(&mut self, square_size: u32) {
-        self.square_size = square_size;
+    pub fn get_mut_line(&mut self, id: &str) -> Option<&mut Line> {
+        self.lines.iter_mut().find(|l| l.get_id() == id)
     }
 
     pub fn add_line(&mut self, mut line: Line) {
@@ -44,14 +42,18 @@ impl Map {
         &mut self.stations
     }
 
+    pub fn add_station(&mut self, station: Station) {
+        self.stations.push(station);
+    }
+
     pub fn station_at_pos(&self, pos: (i32, i32)) -> Option<&Station> {
         self.stations.iter().find(|s| s.get_pos() == pos)
     }
 
-    pub fn calc_nearest_grid_node(&self, pos: (i32, i32)) -> (i32, i32) {
+    pub fn calc_nearest_grid_node(&self, square_size: u32, pos: (i32, i32)) -> (i32, i32) {
         (
-            (pos.0 as f64 / self.square_size as f64).round() as i32,
-            (pos.1 as f64 / self.square_size as f64).round() as i32,
+            (pos.0 as f64 / square_size as f64).round() as i32,
+            (pos.1 as f64 / square_size as f64).round() as i32,
         )
     }
 }
