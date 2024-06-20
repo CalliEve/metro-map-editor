@@ -1,3 +1,5 @@
+//! Contains small components that do not contain child components.
+
 mod button;
 mod number_input;
 

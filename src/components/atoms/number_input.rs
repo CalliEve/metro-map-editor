@@ -1,20 +1,31 @@
-use std::i32;
+//! Contains the [`NumberInput`] component.
 
 use leptos::*;
 
+/// An input html element for number input.
 #[component]
 pub fn NumberInput<F, V>(
+    /// The label on the input.
     text: &'static str,
+    /// Gets called when the number input is changed.
     on_input: F,
-    #[prop(optional)] value: Option<V>,
-    #[prop(optional)] min: f64,
-    #[prop(default = (i32::MAX) as f64)] max: f64,
+    /// Gets called to set the current input value.
+    #[prop(optional)]
+    value: Option<V>,
+    /// The minimum value (default: 0)
+    #[prop(optional)]
+    min: f64,
+    /// The maximum value (default: i32::MAX)
+    #[prop(default = (i32::MAX) as f64)]
+    max: f64,
 ) -> impl IntoView
 where
     F: Fn(f64) + 'static,
     V: (Fn() -> f64) + Copy + 'static,
 {
-    let id = text.to_lowercase().replace(" ", "_");
+    let id = text
+        .to_lowercase()
+        .replace(' ', "_");
 
     view! {
     <div class="relative mb-3" data-twe-input-wrapper-init>
@@ -25,7 +36,7 @@ where
         on:input=move |ev| {on_input(event_target_value(&ev).parse().expect("number input does not give number"))}
         max=max
         min=min
-        prop:value=move || min.max(value.map_or(0.0, |v| v())) />
+        prop:value=move || value.map(|v| v().max(min)) />
       <label
         for={id}
         class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate pt-[0.37rem] leading-[1.6] text-neutral-500 peer-focus:text-primary -translate-y-[0.9rem] scale-[0.8] dark:text-neutral-400 dark:peer-focus:text-primary"

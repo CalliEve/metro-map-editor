@@ -1,15 +1,27 @@
+//! Contains the [`FileModal`] component.
+
+use ev::MouseEvent;
 use leptos::*;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
+use wasm_bindgen::{
+    closure::Closure,
+    JsCast,
+    JsValue,
+};
 use web_sys::HtmlInputElement;
 
 use crate::components::atoms::Button;
 
+/// Gets the file uploaded to the input element by the user and passes its
+/// contents to the provided `on_submit` callback function.
 fn get_file<S>(input: &HtmlInputElement, on_submit: S)
 where
     S: Fn(String) + 'static,
 {
     let cb = Closure::new(move |v: JsValue| {
-        on_submit(v.as_string().expect("file contents should be a string"));
+        on_submit(
+            v.as_string()
+                .expect("file contents should be a string"),
+        );
     });
 
     input
@@ -24,14 +36,42 @@ where
     cb.forget();
 }
 
+/// A modal that asks the user to upload a file.
 #[component]
-pub fn FileModal<S, C>(show: ReadSignal<bool>, on_submit: S, on_close: C) -> impl IntoView
+pub fn FileModal<S, C>(
+    /// If the modal should be shown.
+    show: ReadSignal<bool>,
+    /// Gets called on file submit with the contents of the file.
+    on_submit: S,
+    /// Gets called if the modal is closed without submit (the user clicks
+    /// outside of the modal).
+    on_close: C,
+) -> impl IntoView
 where
     S: Fn(String) + 'static + Copy,
     C: Fn() + 'static,
 {
     let modal_ref: NodeRef<html::Div> = create_node_ref();
     let input_ref: NodeRef<html::Input> = create_node_ref();
+
+    let on_outside_click = move |e: MouseEvent| {
+        // actual dom node that got clicked on
+        let target_node = e
+            .target()
+            .and_then(|t| {
+                t.dyn_ref::<web_sys::Node>()
+                    .cloned()
+            });
+
+        // if the clicked node is outside the modal itself
+        if !modal_ref
+            .get()
+            .unwrap()
+            .contains(target_node.as_ref())
+        {
+            on_close();
+        }
+    };
 
     view! {
         <div
@@ -40,7 +80,7 @@ where
             tabindex="-1"
             style:display=move || if show() {"flex"} else {"none"}
             class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
-            on:click=move |e| if !modal_ref.get().unwrap().contains(e.target().and_then(|t| t.dyn_ref::<web_sys::Node>().cloned()).as_ref()) {on_close()}>
+            on:click=on_outside_click>
             <div _ref=modal_ref class="relative p-4 w-full max-w-2xl max-h-full">
                 // content
                 <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">

@@ -1,11 +1,23 @@
+//! Contains the [`Sidebar`] component.
+
 use leptos::*;
 
 use crate::{
-    algorithm::{Line, Map, Station},
-    components::atoms::{Button, NumberInput},
-    state::MapState,
+    components::{
+        atoms::{
+            Button,
+            NumberInput,
+        },
+        MapState,
+    },
+    models::{
+        Line,
+        Map,
+        Station,
+    },
 };
 
+/// The sidebar component with all the tools on there for editing the canvas.
 #[component]
 pub fn Sidebar() -> impl IntoView {
     let map_state =
@@ -19,13 +31,14 @@ pub fn Sidebar() -> impl IntoView {
             <NumberInput
                 text="Set grid size"
                 min=2.0
-                max=u32::MAX as f64
-                value=move || map_state.get().get_square_size() as f64
-                on_input=move |n| map_state.update(|state| state.set_square_size(n as u32))/>
+                max=f64::from(u32::MAX)
+                value=move || f64::from(map_state.get().get_square_size())
+                on_input=move |n| map_state.update(|state| state.set_square_size(n.abs() as u32))/>
         </div>
     }
 }
 
+/// Temporary function to load in a test metro map.
 fn testmap() -> Map {
     let mut map = Map::new();
 
@@ -35,7 +48,7 @@ fn testmap() -> Map {
             Station::new((15, 15), None),
             Station::new((20, 25), None),
         ],
-        "line 1",
+        &"line 1",
     ));
 
     map.add_line(Line::new(
@@ -44,10 +57,13 @@ fn testmap() -> Map {
             Station::new((25, 12), None),
             Station::new((30, 20), None),
         ],
-        "line 2",
+        &"line 2",
     ));
 
-    map.add_line(Line::new(vec![Station::new((7, 5), None)], "line 3"));
+    map.add_line(Line::new(
+        vec![Station::new((7, 5), None)],
+        &"line 3",
+    ));
 
     map
 }

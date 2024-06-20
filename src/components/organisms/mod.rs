@@ -1,3 +1,6 @@
+//! Contains large, complex components that make up major elements of the page
+//! and consist of multiple child components.
+
 mod navbar;
 mod sidebar;
 

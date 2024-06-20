@@ -1,5 +1,11 @@
-use serde::{Deserialize, Serialize};
+//! Contains all objects that together represent the data in a GraphML file.
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+/// A key-value pair that contains information about its parent object.
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct Data {
     #[serde(rename = "@key")]
@@ -8,6 +14,7 @@ pub(super) struct Data {
     pub(super) value: String,
 }
 
+/// Represents a station in the GraphML.
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct Node {
     #[serde(rename = "@id")]
@@ -16,6 +23,7 @@ pub(super) struct Node {
     pub(super) data: Vec<Data>,
 }
 
+/// Represents an edge connecting two stations as part of a line.
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct Edge {
     #[serde(rename = "@id")]
@@ -27,6 +35,8 @@ pub(super) struct Edge {
     pub(super) data: Vec<Data>,
 }
 
+/// This GraphML object can either be a [`Node`] (station) or [`Edge`] (edge
+/// connecting two stations).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(super) enum GraphItem {
@@ -34,12 +44,15 @@ pub(super) enum GraphItem {
     Edge(Edge),
 }
 
+/// The struct containing a list of either [`Edge`] or [`Node`]
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct Graph {
     #[serde(rename = "$value")]
     pub(super) content: Vec<GraphItem>,
 }
 
+/// A [`Key`] represents base information about either a line or what
+/// information is available about a station.
 #[derive(Debug, Deserialize, Serialize)]
 pub(super) struct Key {
     #[serde(rename = "@id")]
@@ -56,6 +69,7 @@ pub(super) struct Key {
     pub(super) name: String,
 }
 
+/// The root struct that contains the map in a GraphML data file
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphMlMap {
     pub(super) graph: Graph,

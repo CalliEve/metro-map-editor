@@ -1,0 +1,19 @@
+match_block_trailing_comma = true
+struct_lit_width = 0
+use_field_init_shorthand = true
+chain_width = 0
+array_width = 40
+fn_call_width = 40
+
+# unstable features: require nightly
+# call using `cargo +nightly fmt`
+wrap_comments = true
+combine_control_expr = false
+group_imports = "StdExternalCrate"
+imports_layout = "Vertical"
+imports_granularity = "Crate"
+normalize_doc_attributes = true
+reorder_impl_items = true
+condense_wildcard_suffixes = true
+force_multiline_blocks = true
+format_macro_matchers = true

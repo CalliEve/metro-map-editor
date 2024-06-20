@@ -1,3 +1,6 @@
+//! Contains components that contain child components or have complex state
+//! interactions.
+
 mod canvas;
 mod file_modal;
 

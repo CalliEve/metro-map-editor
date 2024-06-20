@@ -1,10 +1,16 @@
+//! Contains the [`Home`] page component
+
 use leptos::*;
 
 use crate::components::{
     molecules::Canvas,
-    organisms::{Navbar, Sidebar},
+    organisms::{
+        Navbar,
+        Sidebar,
+    },
 };
 
+/// The main page component.
 #[component]
 pub fn Home() -> impl IntoView {
     view! {
