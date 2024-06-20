@@ -29,3 +29,31 @@ pub fn calc_grid_loc(canvas_pos: (f64, f64), square_size: u32) -> (i32, i32) {
 pub fn equal_pixel(left: f64, right: f64) -> bool {
     (left - right).abs() < 1.0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calc_canvas_loc() {
+        let result = calc_canvas_loc((4, 5), 30);
+
+        assert_eq!(result, (120.0, 150.0));
+    }
+
+    #[test]
+    fn test_calc_grid_loc() {
+        let result = calc_grid_loc((120.0, 157.5), 30);
+
+        assert_eq!(result, (4, 5));
+    }
+
+    #[test]
+    fn test_equal_pixel() {
+        assert!(equal_pixel(3.253, 3.0));
+        assert!(equal_pixel(3.0, 3.253));
+        assert!(equal_pixel(3.0, 3.0));
+        assert!(!equal_pixel(4.0, 3.0));
+        assert!(!equal_pixel(4.7, 3.6));
+    }
+}

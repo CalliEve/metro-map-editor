@@ -22,3 +22,28 @@ pub fn decode_map(input: &str, square_size: u32) -> Result<Map, DeError> {
 
     Ok(graphml_to_map(&decoded, square_size))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_map() {
+        let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.graphml")
+            .expect("test data file does not exist");
+
+        let result = decode_map(&test_file_content, 30).expect("failed to decode graphml");
+
+        let result_line = result
+            .get_line("l0")
+            .expect("no line with id l0");
+        assert_eq!(result_line.get_color(), (84, 167, 33));
+        assert_eq!(result_line.get_name(), "lineU1");
+
+        let result_station = result
+            .get_station("n1")
+            .expect("no station with id n1");
+        assert_eq!(result_station.get_pos(), (4, 3));
+        assert_eq!(result_station.get_name(), "test 2");
+    }
+}

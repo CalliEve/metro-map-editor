@@ -63,7 +63,7 @@ pub(super) struct Key {
     pub(super) r: Option<String>,
     #[serde(rename = "@color.g")]
     pub(super) g: Option<String>,
-    #[serde(rename = "@color.g")]
+    #[serde(rename = "@color.b")]
     pub(super) b: Option<String>,
     #[serde(rename = "@attr.name")]
     pub(super) name: String,

@@ -29,6 +29,13 @@ impl Map {
             .find(|s| s.get_id() == id)
     }
 
+    /// Get a [`Line`] with the given id.
+    pub fn get_line(&self, id: &str) -> Option<&Line> {
+        self.lines
+            .iter()
+            .find(|l| l.get_id() == id)
+    }
+
     /// Get a mutable [`Line`] with the given id.
     pub fn get_mut_line(&mut self, id: &str) -> Option<&mut Line> {
         self.lines

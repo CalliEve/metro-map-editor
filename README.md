@@ -1,6 +1,7 @@
 ![Check and Deploy](https://img.shields.io/github/check-runs/callieve/metro-map-editor/main?style=flat-square)
 ![GitHub License](https://img.shields.io/github/license/callieve/metro-map-editor?style=flat-square)
-![Website](https://img.shields.io/website?url=https%3A%2F%2Fcalli.dev%2Funiversity%2Fmetro-map&up_message=Online%20editor&up_color=blue&down_message=Temporarily%20unavailable&down_color=red&style=flat-square&label=try%20it%20out!)
+
+[![Try it - yourself!](https://img.shields.io/badge/Try_it-yourself!-blue?style=for-the-badge)](https://calli.dev/university/metro-map)
 
 # Algorithmically Assisted Metro Map Editor
 

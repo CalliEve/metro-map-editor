@@ -82,6 +82,11 @@ impl Station {
         self.name = name.to_string();
     }
 
+    /// A getter for the name.
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
     /// Clone the [`Station`] without keeping a reference to the coordinate
     /// position.
     pub fn clone_non_ref(&self) -> Self {
@@ -124,5 +129,27 @@ impl Drawable for Station {
 impl PartialEq for Station {
     fn eq(&self, other: &Station) -> bool {
         other.id == self.id
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_station() {
+        let before_id = STATION_ID.load(Ordering::Relaxed);
+
+        let first_station = Station::new((2, 3), None);
+        let second_station = Station::new((2, 3), Some("test".to_owned()));
+
+        let after_id = STATION_ID.load(Ordering::Relaxed);
+
+        assert_eq!(before_id + 1, after_id);
+        assert_eq!(
+            first_station.get_id(),
+            before_id.to_string()
+        );
+        assert_eq!(second_station.get_id(), "test");
     }
 }

@@ -73,9 +73,19 @@ impl Line {
         self.color = color;
     }
 
+    /// A getter for the station's color.
+    pub fn get_color(&self) -> (u8, u8, u8) {
+        self.color
+    }
+
     /// A setter for the station's name.
     pub fn set_name(&mut self, name: &impl ToString) {
         self.name = name.to_string();
+    }
+
+    /// A getter for the station's name.
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     /// A getter for the station id.
