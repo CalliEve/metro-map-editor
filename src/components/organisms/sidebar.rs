@@ -6,6 +6,8 @@ use crate::{
     components::{
         atoms::{
             Button,
+            ButtonGroup,
+            ButtonProps,
             NumberInput,
         },
         MapState,
@@ -26,7 +28,7 @@ pub fn Sidebar() -> impl IntoView {
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
-                on_click=move |_| map_state.update(|state| state.set_map(testmap()))
+                on_click=Box::new(move |_| map_state.update(|state| state.set_map(testmap())))
                 text="reset map" />
             <NumberInput
                 text="Set grid size"
@@ -34,6 +36,16 @@ pub fn Sidebar() -> impl IntoView {
                 max=f64::from(u32::MAX)
                 value=move || f64::from(map_state.get().get_square_size())
                 on_input=move |n| map_state.update(|state| state.set_square_size(n.abs() as u32))/>
+            <ButtonGroup
+                children={vec![
+                    ButtonProps::builder().text("Add Station").on_click(Box::new(|_| {})).build(),
+                    ButtonProps::builder().text("Remove Station").on_click(Box::new(|_| {})).danger(true).build(),
+                ]}/>
+            <ButtonGroup
+                children={vec![
+                    ButtonProps::builder().text("Add Line").on_click(Box::new(|_| {})).build(),
+                    ButtonProps::builder().text("Remove Line").on_click(Box::new(|_| {})).danger(true).build(),
+                ]}/>
         </div>
     }
 }

@@ -1,7 +1,15 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: {
     files: ["*.html", "./src/**/*.rs"],
   },
+  safelist: ["border", "text", "bg"]
+    .flatMap((s) => ["red", "blue"].map((c) => `${s}-${c}`))
+    .flatMap((s) =>
+      ["400", "500", "600", "700", "800", "900", "950"].map((n) => `${s}-${n}`)
+    )
+    .flatMap((s) => ["", "hover:", "active:"].map((m) => `${m}${s}`))
+    .flatMap((s) => ["", "dark:"].map((m) => `${m}${s}`)),
   theme: {
     extend: {
       boxShadow: {

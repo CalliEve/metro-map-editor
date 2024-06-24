@@ -5,28 +5,41 @@ use leptos::{
     *,
 };
 
+type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
+
 /// A clickable button html element.
 #[component]
-pub fn Button<F>(
+pub fn Button(
     /// The text displayed on the button.
     text: &'static str,
     /// Gets called when the button is clicked.
-    on_click: F,
+    on_click: OnButtonClick,
     /// If false the button is filled-in with one color, else just the border
     /// outline is shown.
     #[prop(optional)]
     outlined: bool,
-) -> impl IntoView
-where
-    F: Fn(MouseEvent) + 'static,
-{
-    let mut class = "inline-block rounded px-6 py-2 text-base font-semibold uppercase leading-normal shadow-primary-3 dark:shadow-neutral-950 hover:shadow-blue-900 dark:hover:shadow-neutral-900".to_owned();
+    /// If the button should be colored red (is blue otherwise).
+    #[prop(optional)]
+    danger: bool,
+) -> impl IntoView {
+    let color = if danger { "red" } else { "blue" };
+
+    let base = if danger { 600 } else { 400 };
+    let base_hover = base + 100;
+    let base_active = base + 200;
+    let dark = base + 200;
+    let dark_hover = dark + 100;
+    let dark_active = dark + 200;
+
+    let mut class = "inline-block rounded px-4 py-1.5 text-sm font-semibold uppercase leading-snug shadow-neutral-800 dark:shadow-neutral-950 hover:shadow-blue-900 dark:hover:shadow-neutral-900".to_owned();
 
     if outlined {
-        class += " border-solid border-4 text-blue-400 border-blue-400 hover:text-blue-500 hover:border-blue-500 active:text-blue-600 active:border-blue-600 dark:text-blue-500 dark:border-blue-500 dark:hover:text-blue-600 dark:hover:border-blue-600 dark:active:text-blue-700 dark:active:border-blue-700";
+        class += &format!(" border-solid border-4 text-{color}-{base} border-{color}-{base} hover:text-{color}-{base_hover} hover:border-{color}-{base_hover} active:text-{color}-{base_active} active:border-{color}-{base_active} dark:text-{color}-{dark} dark:border-{color}-{dark} dark:hover:text-{color}-{dark_hover} dark:hover:border-{color}-{dark_hover} dark:active:text-{color}-{dark_active} dark:active:border-{color}-{dark_active}");
     } else {
-        class += " text-white bg-blue-400 hover:bg-blue-500 active:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:active:bg-blue-800";
+        class += &format!(" text-white bg-{color}-{base} hover:bg-{color}-{base_hover} active:bg-{color}-{base_active} dark:bg-{color}-{dark} dark:hover:bg-{color}-{dark_hover} dark:active:bg-{color}-{dark_active}");
     }
+
+    class = class.replace("1000", "950");
 
     view! {
             <button

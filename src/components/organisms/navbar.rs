@@ -30,7 +30,7 @@ pub fn Navbar() -> impl IntoView {
         <div class="ms-2">
           <a class="text-2xl font-extrabold text-black dark:text-white" href="#">Metro Map Editor</a>
         </div>
-        <Button text="Upload file" outlined=true on_click=move |_| set_show_file_modal(true)/>
+        <Button text="Upload file" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
       </div>
     </nav>
     <FileModal

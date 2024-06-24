@@ -100,7 +100,7 @@ where
                     </div>
                     // footer
                     <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                        <Button text="Upload File" on_click=move |_| get_file(&input_ref.get().unwrap(), on_submit)/>
+                        <Button text="Upload File" on_click=Box::new(move |_| get_file(&input_ref.get().unwrap(), on_submit))/>
                     </div>
                 </div>
             </div>
