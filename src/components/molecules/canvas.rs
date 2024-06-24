@@ -110,9 +110,23 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
 fn on_mouse_down(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
     let mut map_state = map_state_signal.get();
-    let Some(map) = map_state.get_map() else {
+    let Some(mut map) = map_state
+        .get_map()
+        .cloned()
+    else {
         return;
     };
+
+    if let Some(selected) = map_state
+        .get_selected_station()
+        .cloned()
+    {
+        map.add_station(selected);
+        map_state.clear_selected_station();
+        map_state.set_map(map);
+        map_state_signal.set(map_state);
+        return;
+    }
 
     let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
 

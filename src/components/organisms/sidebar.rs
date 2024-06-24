@@ -25,6 +25,9 @@ pub fn Sidebar() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
+    let add_station =
+        move |_| map_state.update(|state| state.set_selected_station(Station::new((-1, -1), None)));
+
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
@@ -38,7 +41,7 @@ pub fn Sidebar() -> impl IntoView {
                 on_input=move |n| map_state.update(|state| state.set_square_size(n.abs() as u32))/>
             <ButtonGroup
                 children={vec![
-                    ButtonProps::builder().text("Add Station").on_click(Box::new(|_| {})).build(),
+                    ButtonProps::builder().text("Add Station").on_click(Box::new(add_station)).build(),
                     ButtonProps::builder().text("Remove Station").on_click(Box::new(|_| {})).danger(true).build(),
                 ]}/>
             <ButtonGroup

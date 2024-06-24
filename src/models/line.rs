@@ -1,6 +1,9 @@
 //! Contains the [`Line`] struct and all its methods.
 
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    f64::consts::PI,
+};
 
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
@@ -96,7 +99,6 @@ impl Line {
 
 impl Drawable for Line {
     fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32) {
-        let offset = f64::from(square_size) / 3.0 - 2.0;
         let stations = self.get_stations();
 
         canvas.set_line_width(2.0);
@@ -125,20 +127,12 @@ impl Drawable for Line {
                             .skip(1),
                     )
                 {
-                    let (from_x, from_y) = station_corner_closest(
-                        start_station,
-                        end_station,
-                        square_size,
-                        offset,
-                    );
+                    let (from_x, from_y) =
+                        station_corner_closest(start_station, end_station, square_size);
                     canvas.move_to(from_x, from_y);
 
-                    let (to_x, to_y) = station_corner_closest(
-                        end_station,
-                        start_station,
-                        square_size,
-                        offset,
-                    );
+                    let (to_x, to_y) =
+                        station_corner_closest(end_station, start_station, square_size);
                     canvas.line_to(to_x, to_y);
                 }
             },
@@ -146,6 +140,7 @@ impl Drawable for Line {
             // line.
             Ordering::Equal => {
                 let (station_x, station_y) = stations[0].get_canvas_pos(square_size);
+                let offset = f64::from(square_size) / PI;
 
                 canvas.move_to(station_x - offset, station_y);
                 canvas.line_to(
@@ -176,34 +171,44 @@ impl PartialEq for Line {
 /// Calculates the coordinate of the corner (on an octilinear grid) of a station
 /// closest to the given neighbor. An offset is provided for if the corner is
 /// further from the middle of the station coordinate.
-fn station_corner_closest(
-    station: &Station,
-    neighbor: &Station,
-    square_size: u32,
-    offset: f64,
-) -> (f64, f64) {
+fn station_corner_closest(station: &Station, neighbor: &Station, square_size: u32) -> (f64, f64) {
+    let cardinal_offset = f64::from(square_size) / PI;
+    let corner_offset = f64::from(square_size) / PI * 0.8;
+
     let (station_x, station_y) = station.get_canvas_pos(square_size);
     let (neighbor_x, neighbor_y) = neighbor.get_canvas_pos(square_size);
 
-    if equal_pixel(station_x, station_y) {
+    if equal_pixel(station_x, neighbor_x) {
         if station_y > neighbor_y {
-            (station_x, station_y - offset) // below
+            (station_x, station_y - cardinal_offset) // below
         } else {
-            (station_x, station_y + offset) // above
+            (station_x, station_y + cardinal_offset) // above
         }
     } else if station_x > neighbor_x {
         if equal_pixel(station_y, neighbor_y) {
-            (station_x - offset, station_y) // left
+            (station_x - cardinal_offset, station_y) // left
         } else if station_y > neighbor_y {
-            (station_x - offset, station_y - offset) // below left
+            (
+                station_x - corner_offset,
+                station_y - corner_offset,
+            ) // below left
         } else {
-            (station_x - offset, station_y + offset) // above left
+            (
+                station_x - corner_offset,
+                station_y + corner_offset,
+            ) // above left
         }
     } else if equal_pixel(station_y, neighbor_y) {
-        (station_x + offset, station_y) // right
+        (station_x + cardinal_offset, station_y) // right
     } else if station_y > neighbor_y {
-        (station_x + offset, station_y - offset) // below right
+        (
+            station_x + corner_offset,
+            station_y - corner_offset,
+        ) // below right
     } else {
-        (station_x + offset, station_y + offset) // above right
+        (
+            station_x + corner_offset,
+            station_y + corner_offset,
+        ) // above right
     }
 }
