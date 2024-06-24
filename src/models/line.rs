@@ -61,7 +61,7 @@ impl Line {
         } else if let Some(a) = after.cloned() {
             // after exists but not found, so inserting it at the end
             self.stations
-                .push(a)
+                .push(a);
         }
 
         self.stations
