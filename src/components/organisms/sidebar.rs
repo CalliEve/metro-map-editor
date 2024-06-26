@@ -15,6 +15,7 @@ use crate::{
     models::{
         Line,
         Map,
+        SelectedLine,
         Station,
     },
 };
@@ -25,8 +26,15 @@ pub fn Sidebar() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
-    let add_station =
-        move |_| map_state.update(|state| state.set_selected_station(Station::new((-1, -1), None)));
+    let add_station = move |_| {
+        map_state.update(|state| {
+            let mut station = Station::new((-1, -1), None);
+            station.set_is_ghost(true);
+            state.set_selected_station(station);
+        });
+    };
+    let add_line =
+        move |_| map_state.update(|state| state.set_selected_line(SelectedLine::new_line()));
 
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
@@ -46,7 +54,7 @@ pub fn Sidebar() -> impl IntoView {
                 ]}/>
             <ButtonGroup
                 children={vec![
-                    ButtonProps::builder().text("Add Line").on_click(Box::new(|_| {})).build(),
+                    ButtonProps::builder().text("Add Line").on_click(Box::new(add_line)).build(),
                     ButtonProps::builder().text("Remove Line").on_click(Box::new(|_| {})).danger(true).build(),
                 ]}/>
         </div>
@@ -63,7 +71,7 @@ fn testmap() -> Map {
             Station::new((15, 15), None),
             Station::new((20, 25), None),
         ],
-        &"line 1",
+        Some("line 1".to_owned()),
     ));
 
     map.add_line(Line::new(
@@ -72,12 +80,12 @@ fn testmap() -> Map {
             Station::new((25, 12), None),
             Station::new((30, 20), None),
         ],
-        &"line 2",
+        Some("line 2".to_owned()),
     ));
 
     map.add_line(Line::new(
         vec![Station::new((7, 5), None)],
-        &"line 3",
+        Some("line 3".to_owned()),
     ));
 
     map

@@ -108,8 +108,7 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
 /// Listener for the [mousedown] event on the canvas.
 ///
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
-fn on_mouse_down(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
-    let mut map_state = map_state_signal.get();
+fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     let Some(mut map) = map_state
         .get_map()
         .cloned()
@@ -117,20 +116,44 @@ fn on_mouse_down(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
         return;
     };
 
-    if let Some(selected) = map_state
+    // Handle a click while having a new station selected.
+    if let Some(mut selected) = map_state
         .get_selected_station()
         .cloned()
     {
+        selected.set_is_ghost(false);
         map.add_station(selected);
         map_state.clear_selected_station();
         map_state.set_map(map);
-        map_state_signal.set(map_state);
         return;
     }
 
     let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-
     let mouse_pos = calc_grid_loc(canvas_pos, map_state.get_square_size());
+
+    // Handle a click while having a new line selected
+    if let Some(selected) = map_state
+        .get_selected_line()
+        .cloned()
+    {
+        if let Some(station_at_pos) = map
+            .station_at_pos(mouse_pos)
+            .cloned()
+        {
+            let (before, _) = selected.get_before_after();
+            let mut line = selected
+                .get_line()
+                .clone();
+
+            line.add_station(station_at_pos, before);
+
+            map.add_line(line);
+            map_state.set_map(map);
+            map_state.clear_selected_line();
+        }
+        return;
+    }
+
     let selected_opt = map
         .station_at_pos(mouse_pos)
         .map(Station::clone_non_ref);
@@ -142,30 +165,26 @@ fn on_mouse_down(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
     selected.set_pos(mouse_pos);
     selected.set_is_ghost(true);
     map_state.set_selected_station(selected);
-
-    map_state_signal.set(map_state);
 }
 
 /// Listener for the [mouseup] event on the canvas.
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
-fn on_mouse_up(map_state_signal: &RwSignal<MapState>) {
-    let mut map_state = map_state_signal.get();
-    if !map_state.has_selected_station() {
-        return;
-    }
-
-    let map = map_state
-        .get_map()
-        .cloned()
-        .unwrap();
-    let mut selected = map_state
+fn on_mouse_up(map_state: &mut MapState) {
+    let Some(mut selected) = map_state
         .get_selected_station()
+        .cloned()
+    else {
+        return;
+    };
+
+    let mut map = map_state
+        .get_map()
         .cloned()
         .unwrap();
     selected.set_is_ghost(false);
 
-    for station in map.get_stations() {
+    for station in map.get_mut_stations() {
         if *station == selected {
             station.set_pos(selected.get_pos());
             break;
@@ -174,55 +193,48 @@ fn on_mouse_up(map_state_signal: &RwSignal<MapState>) {
 
     map_state.set_map(map);
     map_state.clear_selected_station();
-
-    map_state_signal.set(map_state);
 }
 
 /// Listener for the [mousemove] event on the canvas.
 ///
 /// [mousemove]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
-fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
-    let mut map_state = map_state_signal.get();
-    let selected_opt = map_state.get_selected_station();
-    if selected_opt.is_none() {
+fn on_mouse_move(map_state: &mut MapState, ev: &UiEvent) {
+    let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
+    let mouse_pos = calc_grid_loc(canvas_pos, map_state.get_square_size());
+
+    // Handle move of selected line
+    if let Some(selected) = map_state.get_mut_selected_line() {
+        selected.set_current_hover(mouse_pos);
         return;
     }
-    let selected = selected_opt
+
+    // Handle move of selected station
+    let Some(mut selected) = map_state
+        .get_selected_station()
         .cloned()
-        .unwrap();
+    else {
+        return;
+    };
 
-    let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-
-    let mouse_pos = calc_grid_loc(canvas_pos, map_state.get_square_size());
     if mouse_pos == selected.get_pos() {
         return;
     }
 
     selected.set_pos(mouse_pos);
     map_state.set_selected_station(selected);
-
-    map_state_signal.set(map_state);
 }
 
 /// Listener for the [mouseout] event on the canvas.
 ///
 /// [mouseout]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
-fn on_mouse_out(map_state_signal: &RwSignal<MapState>) {
-    let mut map_state = map_state_signal.get();
-    if !map_state.has_selected_station() {
-        return;
-    }
-
+fn on_mouse_out(map_state: &mut MapState) {
     map_state.clear_selected_station();
-
-    map_state_signal.set(map_state);
+    map_state.clear_selected_line();
 }
 
 /// Listener for when the user scrolls on the canvas.
-fn on_scroll(amount: f64, map_state_signal: &RwSignal<MapState>) {
-    let current = map_state_signal
-        .get()
-        .get_square_size();
+fn on_scroll(map_state: &mut MapState, amount: f64) {
+    let current = map_state.get_square_size();
 
     let size = if amount > 0.0 {
         if current >= 100 {
@@ -236,7 +248,7 @@ fn on_scroll(amount: f64, map_state_signal: &RwSignal<MapState>) {
         current - 5
     };
 
-    map_state_signal.update(|state| state.set_square_size(size));
+    map_state.set_square_size(size);
 }
 
 /// The canvas itself.
@@ -283,15 +295,15 @@ pub fn Canvas() -> impl IntoView {
         <div class="grow overflow-hidden bg-zinc-50 dark:bg-neutral-700 text-black dark:text-white">
             <canvas
                 _ref=canvas_ref
-                on:mousedown=move |ev| on_mouse_down(&map_state, ev.as_ref())
-                on:mouseup=move |_| on_mouse_up(&map_state)
-                on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
-                on:mouseout=move |_| on_mouse_out(&map_state)
-                on:touchstart=move |ev| on_mouse_down(&map_state, ev.as_ref())
-                on:touchend=move |_| on_mouse_up(&map_state)
-                on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
-                on:touchcancel=move |_| on_mouse_out(&map_state)
-                on:wheel=move |ev| on_scroll(ev.delta_y(), &map_state)
+                on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
+                on:mouseup=move |_| map_state.update(on_mouse_up)
+                on:mousemove=move |ev| map_state.update(|state| on_mouse_move(state, ev.as_ref()))
+                on:mouseout=move |_| map_state.update(on_mouse_out)
+                on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
+                on:touchend=move |_| map_state.update(on_mouse_up)
+                on:touchmove=move |ev| map_state.update(|state| on_mouse_move(state, ev.as_ref()))
+                on:touchcancel=move |_| map_state.update(on_mouse_out)
+                on:wheel=move |ev| map_state.update(|state| on_scroll(state, ev.delta_y()))
                 id="canvas"
                 style="touch-action: none;"
                 class="object-contain"/>

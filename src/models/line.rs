@@ -3,6 +3,10 @@
 use std::{
     cmp::Ordering,
     f64::consts::PI,
+    sync::atomic::{
+        AtomicU32,
+        Ordering as AtomicOrdering,
+    },
 };
 
 use wasm_bindgen::JsValue;
@@ -12,7 +16,10 @@ use super::{
     Drawable,
     Station,
 };
-use crate::utils::equal_pixel;
+use crate::algorithm::draw_edge;
+
+/// Next generated sequential identifier for a new line.
+static LINE_ID: AtomicU32 = AtomicU32::new(1);
 
 /// Represents a metro line, including its stations, name and color.
 #[derive(Clone, Debug)]
@@ -30,10 +37,14 @@ pub struct Line {
 impl Line {
     /// Create a new [`Line`] with the stations it visits and an identifier.
     /// Color and name are set to default values.
-    pub fn new(stations: Vec<Station>, id: &impl ToString) -> Self {
+    pub fn new(stations: Vec<Station>, id: Option<String>) -> Self {
         Self {
             stations,
-            id: id.to_string(),
+            id: id.unwrap_or_else(|| {
+                LINE_ID
+                    .fetch_add(1, AtomicOrdering::SeqCst)
+                    .to_string()
+            }),
             color: (0, 0, 0),
             name: String::new(),
         }
@@ -102,6 +113,7 @@ impl Drawable for Line {
         let stations = self.get_stations();
 
         canvas.set_line_width(2.0);
+        canvas.set_global_alpha(1.0);
         canvas.set_stroke_style(&JsValue::from_str(&format!(
             "rgb({} {} {})",
             self.color
@@ -127,13 +139,12 @@ impl Drawable for Line {
                             .skip(1),
                     )
                 {
-                    let (from_x, from_y) =
-                        station_corner_closest(start_station, end_station, square_size);
-                    canvas.move_to(from_x, from_y);
-
-                    let (to_x, to_y) =
-                        station_corner_closest(end_station, start_station, square_size);
-                    canvas.line_to(to_x, to_y);
+                    draw_edge(
+                        start_station,
+                        end_station,
+                        canvas,
+                        square_size,
+                    );
                 }
             },
             // Add two horizontal lines to the single station, showing its a lone station on the
@@ -165,50 +176,5 @@ impl Drawable for Line {
 impl PartialEq for Line {
     fn eq(&self, other: &Line) -> bool {
         other.id == self.id
-    }
-}
-
-/// Calculates the coordinate of the corner (on an octilinear grid) of a station
-/// closest to the given neighbor. An offset is provided for if the corner is
-/// further from the middle of the station coordinate.
-fn station_corner_closest(station: &Station, neighbor: &Station, square_size: u32) -> (f64, f64) {
-    let cardinal_offset = f64::from(square_size) / PI;
-    let corner_offset = f64::from(square_size) / PI * 0.8;
-
-    let (station_x, station_y) = station.get_canvas_pos(square_size);
-    let (neighbor_x, neighbor_y) = neighbor.get_canvas_pos(square_size);
-
-    if equal_pixel(station_x, neighbor_x) {
-        if station_y > neighbor_y {
-            (station_x, station_y - cardinal_offset) // below
-        } else {
-            (station_x, station_y + cardinal_offset) // above
-        }
-    } else if station_x > neighbor_x {
-        if equal_pixel(station_y, neighbor_y) {
-            (station_x - cardinal_offset, station_y) // left
-        } else if station_y > neighbor_y {
-            (
-                station_x - corner_offset,
-                station_y - corner_offset,
-            ) // below left
-        } else {
-            (
-                station_x - corner_offset,
-                station_y + corner_offset,
-            ) // above left
-        }
-    } else if equal_pixel(station_y, neighbor_y) {
-        (station_x + cardinal_offset, station_y) // right
-    } else if station_y > neighbor_y {
-        (
-            station_x + corner_offset,
-            station_y - corner_offset,
-        ) // below right
-    } else {
-        (
-            station_x + corner_offset,
-            station_y + corner_offset,
-        ) // above right
     }
 }

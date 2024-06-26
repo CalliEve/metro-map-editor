@@ -9,6 +9,7 @@ use crate::{
     algorithm::redraw_canvas,
     models::{
         Map,
+        SelectedLine,
         Station,
     },
 };
@@ -16,9 +17,15 @@ use crate::{
 /// Holds all the state of the current map and canvas.
 #[derive(Clone, Debug)]
 pub struct MapState {
+    /// The current state of the map.
     map: Option<Map>,
+    /// The currently selected [`Station`].
     selected_station: Option<Station>,
+    /// The currently selected [`Line`].
+    selected_line: Option<SelectedLine>,
+    /// The height and width of the current canvas.
     size: (u32, u32),
+    /// The size of the map grid squares.
     square_size: u32,
 }
 
@@ -29,6 +36,7 @@ impl MapState {
         Self {
             map: Some(map),
             selected_station: None,
+            selected_line: None,
             size: (300, 300),
             square_size: 30,
         }
@@ -61,10 +69,26 @@ impl MapState {
         self.selected_station = None;
     }
 
-    /// Returns if a station has been selected.
-    pub fn has_selected_station(&self) -> bool {
-        self.selected_station
-            .is_some()
+    /// A mutable getter method for the selected line.
+    pub fn get_mut_selected_line(&mut self) -> Option<&mut SelectedLine> {
+        self.selected_line
+            .as_mut()
+    }
+
+    /// A getter method for the selected line.
+    pub fn get_selected_line(&self) -> Option<&SelectedLine> {
+        self.selected_line
+            .as_ref()
+    }
+
+    /// A setter method for the selected line.
+    pub fn set_selected_line(&mut self, line: SelectedLine) {
+        self.selected_line = Some(line);
+    }
+
+    /// Set the selected line to None.
+    pub fn clear_selected_line(&mut self) {
+        self.selected_line = None;
     }
 
     /// A getter method for the canvas size.

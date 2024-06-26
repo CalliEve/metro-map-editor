@@ -6,8 +6,11 @@ use web_sys::{
     HtmlCanvasElement,
 };
 
+mod closest_corner;
+mod draw_edge;
 mod grid;
 
+pub use draw_edge::draw_edge;
 use grid::draw_grid;
 
 use crate::{
@@ -31,11 +34,17 @@ pub fn redraw_canvas(canvas: &HtmlCanvasElement, state: &MapState) {
         state.get_square_size(),
     );
 
+    let draw_drawable = |d: &dyn Drawable| d.draw(&context, state.get_square_size());
+
     state
         .get_map()
-        .inspect(|m| m.draw(&context, state.get_square_size()));
+        .inspect(|d| draw_drawable(*d));
 
     state
         .get_selected_station()
-        .inspect(|s| s.draw(&context, state.get_square_size()));
+        .inspect(|d| draw_drawable(*d));
+
+    state
+        .get_selected_line()
+        .inspect(|d| draw_drawable(*d));
 }

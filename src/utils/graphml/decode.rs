@@ -18,7 +18,13 @@ use crate::{
 
 /// Transforms an edge represented by a [`Key`] to a [`Line`].
 fn edge_to_line(edge: &Key) -> Line {
-    let mut line = Line::new(Vec::new(), &edge.id);
+    let mut line = Line::new(
+        Vec::new(),
+        Some(
+            edge.id
+                .clone(),
+        ),
+    );
     line.set_name(&edge.name);
     line.set_color((
         edge.r
@@ -193,7 +199,7 @@ mod tests {
 
         let result = edge_to_line(&input);
 
-        let mut example = Line::new(Vec::new(), &"test");
+        let mut example = Line::new(Vec::new(), Some("test".to_owned()));
         example.set_color((30, 0, 235));
         example.set_name(&"test line");
 

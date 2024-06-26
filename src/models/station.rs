@@ -16,7 +16,7 @@ use web_sys::CanvasRenderingContext2d;
 use super::Drawable;
 use crate::utils::calc_canvas_loc;
 
-/// Next generated sequential identifier for a new station
+/// Next generated sequential identifier for a new station.
 static STATION_ID: AtomicU32 = AtomicU32::new(1);
 
 /// Represents a metro station, including its grid position on the map, its id,
@@ -65,8 +65,8 @@ impl Station {
         self.is_ghost = ghost;
     }
 
-    /// A getter for if the station should be greyed out.
-    pub fn set_pos(&self, pos: (i32, i32)) {
+    /// A setter for the grid position of the station.
+    pub fn set_pos(&mut self, pos: (i32, i32)) {
         self.pos
             .set(pos);
     }
@@ -110,6 +110,8 @@ impl Drawable for Station {
         canvas.set_line_width(4.0);
         if self.is_ghost {
             canvas.set_global_alpha(0.5);
+        } else {
+            canvas.set_global_alpha(1.0);
         }
         canvas.set_stroke_style(&JsValue::from_str("black"));
         canvas.begin_path();
@@ -151,5 +153,23 @@ mod tests {
             before_id.to_string()
         );
         assert_eq!(second_station.get_id(), "test");
+    }
+
+    #[test]
+    fn test_clone_non_ref() {
+        let before_pos = (16, 20);
+        let before_station = Station::new(before_pos, None);
+
+        let mut after_station = before_station.clone_non_ref();
+
+        let after_pos = (20, 30);
+        after_station.set_pos(after_pos);
+
+        assert_eq!(before_station.get_pos(), before_pos);
+        assert_eq!(after_station.get_pos(), after_pos);
+        assert_eq!(
+            before_station.get_id(),
+            after_station.get_id()
+        );
     }
 }

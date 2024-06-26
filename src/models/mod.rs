@@ -4,10 +4,12 @@ use web_sys::CanvasRenderingContext2d;
 
 mod line;
 mod map;
+mod selected_line;
 mod station;
 
 pub use line::Line;
 pub use map::Map;
+pub use selected_line::SelectedLine;
 pub use station::Station;
 
 /// This trait signifies an object that can be drawn onto the canvas.
