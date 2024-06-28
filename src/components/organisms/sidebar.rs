@@ -16,6 +16,7 @@ use crate::{
         Line,
         Map,
         SelectedLine,
+        SelectedStation,
         Station,
     },
 };
@@ -28,9 +29,7 @@ pub fn Sidebar() -> impl IntoView {
 
     let add_station = move |_| {
         map_state.update(|state| {
-            let mut station = Station::new((-1, -1).into(), None);
-            station.set_is_ghost(true);
-            state.set_selected_station(station);
+            state.set_selected_station(SelectedStation::new_station());
         });
     };
     let add_line =

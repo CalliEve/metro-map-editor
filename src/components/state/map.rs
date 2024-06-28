@@ -10,7 +10,7 @@ use crate::{
     models::{
         Map,
         SelectedLine,
-        Station,
+        SelectedStation,
     },
 };
 
@@ -20,7 +20,7 @@ pub struct MapState {
     /// The current state of the map.
     map: Option<Map>,
     /// The currently selected [`Station`].
-    selected_station: Option<Station>,
+    selected_station: Option<SelectedStation>,
     /// The currently selected [`Line`].
     selected_line: Option<SelectedLine>,
     /// The height and width of the current canvas.
@@ -54,13 +54,13 @@ impl MapState {
     }
 
     /// A getter method for the selected station.
-    pub fn get_selected_station(&self) -> Option<&Station> {
+    pub fn get_selected_station(&self) -> Option<&SelectedStation> {
         self.selected_station
             .as_ref()
     }
 
     /// A setter method for the selected station.
-    pub fn set_selected_station(&mut self, station: Station) {
+    pub fn set_selected_station(&mut self, station: SelectedStation) {
         self.selected_station = Some(station);
     }
 

@@ -1,3 +1,5 @@
+//! Contains the [`SelectedLine`] struct and all its methods.
+
 use wasm_bindgen::JsValue;
 use web_sys::js_sys::Uint8Array;
 
@@ -12,7 +14,7 @@ use crate::algorithm::{
     run_a_star,
 };
 
-/// Holds information about the currently selected line.
+/// Holds information about the currently selected [`Line`].
 #[derive(Debug, Clone)]
 pub struct SelectedLine {
     /// The selected line.
@@ -66,9 +68,22 @@ impl SelectedLine {
         self.grabbed_at
     }
 
+    /// Get the stations before and after the point the line was grabbed.
     pub fn get_before_after(&self) -> (Option<&Station>, Option<&Station>) {
         let (before, after) = &self.before_after;
         (before.as_ref(), after.as_ref())
+    }
+
+    /// Set the station that came before the point the line was grabbed.
+    pub fn set_before(&mut self, before: Station) {
+        self.before_after
+            .0 = Some(before);
+    }
+
+    /// Set the station that came after the point the line was grabbed.
+    pub fn set_after(&mut self, after: Station) {
+        self.before_after
+            .1 = Some(after);
     }
 }
 
@@ -98,56 +113,45 @@ impl Drawable for SelectedLine {
         canvas.move_to(hover_x, hover_y + half_square);
         canvas.line_to(hover_x, hover_y - half_square);
 
+        let draw_before = |before: &Station| {
+            draw_edge(
+                before.get_pos(),
+                self.get_current_hover(),
+                &run_a_star(
+                    before.get_pos(),
+                    self.get_current_hover(),
+                ),
+                canvas,
+                square_size,
+            )
+        };
+        let draw_after = |after: &Station| {
+            draw_edge(
+                self.get_current_hover(),
+                after.get_pos(),
+                &run_a_star(
+                    self.get_current_hover(),
+                    after.get_pos(),
+                ),
+                canvas,
+                square_size,
+            )
+        };
+
         match self.get_before_after() {
             (None, None) => {
                 canvas.move_to(hover_x + half_square, hover_y);
                 canvas.line_to(hover_x - half_square, hover_y);
             },
             (Some(before), None) => {
-                draw_edge(
-                    before.get_pos(),
-                    self.get_current_hover(),
-                    &run_a_star(
-                        before.get_pos(),
-                        self.get_current_hover(),
-                    ),
-                    canvas,
-                    square_size,
-                );
+                draw_before(before);
             },
             (None, Some(after)) => {
-                draw_edge(
-                    self.get_current_hover(),
-                    after.get_pos(),
-                    &run_a_star(
-                        self.get_current_hover(),
-                        after.get_pos(),
-                    ),
-                    canvas,
-                    square_size,
-                );
+                draw_after(after);
             },
             (Some(before), Some(after)) => {
-                draw_edge(
-                    before.get_pos(),
-                    self.get_current_hover(),
-                    &run_a_star(
-                        before.get_pos(),
-                        self.get_current_hover(),
-                    ),
-                    canvas,
-                    square_size,
-                );
-                draw_edge(
-                    self.get_current_hover(),
-                    after.get_pos(),
-                    &run_a_star(
-                        self.get_current_hover(),
-                        after.get_pos(),
-                    ),
-                    canvas,
-                    square_size,
-                );
+                draw_before(before);
+                draw_after(after);
             },
         }
 

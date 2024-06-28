@@ -120,6 +120,34 @@ impl Line {
         &self.id
     }
 
+    /// Get the neighbors of the station on this line.
+    pub fn get_neighbors(&self, station: &Station) -> (Option<Station>, Option<Station>) {
+        let mut found = false;
+        let mut before = None;
+        let mut after = None;
+
+        let mut iterator = self
+            .stations
+            .iter();
+        while let Some(line_station) = iterator.next() {
+            if &line_station.0 == station {
+                found = true;
+                after = iterator
+                    .next()
+                    .cloned()
+                    .map(|s| s.0);
+                break;
+            }
+            before = Some(&line_station.0)
+        }
+
+        if found {
+            (before.cloned(), after)
+        } else {
+            (None, None)
+        }
+    }
+
     /// Recalculates the edges between the stations.
     pub fn calculate_line_edges(&mut self) {
         let to_stations = self

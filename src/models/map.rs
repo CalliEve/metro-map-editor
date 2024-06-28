@@ -44,7 +44,13 @@ impl Map {
             .find(|l| l.get_id() == id)
     }
 
-    /// Get a mutable reference to all [`Line`]s of the map.
+    /// Get a list of all [`Line`]s on the map.
+    pub fn get_lines(&self) -> &[Line] {
+        self.lines
+            .as_ref()
+    }
+
+    /// Get a mutable reference to all [`Line`]s on the map.
     pub fn get_mut_lines(&mut self) -> &mut [Line] {
         self.lines
             .as_mut_slice()

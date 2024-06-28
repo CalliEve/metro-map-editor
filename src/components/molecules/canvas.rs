@@ -19,6 +19,7 @@ use crate::{
     components::MapState,
     models::{
         GridNode,
+        SelectedStation,
         Station,
     },
 };
@@ -119,12 +120,11 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     };
 
     // Handle a click while having a new station selected.
-    if let Some(mut selected) = map_state
+    if let Some(selected) = map_state
         .get_selected_station()
         .cloned()
     {
-        selected.set_is_ghost(false);
-        map.add_station(selected);
+        map.add_station(selected.deselect());
         map_state.clear_selected_station();
         map_state.set_map(map);
         return;
@@ -156,16 +156,24 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         return;
     }
 
-    let selected_opt = map
+    let Some(mut selected) = map
         .station_at_pos(mouse_pos)
-        .map(Station::clone_non_ref);
-    if selected_opt.is_none() {
+        .map(Station::clone_non_ref)
+        .map(SelectedStation::new)
+    else {
         return;
-    }
-    let mut selected = selected_opt.unwrap();
+    };
 
-    selected.set_pos(mouse_pos);
-    selected.set_is_ghost(true);
+    for line in map.get_lines() {
+        let (before, after) = line.get_neighbors(selected.get_station());
+        if let Some(before) = before {
+            selected.add_before(before);
+        }
+        if let Some(after) = after {
+            selected.add_after(after);
+        }
+    }
+
     map_state.set_selected_station(selected);
 }
 
@@ -173,9 +181,10 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
 fn on_mouse_up(map_state: &mut MapState) {
-    let Some(mut selected) = map_state
+    let Some(selected) = map_state
         .get_selected_station()
         .cloned()
+        .map(|s| s.deselect())
     else {
         return;
     };
@@ -184,7 +193,6 @@ fn on_mouse_up(map_state: &mut MapState) {
         .get_map()
         .cloned()
         .unwrap();
-    selected.set_is_ghost(false);
 
     for station in map.get_mut_stations() {
         if *station == selected {
@@ -222,7 +230,7 @@ fn on_mouse_move(map_state: &mut MapState, ev: &UiEvent) {
         return;
     }
 
-    selected.set_pos(mouse_pos);
+    selected.update_pos(mouse_pos);
     map_state.set_selected_station(selected);
 }
 

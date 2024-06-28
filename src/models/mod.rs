@@ -6,12 +6,14 @@ mod grid_node;
 mod line;
 mod map;
 mod selected_line;
+mod selected_station;
 mod station;
 
 pub use grid_node::GridNode;
 pub use line::Line;
 pub use map::Map;
 pub use selected_line::SelectedLine;
+pub use selected_station::SelectedStation;
 pub use station::Station;
 
 /// This trait signifies an object that can be drawn onto the canvas.
