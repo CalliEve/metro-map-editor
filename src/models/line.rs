@@ -14,9 +14,13 @@ use web_sys::CanvasRenderingContext2d;
 
 use super::{
     Drawable,
+    GridNode,
     Station,
 };
-use crate::algorithm::draw_edge;
+use crate::algorithm::{
+    draw_edge,
+    run_a_star,
+};
 
 /// Next generated sequential identifier for a new line.
 static LINE_ID: AtomicU32 = AtomicU32::new(1);
@@ -31,7 +35,7 @@ pub struct Line {
     /// Color of the line.
     color: (u8, u8, u8),
     /// All stations the line visits.
-    stations: Vec<Station>,
+    stations: Vec<(Station, Vec<GridNode>)>,
 }
 
 impl Line {
@@ -39,7 +43,10 @@ impl Line {
     /// Color and name are set to default values.
     pub fn new(stations: Vec<Station>, id: Option<String>) -> Self {
         Self {
-            stations,
+            stations: stations
+                .into_iter()
+                .map(|s| (s, Vec::new()))
+                .collect(),
             id: id.unwrap_or_else(|| {
                 LINE_ID
                     .fetch_add(1, AtomicOrdering::SeqCst)
@@ -51,13 +58,19 @@ impl Line {
     }
 
     /// A getter method for the stations the line visits.
-    pub fn get_stations(&self) -> &[Station] {
-        &self.stations
+    pub fn get_stations(&self) -> Vec<&Station> {
+        self.stations
+            .iter()
+            .map(|(s, _)| s)
+            .collect()
     }
 
     /// A mutable getter method for the stations the line visits.
-    pub fn get_mut_stations(&mut self) -> &mut [Station] {
-        &mut self.stations
+    pub fn get_mut_stations(&mut self) -> Vec<&mut Station> {
+        self.stations
+            .iter_mut()
+            .map(|(s, _)| s)
+            .collect()
     }
 
     /// Add a station after the after station, or at the end of the line.
@@ -66,20 +79,20 @@ impl Line {
         if let Some(index) = after.and_then(|a| {
             self.stations
                 .iter()
-                .position(|s| s == a)
+                .position(|s| &s.0 == a)
         }) {
             // found after and will insert station after after
             self.stations
-                .insert(index + 1, station);
+                .insert(index + 1, (station, Vec::new()));
             return;
         } else if let Some(a) = after.cloned() {
             // after exists but not found, so inserting it at the end
             self.stations
-                .push(a);
+                .push((a, Vec::new()));
         }
 
         self.stations
-            .push(station);
+            .push((station, Vec::new()));
     }
 
     /// A setter for the station's color.
@@ -106,6 +119,23 @@ impl Line {
     pub fn get_id(&self) -> &str {
         &self.id
     }
+
+    /// Recalculates the edges between the stations.
+    pub fn calculate_line_edges(&mut self) {
+        let to_stations = self
+            .stations
+            .iter()
+            .map(|(s, _)| s.get_pos())
+            .skip(1)
+            .collect::<Vec<GridNode>>();
+        for ((from, edges), to) in self
+            .stations
+            .iter_mut()
+            .zip(to_stations)
+        {
+            *edges = run_a_star(from.get_pos(), to);
+        }
+    }
 }
 
 impl Drawable for Line {
@@ -131,7 +161,8 @@ impl Drawable for Line {
         {
             // Draw a line between each two sequential stations on the line.
             Ordering::Greater => {
-                for (start_station, end_station) in stations
+                for (start_station, end_station) in self
+                    .stations
                     .iter()
                     .zip(
                         stations
@@ -140,8 +171,11 @@ impl Drawable for Line {
                     )
                 {
                     draw_edge(
-                        start_station,
-                        end_station,
+                        start_station
+                            .0
+                            .get_pos(),
+                        end_station.get_pos(),
+                        &start_station.1,
                         canvas,
                         square_size,
                     );

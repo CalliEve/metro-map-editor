@@ -2,11 +2,13 @@
 
 use web_sys::CanvasRenderingContext2d;
 
+mod grid_node;
 mod line;
 mod map;
 mod selected_line;
 mod station;
 
+pub use grid_node::GridNode;
 pub use line::Line;
 pub use map::Map;
 pub use selected_line::SelectedLine;

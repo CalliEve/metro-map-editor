@@ -7,13 +7,11 @@ use super::graphml_map::{
     Key,
     Node,
 };
-use crate::{
-    models::{
-        Line,
-        Map,
-        Station,
-    },
-    utils::calc_grid_loc,
+use crate::models::{
+    GridNode,
+    Line,
+    Map,
+    Station,
 };
 
 /// Transforms an edge represented by a [`Key`] to a [`Line`].
@@ -52,7 +50,7 @@ fn edge_to_line(edge: &Key) -> Line {
 
 /// Transforms a [`Node`] into a [`Station`].
 fn node_to_station(node: &Node, square_size: u32) -> Station {
-    let station_loc = calc_grid_loc(
+    let station_loc = GridNode::from_canvas_pos(
         (
             node.data
                 .iter()
@@ -120,9 +118,9 @@ fn normalize_stations(map: &mut Map) {
         }
     }
 
+    let adjustment = GridNode::from((-low_x + 2, -low_y + 2));
     for station in map.get_mut_stations() {
-        let (x, y) = station.get_pos();
-        station.set_pos((x - low_x + 2, y - low_y + 2));
+        station.set_pos(station.get_pos() + adjustment);
     }
 }
 
@@ -230,7 +228,7 @@ mod tests {
 
         let result = node_to_station(&node, 30);
 
-        let mut example = Station::new((4, 5), Some("test".to_owned()));
+        let mut example = Station::new((4, 5).into(), Some("test".to_owned()));
         example.set_name(&"test station");
 
         assert_eq!(result.get_id(), example.get_id());
@@ -241,9 +239,9 @@ mod tests {
     #[test]
     fn test_normalize_stations() {
         let mut map = Map::new();
-        map.add_station(Station::new((-3, 4), None));
-        map.add_station(Station::new((10, 10), None));
-        map.add_station(Station::new((0, 7), None));
+        map.add_station(Station::new((-3, 4).into(), None));
+        map.add_station(Station::new((10, 10).into(), None));
+        map.add_station(Station::new((0, 7).into(), None));
 
         normalize_stations(&mut map);
 

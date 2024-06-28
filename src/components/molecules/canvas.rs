@@ -17,8 +17,10 @@ use wasm_bindgen::{
 
 use crate::{
     components::MapState,
-    models::Station,
-    utils::calc_grid_loc,
+    models::{
+        GridNode,
+        Station,
+    },
 };
 
 /// If the document has fully loaded.
@@ -129,7 +131,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     }
 
     let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-    let mouse_pos = calc_grid_loc(canvas_pos, map_state.get_square_size());
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
 
     // Handle a click while having a new line selected
     if let Some(selected) = map_state
@@ -200,7 +202,7 @@ fn on_mouse_up(map_state: &mut MapState) {
 /// [mousemove]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
 fn on_mouse_move(map_state: &mut MapState, ev: &UiEvent) {
     let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-    let mouse_pos = calc_grid_loc(canvas_pos, map_state.get_square_size());
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
 
     // Handle move of selected line
     if let Some(selected) = map_state.get_mut_selected_line() {
@@ -285,6 +287,8 @@ pub fn Canvas() -> impl IntoView {
             .get_size();
         canvas_node.set_height(s.0);
         canvas_node.set_width(s.1);
+
+        map_state.update(MapState::run_local_search);
 
         map_state
             .get()

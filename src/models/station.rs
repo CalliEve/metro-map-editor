@@ -13,8 +13,10 @@ use std::{
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
-use super::Drawable;
-use crate::utils::calc_canvas_loc;
+use super::{
+    Drawable,
+    GridNode,
+};
 
 /// Next generated sequential identifier for a new station.
 static STATION_ID: AtomicU32 = AtomicU32::new(1);
@@ -24,7 +26,7 @@ static STATION_ID: AtomicU32 = AtomicU32::new(1);
 #[derive(Clone, Debug)]
 pub struct Station {
     /// Position of the station
-    pos: Rc<Cell<(i32, i32)>>,
+    pos: Rc<Cell<GridNode>>,
     /// ID of the station
     id: String,
     /// If when drawn the station should be greyed out (like when moving)
@@ -36,7 +38,7 @@ pub struct Station {
 impl Station {
     /// Create a new [`Station`] at the given grid coordinate.
     /// If id is None, the next sequential id from [`STATION_ID`] is used.
-    pub fn new(pos: (i32, i32), id: Option<String>) -> Self {
+    pub fn new(pos: GridNode, id: Option<String>) -> Self {
         Self {
             pos: Rc::new(Cell::new(pos)),
             id: id.unwrap_or_else(|| {
@@ -54,8 +56,8 @@ impl Station {
         &self.id
     }
 
-    /// A getter for the grid coordinate.
-    pub fn get_pos(&self) -> (i32, i32) {
+    /// A getter for the grid position.
+    pub fn get_pos(&self) -> GridNode {
         self.pos
             .get()
     }
@@ -66,7 +68,7 @@ impl Station {
     }
 
     /// A setter for the grid position of the station.
-    pub fn set_pos(&mut self, pos: (i32, i32)) {
+    pub fn set_pos(&mut self, pos: GridNode) {
         self.pos
             .set(pos);
     }
@@ -74,7 +76,8 @@ impl Station {
     /// The location of the station on the canvas, given the size of a grid
     /// square.
     pub fn get_canvas_pos(&self, square_size: u32) -> (f64, f64) {
-        calc_canvas_loc(self.get_pos(), square_size)
+        self.get_pos()
+            .to_canvas_pos(square_size)
     }
 
     /// A setter for the name.
@@ -142,10 +145,10 @@ mod tests {
     fn test_new_station() {
         let before_id = STATION_ID.load(Ordering::Relaxed);
 
-        let first_station = Station::new((2, 3), None);
-        let second_station = Station::new((2, 3), Some("test".to_owned()));
+        let first_station = Station::new((2, 3).into(), None);
+        let second_station = Station::new((2, 3).into(), Some("test".to_owned()));
 
-        let after_id = STATION_ID.load(Ordering::Relaxed);
+        let after_id = STATION_ID.load(Ordering::Acquire);
 
         assert_eq!(before_id + 1, after_id);
         assert_eq!(
@@ -157,12 +160,12 @@ mod tests {
 
     #[test]
     fn test_clone_non_ref() {
-        let before_pos = (16, 20);
+        let before_pos = GridNode::from((16, 20));
         let before_station = Station::new(before_pos, None);
 
         let mut after_station = before_station.clone_non_ref();
 
-        let after_pos = (20, 30);
+        let after_pos = GridNode::from((20, 30));
         after_station.set_pos(after_pos);
 
         assert_eq!(before_station.get_pos(), before_pos);

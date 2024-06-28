@@ -6,10 +6,12 @@ use web_sys::{
     HtmlCanvasElement,
 };
 
+mod a_star;
 mod closest_corner;
 mod draw_edge;
 mod grid;
 
+pub use a_star::run_a_star;
 pub use draw_edge::draw_edge;
 use grid::draw_grid;
 

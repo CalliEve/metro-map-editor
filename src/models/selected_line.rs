@@ -3,12 +3,13 @@ use web_sys::js_sys::Uint8Array;
 
 use super::{
     Drawable,
+    GridNode,
     Line,
     Station,
 };
-use crate::{
-    algorithm::draw_edge,
-    utils::calc_canvas_loc,
+use crate::algorithm::{
+    draw_edge,
+    run_a_star,
 };
 
 /// Holds information about the currently selected line.
@@ -17,17 +18,17 @@ pub struct SelectedLine {
     /// The selected line.
     line: Line,
     /// The coordinate the line was grabbed at.
-    grabbed_at: Option<(i32, i32)>,
+    grabbed_at: Option<GridNode>,
     /// The stations before and after the point the line was grabbed if
     /// applicable.
     before_after: (Option<Station>, Option<Station>),
     /// The grid coordinate the user is currently hovering over.
-    current_hover: (i32, i32),
+    current_hover: GridNode,
 }
 
 impl SelectedLine {
     /// Select a line.
-    pub fn new(line: Line, current_hover: (i32, i32), grabbed_at: Option<(i32, i32)>) -> Self {
+    pub fn new(line: Line, current_hover: GridNode, grabbed_at: Option<GridNode>) -> Self {
         Self {
             line,
             current_hover,
@@ -40,18 +41,18 @@ impl SelectedLine {
     pub fn new_line() -> Self {
         Self::new(
             Line::new(Vec::new(), None),
-            (-1, -1),
+            GridNode::from((-1, -1)),
             None,
         )
     }
 
     /// Get the current hover coordinate.
-    pub fn get_current_hover(&self) -> (i32, i32) {
+    pub fn get_current_hover(&self) -> GridNode {
         self.current_hover
     }
 
     /// Set the current hover coordinate.
-    pub fn set_current_hover(&mut self, at: (i32, i32)) {
+    pub fn set_current_hover(&mut self, at: GridNode) {
         self.current_hover = at;
     }
 
@@ -61,7 +62,7 @@ impl SelectedLine {
     }
 
     /// Get the coordinate the line was grabbet at.
-    pub fn get_grabbed_at(&self) -> Option<(i32, i32)> {
+    pub fn get_grabbed_at(&self) -> Option<GridNode> {
         self.grabbed_at
     }
 
@@ -73,11 +74,9 @@ impl SelectedLine {
 
 impl Drawable for SelectedLine {
     fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
-        let fake_station = Station::new(
-            self.get_current_hover(),
-            Some("temp_line".to_owned()),
-        );
-        let (hover_x, hover_y) = calc_canvas_loc(self.get_current_hover(), square_size);
+        let (hover_x, hover_y) = self
+            .get_current_hover()
+            .to_canvas_pos(square_size);
         let half_square = f64::from(square_size) / 2.0;
 
         canvas.set_line_width(2.0);
@@ -106,30 +105,46 @@ impl Drawable for SelectedLine {
             },
             (Some(before), None) => {
                 draw_edge(
-                    before,
-                    &fake_station,
+                    before.get_pos(),
+                    self.get_current_hover(),
+                    &run_a_star(
+                        before.get_pos(),
+                        self.get_current_hover(),
+                    ),
                     canvas,
                     square_size,
                 );
             },
             (None, Some(after)) => {
                 draw_edge(
-                    &fake_station,
-                    after,
+                    self.get_current_hover(),
+                    after.get_pos(),
+                    &run_a_star(
+                        self.get_current_hover(),
+                        after.get_pos(),
+                    ),
                     canvas,
                     square_size,
                 );
             },
             (Some(before), Some(after)) => {
                 draw_edge(
-                    before,
-                    &fake_station,
+                    before.get_pos(),
+                    self.get_current_hover(),
+                    &run_a_star(
+                        before.get_pos(),
+                        self.get_current_hover(),
+                    ),
                     canvas,
                     square_size,
                 );
                 draw_edge(
-                    &fake_station,
-                    after,
+                    self.get_current_hover(),
+                    after.get_pos(),
+                    &run_a_star(
+                        self.get_current_hover(),
+                        after.get_pos(),
+                    ),
                     canvas,
                     square_size,
                 );
@@ -143,7 +158,7 @@ impl Drawable for SelectedLine {
                 .set_line_dash(&Uint8Array::from([5u8, 5].as_ref()))
                 .unwrap();
 
-            let (origin_x, origin_y) = calc_canvas_loc(origin, square_size);
+            let (origin_x, origin_y) = origin.to_canvas_pos(square_size);
             canvas.move_to(origin_x, origin_y);
             canvas.line_to(hover_x, hover_y);
 

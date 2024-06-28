@@ -28,7 +28,7 @@ pub fn Sidebar() -> impl IntoView {
 
     let add_station = move |_| {
         map_state.update(|state| {
-            let mut station = Station::new((-1, -1), None);
+            let mut station = Station::new((-1, -1).into(), None);
             station.set_is_ghost(true);
             state.set_selected_station(station);
         });
@@ -67,24 +67,24 @@ fn testmap() -> Map {
 
     map.add_line(Line::new(
         vec![
-            Station::new((10, 10), None),
-            Station::new((15, 15), None),
-            Station::new((20, 25), None),
+            Station::new((10, 10).into(), None),
+            Station::new((15, 15).into(), None),
+            Station::new((20, 25).into(), None),
         ],
         Some("line 1".to_owned()),
     ));
 
     map.add_line(Line::new(
         vec![
-            Station::new((20, 12), None),
-            Station::new((25, 12), None),
-            Station::new((30, 20), None),
+            Station::new((20, 12).into(), None),
+            Station::new((25, 12).into(), None),
+            Station::new((30, 20).into(), None),
         ],
         Some("line 2".to_owned()),
     ));
 
     map.add_line(Line::new(
-        vec![Station::new((7, 5), None)],
+        vec![Station::new((7, 5).into(), None)],
         Some("line 3".to_owned()),
     ));
 

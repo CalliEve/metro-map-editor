@@ -120,4 +120,12 @@ impl MapState {
             self,
         );
     }
+
+    pub fn run_local_search(&mut self) {
+        if let Some(map) = &mut self.map {
+            for line in map.get_mut_lines() {
+                line.calculate_line_edges();
+            }
+        }
+    }
 }

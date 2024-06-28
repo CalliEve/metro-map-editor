@@ -2,6 +2,7 @@
 
 use super::{
     Drawable,
+    GridNode,
     Line,
     Station,
 };
@@ -43,6 +44,12 @@ impl Map {
             .find(|l| l.get_id() == id)
     }
 
+    /// Get a mutable reference to all [`Line`]s of the map.
+    pub fn get_mut_lines(&mut self) -> &mut [Line] {
+        self.lines
+            .as_mut_slice()
+    }
+
     /// Add a [`Line`]. Also adds any stations not yet added before.
     pub fn add_line(&mut self, mut line: Line) {
         for station in line.get_mut_stations() {
@@ -78,8 +85,8 @@ impl Map {
             .push(station);
     }
 
-    /// Get the station located on the given grid coordinate.
-    pub fn station_at_pos(&self, pos: (i32, i32)) -> Option<&Station> {
+    /// Get the station located on the given grid position.
+    pub fn station_at_pos(&self, pos: GridNode) -> Option<&Station> {
         self.stations
             .iter()
             .find(|s| s.get_pos() == pos)
