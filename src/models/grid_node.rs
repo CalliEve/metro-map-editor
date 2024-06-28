@@ -27,15 +27,15 @@ impl GridNode {
     }
 
     /// Get the diagonal distance to a target node.
-    pub fn diagonal_distance_to(&self, target: GridNode) -> f64 {
-        let dx = (self.0 - target.0).abs() as f64;
-        let dy = (self.1 - target.1).abs() as f64;
+    pub fn diagonal_distance_to(self, target: GridNode) -> f64 {
+        let dx = (self.0 - target.0).abs();
+        let dy = (self.1 - target.1).abs();
 
-        (dx + dy) - (2f64.sqrt() - 2.0) * dx.min(dy)
+        f64::from(dx + dy) - (2f64.sqrt() - 2.0) * f64::from(dx.min(dy))
     }
 
     /// Get a list of all the neighbors of this grid node.
-    pub fn get_neighbors(&self) -> Vec<GridNode> {
+    pub fn get_neighbors(self) -> Vec<GridNode> {
         vec![
             Self(self.0 - 1, self.1 - 1),
             Self(self.0, self.1 - 1),

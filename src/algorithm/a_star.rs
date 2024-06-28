@@ -16,10 +16,10 @@ struct AStarState {
 
 impl AStarState {
     /// Get the path that led to this state.
-    fn to_path(self) -> Vec<GridNode> {
+    fn to_path(&self) -> Vec<GridNode> {
         let mut path = Vec::new();
 
-        let mut current = Box::new(self);
+        let mut current = Box::new(self.clone());
         while let Some(state) = current.parent {
             path.push(state.node);
             current = state;
@@ -97,7 +97,7 @@ pub fn run_a_star(from: GridNode, to: GridNode) -> Vec<GridNode> {
         for neighbor in node.get_neighbors() {
             let next = AStarState {
                 path_length: path_length + 1,
-                cost: path_length as f64 + neighbor.diagonal_distance_to(to),
+                cost: f64::from(path_length) + neighbor.diagonal_distance_to(to),
                 node: neighbor,
                 parent: Some(Box::new(current.clone())),
             };
