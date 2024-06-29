@@ -92,7 +92,7 @@ impl Drawable for SelectedStation {
         self.station
             .draw(canvas, square_size);
 
-        canvas.set_line_width(2.0);
+        canvas.set_line_width(3.0);
         canvas.set_stroke_style(&JsValue::from_str("black"));
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
@@ -112,7 +112,7 @@ impl Drawable for SelectedStation {
                 ),
                 canvas,
                 square_size,
-            )
+            );
         }
 
         for after in self
@@ -130,7 +130,7 @@ impl Drawable for SelectedStation {
                 ),
                 canvas,
                 square_size,
-            )
+            );
         }
 
         canvas.stroke();

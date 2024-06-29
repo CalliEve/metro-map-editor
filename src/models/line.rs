@@ -138,7 +138,7 @@ impl Line {
                     .map(|s| s.0);
                 break;
             }
-            before = Some(&line_station.0)
+            before = Some(&line_station.0);
         }
 
         if found {
@@ -170,7 +170,7 @@ impl Drawable for Line {
     fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32) {
         let stations = self.get_stations();
 
-        canvas.set_line_width(2.0);
+        canvas.set_line_width(3.0);
         canvas.set_global_alpha(1.0);
         canvas.set_stroke_style(&JsValue::from_str(&format!(
             "rgb({} {} {})",

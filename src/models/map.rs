@@ -101,11 +101,12 @@ impl Map {
 
 impl Drawable for Map {
     fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
-        for station in self.get_stations() {
-            station.draw(canvas, square_size);
-        }
+        leptos::logging::log!("redrawing");
         for line in &self.lines {
             line.draw(canvas, square_size);
+        }
+        for station in self.get_stations() {
+            station.draw(canvas, square_size);
         }
     }
 }

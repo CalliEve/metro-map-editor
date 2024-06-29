@@ -8,7 +8,7 @@ use web_sys::CanvasRenderingContext2d;
 /// grid is in the background.
 pub fn draw_grid(canvas: &CanvasRenderingContext2d, size: (u32, u32), square_size: u32) {
     canvas.begin_path();
-    canvas.set_line_width(1.0);
+    canvas.set_line_width(0.3);
     canvas.set_stroke_style(&JsValue::from_str("grey"));
 
     draw_vertical_lines(

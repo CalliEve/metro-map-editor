@@ -91,6 +91,15 @@ impl MapState {
         self.selected_line = None;
     }
 
+    /// Returns if anything has been selected.
+    pub fn has_any_selected(&self) -> bool {
+        self.selected_station
+            .is_some()
+            || self
+                .selected_line
+                .is_some()
+    }
+
     /// A getter method for the canvas size.
     pub fn get_size(&self) -> (u32, u32) {
         self.size

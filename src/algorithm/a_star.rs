@@ -16,6 +16,9 @@ struct AStarState {
 
 impl AStarState {
     /// Get the path that led to this state.
+    ///
+    /// Note: This method excludes the starting node of the path and the node of
+    /// the current state.
     fn to_path(&self) -> Vec<GridNode> {
         let mut path = Vec::new();
 
@@ -107,4 +110,106 @@ pub fn run_a_star(from: GridNode, to: GridNode) -> Vec<GridNode> {
     }
 
     last.to_path()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_path() {
+        let states = AStarState {
+            path_length: 3,
+            cost: 0.0,
+            node: (3, 3).into(),
+            parent: Some(Box::new(AStarState {
+                cost: 0.0,
+                node: (2, 2).into(),
+                path_length: 2,
+                parent: Some(Box::new(AStarState {
+                    cost: 0.0,
+                    node: (1, 1).into(),
+                    path_length: 1,
+                    parent: Some(Box::new(AStarState {
+                        cost: 0.0,
+                        node: (0, 0).into(),
+                        path_length: 0,
+                        parent: None,
+                    })),
+                })),
+            })),
+        };
+
+        let path = states.to_path();
+
+        let expected = vec![(1, 1), (2, 2)];
+
+        assert_eq!(path, expected);
+    }
+
+    #[test]
+    fn test_a_star() {
+        // down
+        assert_eq!(
+            run_a_star((1, 1).into(), (1, 5).into()),
+            vec![(1, 2), (1, 3), (1, 4)]
+        );
+
+        // down diag left
+        assert_eq!(
+            run_a_star((5, 1).into(), (1, 5).into()),
+            vec![(4, 2), (3, 3), (2, 4)]
+        );
+
+        // left
+        assert_eq!(
+            run_a_star((5, 1).into(), (1, 1).into()),
+            vec![(4, 1), (3, 1), (2, 1)]
+        );
+
+        // up diag left
+        assert_eq!(
+            run_a_star((5, 5).into(), (1, 1).into()),
+            vec![(4, 4), (3, 3), (2, 2)]
+        );
+
+        // up
+        assert_eq!(
+            run_a_star((1, 5).into(), (1, 1).into()),
+            vec![(1, 4), (1, 3), (1, 2)]
+        );
+
+        // up diag right
+        assert_eq!(
+            run_a_star((1, 5).into(), (5, 1).into()),
+            vec![(2, 4), (3, 3), (4, 2)]
+        );
+
+        // right
+        assert_eq!(
+            run_a_star((1, 1).into(), (5, 1).into()),
+            vec![(2, 1), (3, 1), (4, 1)]
+        );
+
+        // down diag right
+        assert_eq!(
+            run_a_star((1, 1).into(), (5, 5).into()),
+            vec![(2, 2), (3, 3), (4, 4)]
+        );
+
+        // long with corner
+        assert_eq!(
+            run_a_star((1, 1).into(), (10, 5).into()),
+            vec![
+                (2, 2),
+                (3, 3),
+                (4, 4),
+                (5, 5),
+                (6, 5),
+                (7, 5),
+                (8, 5),
+                (9, 5)
+            ]
+        );
+    }
 }

@@ -184,7 +184,7 @@ fn on_mouse_up(map_state: &mut MapState) {
     let Some(selected) = map_state
         .get_selected_station()
         .cloned()
-        .map(|s| s.deselect())
+        .map(SelectedStation::deselect)
     else {
         return;
     };
@@ -208,13 +208,17 @@ fn on_mouse_up(map_state: &mut MapState) {
 /// Listener for the [mousemove] event on the canvas.
 ///
 /// [mousemove]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
-fn on_mouse_move(map_state: &mut MapState, ev: &UiEvent) {
+fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
+    let mut map_state = map_state_signal.get();
     let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
 
     // Handle move of selected line
     if let Some(selected) = map_state.get_mut_selected_line() {
-        selected.set_current_hover(mouse_pos);
+        if selected.get_current_hover() != mouse_pos {
+            selected.set_current_hover(mouse_pos);
+            map_state_signal.set(map_state);
+        }
         return;
     }
 
@@ -232,6 +236,7 @@ fn on_mouse_move(map_state: &mut MapState, ev: &UiEvent) {
 
     selected.update_pos(mouse_pos);
     map_state.set_selected_station(selected);
+    map_state_signal.set(map_state);
 }
 
 /// Listener for the [mouseout] event on the canvas.
@@ -309,11 +314,11 @@ pub fn Canvas() -> impl IntoView {
                 _ref=canvas_ref
                 on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
                 on:mouseup=move |_| map_state.update(on_mouse_up)
-                on:mousemove=move |ev| map_state.update(|state| on_mouse_move(state, ev.as_ref()))
+                on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
                 on:touchend=move |_| map_state.update(on_mouse_up)
-                on:touchmove=move |ev| map_state.update(|state| on_mouse_move(state, ev.as_ref()))
+                on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:touchcancel=move |_| map_state.update(on_mouse_out)
                 on:wheel=move |ev| map_state.update(|state| on_scroll(state, ev.delta_y()))
                 id="canvas"

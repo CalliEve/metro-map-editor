@@ -123,7 +123,7 @@ impl Drawable for SelectedLine {
                 ),
                 canvas,
                 square_size,
-            )
+            );
         };
         let draw_after = |after: &Station| {
             draw_edge(
@@ -135,7 +135,7 @@ impl Drawable for SelectedLine {
                 ),
                 canvas,
                 square_size,
-            )
+            );
         };
 
         match self.get_before_after() {
