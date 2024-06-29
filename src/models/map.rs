@@ -56,7 +56,8 @@ impl Map {
             .as_mut_slice()
     }
 
-    /// Add a [`Line`]. Also adds any stations not yet added before.
+    /// Add a [`Line`] if it doesn't already exist, else replaces it. Also adds
+    /// any stations not yet added before.
     pub fn add_line(&mut self, mut line: Line) {
         for station in line.get_mut_stations() {
             if let Some(existing) = self
@@ -69,6 +70,15 @@ impl Map {
                 self.stations
                     .push(station.clone());
             }
+        }
+
+        if let Some(existing) = self
+            .lines
+            .iter_mut()
+            .find(|l| **l == line)
+        {
+            *existing = line;
+            return;
         }
 
         self.lines
@@ -91,11 +101,18 @@ impl Map {
             .push(station);
     }
 
-    /// Get the station located on the given grid position.
-    pub fn station_at_pos(&self, pos: GridNode) -> Option<&Station> {
+    /// Get the station located on the given grid node.
+    pub fn station_at_node(&self, node: GridNode) -> Option<&Station> {
         self.stations
             .iter()
-            .find(|s| s.get_pos() == pos)
+            .find(|s| s.get_pos() == node)
+    }
+
+    /// Get the line that goes through the given grid node.
+    pub fn line_at_node(&self, node: GridNode) -> Option<&Line> {
+        self.lines
+            .iter()
+            .find(|l| l.visits_node(node))
     }
 }
 

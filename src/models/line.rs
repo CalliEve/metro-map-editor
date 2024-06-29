@@ -120,8 +120,11 @@ impl Line {
         &self.id
     }
 
-    /// Get the neighbors of the station on this line.
-    pub fn get_neighbors(&self, station: &Station) -> (Option<Station>, Option<Station>) {
+    /// Gets the stations on either side of the position on this line.
+    ///
+    /// Note: In case there is a station on this node, the stations before and
+    /// after that station are returned.
+    pub fn get_neighbors(&self, node: GridNode) -> (Option<Station>, Option<Station>) {
         let mut found = false;
         let mut before = None;
         let mut after = None;
@@ -130,7 +133,12 @@ impl Line {
             .stations
             .iter();
         while let Some(line_station) = iterator.next() {
-            if &line_station.0 == station {
+            // station is located at the node; grab the station before it as the before.
+            if line_station
+                .0
+                .get_pos()
+                == node
+            {
                 found = true;
                 after = iterator
                     .next()
@@ -139,12 +147,49 @@ impl Line {
                 break;
             }
             before = Some(&line_station.0);
+
+            // node is in the steps; grab the current station and the one after it.
+            if line_station
+                .1
+                .contains(&node)
+            {
+                found = true;
+                after = iterator
+                    .next()
+                    .cloned()
+                    .map(|s| s.0);
+                break;
+            }
         }
 
         if found {
             (before.cloned(), after)
         } else {
             (None, None)
+        }
+    }
+
+    /// Returns true if the line goes through the given grid node.
+    pub fn visits_node(&self, node: GridNode) -> bool {
+        if self
+            .stations
+            .len()
+            > 1
+        {
+            self.stations
+                .iter()
+                .any(|(s, steps)| s.get_pos() == node || steps.contains(&node))
+        } else if let Some(s) = self
+            .stations
+            .first()
+        {
+            s.0.get_pos() == node
+                || s.0
+                    .get_pos()
+                    .get_neighbors()
+                    .contains(&node)
+        } else {
+            unreachable!("line can't have 0 stations")
         }
     }
 
@@ -156,6 +201,7 @@ impl Line {
             .map(|(s, _)| s.get_pos())
             .skip(1)
             .collect::<Vec<GridNode>>();
+
         for ((from, edges), to) in self
             .stations
             .iter_mut()

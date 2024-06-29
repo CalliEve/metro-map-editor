@@ -31,11 +31,16 @@ pub struct SelectedLine {
 impl SelectedLine {
     /// Select a line.
     pub fn new(line: Line, current_hover: GridNode, grabbed_at: Option<GridNode>) -> Self {
+        let mut before_after = (None, None);
+        if let Some(grabbed_node) = grabbed_at {
+            before_after = line.get_neighbors(grabbed_node);
+        }
+
         Self {
             line,
-            current_hover,
             grabbed_at,
-            before_after: (None, None),
+            before_after,
+            current_hover,
         }
     }
 
@@ -94,7 +99,7 @@ impl Drawable for SelectedLine {
             .to_canvas_pos(square_size);
         let half_square = f64::from(square_size) / 2.0;
 
-        canvas.set_line_width(2.0);
+        canvas.set_line_width(3.0);
         canvas.set_stroke_style(&JsValue::from_str(&format!(
             "rgb({} {} {})",
             self.get_line()
@@ -112,6 +117,8 @@ impl Drawable for SelectedLine {
 
         canvas.move_to(hover_x, hover_y + half_square);
         canvas.line_to(hover_x, hover_y - half_square);
+        canvas.move_to(hover_x + half_square, hover_y);
+        canvas.line_to(hover_x - half_square, hover_y);
 
         let draw_before = |before: &Station| {
             draw_edge(
@@ -139,10 +146,7 @@ impl Drawable for SelectedLine {
         };
 
         match self.get_before_after() {
-            (None, None) => {
-                canvas.move_to(hover_x + half_square, hover_y);
-                canvas.line_to(hover_x - half_square, hover_y);
-            },
+            (None, None) => {},
             (Some(before), None) => {
                 draw_before(before);
             },
@@ -156,6 +160,7 @@ impl Drawable for SelectedLine {
         }
 
         canvas.stroke();
+        canvas.begin_path();
 
         if let Some(origin) = self.get_grabbed_at() {
             canvas

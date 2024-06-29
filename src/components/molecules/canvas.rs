@@ -19,6 +19,7 @@ use crate::{
     components::MapState,
     models::{
         GridNode,
+        SelectedLine,
         SelectedStation,
         Station,
     },
@@ -134,16 +135,16 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
 
     // Handle a click while having a new line selected
-    if let Some(selected) = map_state
+    if let Some(selected_line) = map_state
         .get_selected_line()
         .cloned()
     {
         if let Some(station_at_pos) = map
-            .station_at_pos(mouse_pos)
+            .station_at_node(mouse_pos)
             .cloned()
         {
-            let (before, _) = selected.get_before_after();
-            let mut line = selected
+            let (before, _) = selected_line.get_before_after();
+            let mut line = selected_line
                 .get_line()
                 .clone();
 
@@ -156,32 +157,76 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         return;
     }
 
-    let Some(mut selected) = map
-        .station_at_pos(mouse_pos)
+    if let Some(mut selected_station) = map
+        .station_at_node(mouse_pos)
         .map(Station::clone_non_ref)
         .map(SelectedStation::new)
-    else {
-        return;
-    };
+    {
+        for line in map.get_lines() {
+            let (before, after) = line.get_neighbors(
+                selected_station
+                    .get_station()
+                    .get_pos(),
+            );
+            if let Some(before) = before {
+                selected_station.add_before(before);
+            }
+            if let Some(after) = after {
+                selected_station.add_after(after);
+            }
+        }
 
-    for line in map.get_lines() {
-        let (before, after) = line.get_neighbors(selected.get_station());
-        if let Some(before) = before {
-            selected.add_before(before);
-        }
-        if let Some(after) = after {
-            selected.add_after(after);
-        }
+        map_state.set_selected_station(selected_station);
+        return;
     }
 
-    map_state.set_selected_station(selected);
+    if let Some(selected_line) = map
+        .line_at_node(mouse_pos)
+        .cloned()
+        .map(|l| SelectedLine::new(l, mouse_pos, Some(mouse_pos)))
+    {
+        map_state.set_selected_line(selected_line);
+    }
 }
 
 /// Listener for the [mouseup] event on the canvas.
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
-fn on_mouse_up(map_state: &mut MapState) {
-    let Some(selected) = map_state
+fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
+    let mut map = map_state
+        .get_map()
+        .cloned()
+        .unwrap();
+
+    // Handle a mouseup while having a line selected
+    if let Some(selected_line) = map_state
+        .get_selected_line()
+        .cloned()
+    {
+        let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
+        let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
+
+        if let Some(station_at_pos) = map
+            .station_at_node(mouse_pos)
+            .cloned()
+        {
+            let (before, _) = selected_line.get_before_after();
+            let mut line = selected_line
+                .get_line()
+                .clone();
+
+            line.add_station(station_at_pos, before);
+
+            map.add_line(line);
+            map_state.set_map(map);
+        }
+
+        map_state.clear_selected_line();
+        return;
+    }
+
+    // Handle a mouseup while having a station selected
+    let Some(selected_station) = map_state
         .get_selected_station()
         .cloned()
         .map(SelectedStation::deselect)
@@ -189,14 +234,9 @@ fn on_mouse_up(map_state: &mut MapState) {
         return;
     };
 
-    let mut map = map_state
-        .get_map()
-        .cloned()
-        .unwrap();
-
     for station in map.get_mut_stations() {
-        if *station == selected {
-            station.set_pos(selected.get_pos());
+        if *station == selected_station {
+            station.set_pos(selected_station.get_pos());
             break;
         }
     }
@@ -312,15 +352,19 @@ pub fn Canvas() -> impl IntoView {
         <div class="grow overflow-hidden bg-zinc-50 dark:bg-neutral-700 text-black dark:text-white">
             <canvas
                 _ref=canvas_ref
+
                 on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
-                on:mouseup=move |_| map_state.update(on_mouse_up)
+                on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
+
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
-                on:touchend=move |_| map_state.update(on_mouse_up)
+                on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref()))
                 on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:touchcancel=move |_| map_state.update(on_mouse_out)
+
                 on:wheel=move |ev| map_state.update(|state| on_scroll(state, ev.delta_y()))
+
                 id="canvas"
                 style="touch-action: none;"
                 class="object-contain"/>
