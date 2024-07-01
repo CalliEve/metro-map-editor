@@ -4,7 +4,7 @@ module.exports = {
     files: ["*.html", "./src/**/*.rs"],
   },
   safelist: ["border", "text", "bg"]
-    .flatMap((s) => ["red", "blue"].map((c) => `${s}-${c}`))
+    .flatMap((s) => ["red", "blue", "gray"].map((c) => `${s}-${c}`))
     .flatMap((s) =>
       ["400", "500", "600", "700", "800", "900", "950"].map((n) => `${s}-${n}`)
     )

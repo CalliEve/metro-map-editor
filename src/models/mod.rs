@@ -16,9 +16,11 @@ pub use selected_line::SelectedLine;
 pub use selected_station::SelectedStation;
 pub use station::Station;
 
+use crate::components::CanvasState;
+
 /// This trait signifies an object that can be drawn onto the canvas.
 pub trait Drawable {
     /// Draw the object to the given canvas, which has a grid with the given
     /// square size
-    fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32);
+    fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState);
 }

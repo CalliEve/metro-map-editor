@@ -5,6 +5,7 @@ use leptos::{
     *,
 };
 
+use super::CanvasState;
 use crate::{
     algorithm::redraw_canvas,
     models::{
@@ -23,10 +24,8 @@ pub struct MapState {
     selected_station: Option<SelectedStation>,
     /// The currently selected [`Line`].
     selected_line: Option<SelectedLine>,
-    /// The height and width of the current canvas.
-    size: (u32, u32),
-    /// The size of the map grid squares.
-    square_size: u32,
+    /// The state of the canvas.
+    canvas: CanvasState,
 }
 
 impl MapState {
@@ -37,8 +36,7 @@ impl MapState {
             map: Some(map),
             selected_station: None,
             selected_line: None,
-            size: (300, 300),
-            square_size: 30,
+            canvas: CanvasState::default(),
         }
     }
 
@@ -100,24 +98,17 @@ impl MapState {
                 .is_some()
     }
 
-    /// A getter method for the canvas size.
-    pub fn get_size(&self) -> (u32, u32) {
-        self.size
+    /// A getter method for the state of the canvas.
+    pub fn get_canvas_state(&self) -> CanvasState {
+        self.canvas
     }
 
-    /// A setter method for the canvas size.
-    pub fn set_size(&mut self, size: (u32, u32)) {
-        self.size = size;
-    }
-
-    /// A getter method for the grid square size.
-    pub fn get_square_size(&self) -> u32 {
-        self.square_size
-    }
-
-    /// A setter method for the grid square size.
-    pub fn set_square_size(&mut self, size: u32) {
-        self.square_size = size;
+    /// Update the state of the canvas.
+    pub fn update_canvas_state<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut CanvasState),
+    {
+        f(&mut self.canvas);
     }
 
     /// Draw the current state to the provided canvas.

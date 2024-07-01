@@ -9,9 +9,12 @@ use super::{
     Line,
     Station,
 };
-use crate::algorithm::{
-    draw_edge,
-    run_a_star,
+use crate::{
+    algorithm::{
+        draw_edge,
+        run_a_star,
+    },
+    components::CanvasState,
 };
 
 /// Holds information about the currently selected [`Line`].
@@ -93,11 +96,11 @@ impl SelectedLine {
 }
 
 impl Drawable for SelectedLine {
-    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
+    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
         let (hover_x, hover_y) = self
             .get_current_hover()
-            .to_canvas_pos(square_size);
-        let half_square = f64::from(square_size) / 2.0;
+            .to_canvas_pos(state);
+        let half_square = state.drawn_square_size() / 2.0;
 
         canvas.set_line_width(3.0);
         canvas.set_stroke_style(&JsValue::from_str(&format!(
@@ -129,7 +132,7 @@ impl Drawable for SelectedLine {
                     self.get_current_hover(),
                 ),
                 canvas,
-                square_size,
+                state,
             );
         };
         let draw_after = |after: &Station| {
@@ -141,7 +144,7 @@ impl Drawable for SelectedLine {
                     after.get_pos(),
                 ),
                 canvas,
-                square_size,
+                state,
             );
         };
 
@@ -167,7 +170,7 @@ impl Drawable for SelectedLine {
                 .set_line_dash(&Uint8Array::from([5u8, 5].as_ref()))
                 .unwrap();
 
-            let (origin_x, origin_y) = origin.to_canvas_pos(square_size);
+            let (origin_x, origin_y) = origin.to_canvas_pos(state);
             canvas.move_to(origin_x, origin_y);
             canvas.line_to(hover_x, hover_y);
 

@@ -17,6 +17,7 @@ use super::{
     Drawable,
     GridNode,
 };
+use crate::components::CanvasState;
 
 /// Next generated sequential identifier for a new station.
 static STATION_ID: AtomicU32 = AtomicU32::new(1);
@@ -75,9 +76,9 @@ impl Station {
 
     /// The location of the station on the canvas, given the size of a grid
     /// square.
-    pub fn get_canvas_pos(&self, square_size: u32) -> (f64, f64) {
+    pub fn get_canvas_pos(&self, state: CanvasState) -> (f64, f64) {
         self.get_pos()
-            .to_canvas_pos(square_size)
+            .to_canvas_pos(state)
     }
 
     /// A setter for the name.
@@ -107,8 +108,12 @@ impl Station {
 }
 
 impl Drawable for Station {
-    fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32) {
-        let canvas_pos = self.get_canvas_pos(square_size);
+    fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+        if !state.is_on_canvas(self.get_pos()) {
+            return;
+        }
+
+        let canvas_pos = self.get_canvas_pos(state);
 
         canvas.set_line_width(4.0);
         if self.is_ghost {
@@ -122,7 +127,7 @@ impl Drawable for Station {
             .arc(
                 canvas_pos.0,
                 canvas_pos.1,
-                f64::from(square_size) / 3.0,
+                state.drawn_square_size() / 3.0,
                 0.0,
                 2.0 * f64::consts::PI,
             )

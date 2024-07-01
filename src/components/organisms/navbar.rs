@@ -21,7 +21,7 @@ pub fn Navbar() -> impl IntoView {
 
     let on_submit = move |s: String| {
         set_show_file_modal(false);
-        map_state.update(|state| state.set_map(decode_map(&s, state.get_square_size()).unwrap()));
+        map_state.update(|state| state.set_map(decode_map(&s, state.get_canvas_state()).unwrap()));
     };
 
     view! {

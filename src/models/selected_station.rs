@@ -7,9 +7,12 @@ use super::{
     GridNode,
     Station,
 };
-use crate::algorithm::{
-    draw_edge,
-    run_a_star,
+use crate::{
+    algorithm::{
+        draw_edge,
+        run_a_star,
+    },
+    components::CanvasState,
 };
 
 /// Holds information about the currently selected [`Station`].
@@ -88,9 +91,9 @@ impl SelectedStation {
 }
 
 impl Drawable for SelectedStation {
-    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
+    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
         self.station
-            .draw(canvas, square_size);
+            .draw(canvas, state);
 
         canvas.set_line_width(3.0);
         canvas.set_stroke_style(&JsValue::from_str("black"));
@@ -111,7 +114,7 @@ impl Drawable for SelectedStation {
                         .get_pos(),
                 ),
                 canvas,
-                square_size,
+                state,
             );
         }
 
@@ -129,7 +132,7 @@ impl Drawable for SelectedStation {
                     after.get_pos(),
                 ),
                 canvas,
-                square_size,
+                state,
             );
         }
 

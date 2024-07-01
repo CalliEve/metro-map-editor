@@ -1,13 +1,16 @@
 use std::f64::consts::PI;
 
-use crate::utils::equal_pixel;
+use crate::{
+    components::CanvasState,
+    utils::equal_pixel,
+};
 
 /// Calculates the coordinate of the corner (on an octilinear grid) of a station
 /// closest to the given neigbor. An offset is provided for, if the corner is
 /// further from the middle of the station coordinate.
-pub fn calc_closest_corner(from: (f64, f64), to: (f64, f64), square_size: u32) -> (f64, f64) {
-    let cardinal_offset = f64::from(square_size) / PI;
-    let corner_offset = f64::from(square_size) / PI * 0.8;
+pub fn calc_closest_corner(from: (f64, f64), to: (f64, f64), state: CanvasState) -> (f64, f64) {
+    let cardinal_offset = state.drawn_square_size() / PI;
+    let corner_offset = state.drawn_square_size() / PI * 0.8;
 
     let (from_x, from_y) = from;
     let (to_x, to_y) = to;
@@ -52,7 +55,10 @@ mod tests {
     use super::*;
 
     fn run_closest_corner_test(from: (f64, f64), to: (f64, f64), expected: (f64, f64)) {
-        let result = calc_closest_corner(from, to, 3);
+        let mut state = CanvasState::new();
+        state.set_square_size(3);
+
+        let result = calc_closest_corner(from, to, state);
         let (result_x, result_y) = result;
         let (expected_x, expected_y) = expected;
 

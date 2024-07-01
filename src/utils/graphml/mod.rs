@@ -12,15 +12,18 @@ mod graphml_map;
 use decode::graphml_to_map;
 use graphml_map::GraphMlMap;
 
-use crate::models::Map;
+use crate::{
+    components::CanvasState,
+    models::Map,
+};
 
 /// Decode the given GraphML string into a [`Map`] struct.
 /// This decoder also requires the target grid square size to know which station
 /// goes onto which grid node.
-pub fn decode_map(input: &str, square_size: u32) -> Result<Map, DeError> {
+pub fn decode_map(input: &str, state: CanvasState) -> Result<Map, DeError> {
     let decoded: GraphMlMap = from_str(input)?;
 
-    Ok(graphml_to_map(&decoded, square_size))
+    Ok(graphml_to_map(decoded, state))
 }
 
 #[cfg(test)]
@@ -32,7 +35,8 @@ mod tests {
         let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.graphml")
             .expect("test data file does not exist");
 
-        let result = decode_map(&test_file_content, 30).expect("failed to decode graphml");
+        let result =
+            decode_map(&test_file_content, CanvasState::new()).expect("failed to decode graphml");
 
         let result_line = result
             .get_line("l0")
@@ -43,7 +47,7 @@ mod tests {
         let result_station = result
             .get_station("n1")
             .expect("no station with id n1");
-        assert_eq!(result_station.get_pos(), (4, 3));
+        assert_eq!(result_station.get_pos(), (30, 28));
         assert_eq!(result_station.get_name(), "test 2");
     }
 }

@@ -27,13 +27,19 @@ where
         .to_lowercase()
         .replace(' ', "_");
 
+    let parse_input = move |ev| {
+        let val = event_target_value(&ev);
+
+        on_input(if let Ok(val) = val.parse() { val } else { 1.0 });
+    };
+
     view! {
     <div class="relative mb-3" data-twe-input-wrapper-init>
       <input
         type="number"
         class="peer block min-h-[auto] w-full rounded border-b-2 rounded-md border-solid border-blue-400 bg-transparent px-3 py-[0.32rem] leading-[1.6] outline-none transition-all duration-200 ease-linear peer-focus:text-primary motion-reduce:transition-none dark:text-white dark:placeholder:text-neutral-300 dark:autofill:shadow-autofill dark:peer-focus:text-primary dark:border-blue-600 focus:border-blue-600 dark:focus:border-blue-800"
         id={id.clone()}
-        on:input=move |ev| {on_input(event_target_value(&ev).parse().expect("number input does not give number"))}
+        on:input=parse_input
         max=max
         min=min
         prop:value=move || value.map(|v| v().max(min)) />

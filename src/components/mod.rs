@@ -8,6 +8,7 @@ mod state;
 
 pub use pages::Home;
 pub use state::{
+    CanvasState,
     MapState,
     StateProvider,
 };

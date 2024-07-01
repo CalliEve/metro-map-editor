@@ -21,8 +21,17 @@ pub fn Button(
     /// If the button should be colored red (is blue otherwise).
     #[prop(optional)]
     danger: bool,
+    /// If the button is an overlay button.
+    #[prop(optional)]
+    overlay: bool,
 ) -> impl IntoView {
-    let color = if danger { "red" } else { "blue" };
+    let color = if danger {
+        "red"
+    } else if overlay {
+        "gray"
+    } else {
+        "blue"
+    };
 
     let base = if danger { 600 } else { 400 };
     let base_hover = base + 100;
@@ -31,12 +40,18 @@ pub fn Button(
     let dark_hover = dark + 100;
     let dark_active = dark + 200;
 
-    let mut class = "inline-block rounded px-4 \
-        py-1.5 text-sm font-semibold uppercase \
+    let mut class = "inline-block px-4 \
+        py-1.5 text-center uppercase \
         leading-snug shadow-neutral-800 \
         dark:shadow-neutral-950 hover:shadow-blue-900 \
         dark:hover:shadow-neutral-900"
         .to_owned();
+
+    if overlay {
+        class += " rounded-full text-xl font-bold h-11 w-11";
+    } else {
+        class += " rounded text-sm font-semibold";
+    }
 
     if outlined {
         class += &format!(

@@ -2,8 +2,10 @@
 
 use leptos::*;
 
+mod canvas;
 mod map;
 
+pub use canvas::CanvasState;
 pub use map::MapState;
 
 use crate::models::Map;

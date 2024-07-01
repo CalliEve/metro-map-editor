@@ -17,9 +17,12 @@ use super::{
     GridNode,
     Station,
 };
-use crate::algorithm::{
-    draw_edge,
-    run_a_star,
+use crate::{
+    algorithm::{
+        draw_edge,
+        run_a_star,
+    },
+    components::CanvasState,
 };
 
 /// Next generated sequential identifier for a new line.
@@ -213,7 +216,7 @@ impl Line {
 }
 
 impl Drawable for Line {
-    fn draw(&self, canvas: &CanvasRenderingContext2d, square_size: u32) {
+    fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
         let stations = self.get_stations();
 
         canvas.set_line_width(3.0);
@@ -251,25 +254,26 @@ impl Drawable for Line {
                         end_station.get_pos(),
                         &start_station.1,
                         canvas,
-                        square_size,
+                        state,
                     );
                 }
             },
             // Add two horizontal lines to the single station, showing its a lone station on the
             // line.
             Ordering::Equal => {
-                let (station_x, station_y) = stations[0].get_canvas_pos(square_size);
-                let offset = f64::from(square_size) / PI;
+                let square_size = state.drawn_square_size();
+                let (station_x, station_y) = stations[0].get_canvas_pos(state);
+                let offset = square_size / PI;
 
                 canvas.move_to(station_x - offset, station_y);
                 canvas.line_to(
-                    station_x - (f64::from(square_size) - offset),
+                    station_x - (square_size - offset),
                     station_y,
                 );
 
                 canvas.move_to(station_x + offset, station_y);
                 canvas.line_to(
-                    station_x + (f64::from(square_size) - offset),
+                    station_x + (square_size - offset),
                     station_y,
                 );
             },

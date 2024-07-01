@@ -16,7 +16,10 @@ use wasm_bindgen::{
 };
 
 use crate::{
-    components::MapState,
+    components::{
+        CanvasState,
+        MapState,
+    },
     models::{
         GridNode,
         SelectedLine,
@@ -85,7 +88,7 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
             .round()) as u32;
 
     // update the state with the new size.
-    map_state.update(|state| state.set_size((height, width)));
+    map_state.update(|state| state.update_canvas_state(|canvas| canvas.set_size((height, width))));
 }
 
 /// Gets the position on the canvas that was clicked.
@@ -119,6 +122,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     else {
         return;
     };
+    let canvas_state = map_state.get_canvas_state();
 
     // Handle a click while having a new station selected.
     if let Some(selected) = map_state
@@ -131,8 +135,8 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         return;
     }
 
-    let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
+    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     // Handle a click while having a new line selected
     if let Some(selected_line) = map_state
@@ -203,8 +207,9 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
         .get_selected_line()
         .cloned()
     {
-        let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-        let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
+        let canvas_state = map_state.get_canvas_state();
+        let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+        let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
         if let Some(station_at_pos) = map
             .station_at_node(mouse_pos)
@@ -250,8 +255,9 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
 /// [mousemove]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
 fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
     let mut map_state = map_state_signal.get();
-    let canvas_pos = canvas_click_pos(map_state.get_size(), ev);
-    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, map_state.get_square_size());
+    let canvas_state = map_state.get_canvas_state();
+    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     // Handle move of selected line
     if let Some(selected) = map_state.get_mut_selected_line() {
@@ -289,21 +295,11 @@ fn on_mouse_out(map_state: &mut MapState) {
 
 /// Listener for when the user scrolls on the canvas.
 fn on_scroll(map_state: &mut MapState, amount: f64) {
-    let current = map_state.get_square_size();
-
-    let size = if amount > 0.0 {
-        if current >= 100 {
-            return;
-        }
-        current + 5
+    if amount > 0.0 {
+        map_state.update_canvas_state(CanvasState::zoom_in);
     } else {
-        if current <= 5 {
-            return;
-        }
-        current - 5
+        map_state.update_canvas_state(CanvasState::zoom_out);
     };
-
-    map_state.set_square_size(size);
 }
 
 /// The canvas itself.
@@ -337,6 +333,7 @@ pub fn Canvas() -> impl IntoView {
             .expect("should be loaded now");
         let s = map_state
             .get()
+            .get_canvas_state()
             .get_size();
         canvas_node.set_height(s.0);
         canvas_node.set_width(s.1);
@@ -349,7 +346,7 @@ pub fn Canvas() -> impl IntoView {
     });
 
     view! {
-        <div class="grow overflow-hidden bg-zinc-50 dark:bg-neutral-700 text-black dark:text-white">
+        <div class="absolute grow overflow-hidden bg-zinc-50 dark:bg-neutral-700 text-black dark:text-white">
             <canvas
                 _ref=canvas_ref
 

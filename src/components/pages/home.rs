@@ -2,12 +2,10 @@
 
 use leptos::*;
 
-use crate::components::{
-    molecules::Canvas,
-    organisms::{
-        Navbar,
-        Sidebar,
-    },
+use crate::components::organisms::{
+    CanvasControls,
+    Navbar,
+    Sidebar,
 };
 
 /// The main page component.
@@ -22,7 +20,7 @@ pub fn Home() -> impl IntoView {
                     <Sidebar/>
                 </div>
                 <div class="grow flex self-stretch">
-                    <Canvas/>
+                    <CanvasControls/>
                 </div>
             </div>
     }

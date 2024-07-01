@@ -6,6 +6,7 @@ use super::{
     Line,
     Station,
 };
+use crate::components::CanvasState;
 
 /// Represents the metro map as a whole with all its lines and stations.
 #[derive(Clone, Debug, Default)]
@@ -117,13 +118,12 @@ impl Map {
 }
 
 impl Drawable for Map {
-    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, square_size: u32) {
-        leptos::logging::log!("redrawing");
+    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
         for line in &self.lines {
-            line.draw(canvas, square_size);
+            line.draw(canvas, state);
         }
         for station in self.get_stations() {
-            station.draw(canvas, square_size);
+            station.draw(canvas, state);
         }
     }
 }

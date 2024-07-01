@@ -30,13 +30,9 @@ pub fn redraw_canvas(canvas: &HtmlCanvasElement, state: &MapState) {
         .dyn_into::<CanvasRenderingContext2d>()
         .unwrap();
 
-    draw_grid(
-        &context,
-        state.get_size(),
-        state.get_square_size(),
-    );
+    draw_grid(&context, state.get_canvas_state());
 
-    let draw_drawable = |d: &dyn Drawable| d.draw(&context, state.get_square_size());
+    let draw_drawable = |d: &dyn Drawable| d.draw(&context, state.get_canvas_state());
 
     state
         .get_map()

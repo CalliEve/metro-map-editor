@@ -34,6 +34,14 @@ pub fn Sidebar() -> impl IntoView {
     };
     let add_line =
         move |_| map_state.update(|state| state.set_selected_line(SelectedLine::new_line()));
+    let update_square_size = move |mut n: f64| {
+        if n < 1.0 {
+            n = 1.0;
+        }
+
+        map_state
+            .update(|state| state.update_canvas_state(|canvas| canvas.set_square_size(n as u32)));
+    };
 
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
@@ -44,8 +52,8 @@ pub fn Sidebar() -> impl IntoView {
                 text="Set grid size"
                 min=2.0
                 max=f64::from(u32::MAX)
-                value=move || f64::from(map_state.get().get_square_size())
-                on_input=move |n| map_state.update(|state| state.set_square_size(n.abs() as u32))/>
+                value=move || f64::from(map_state.get().get_canvas_state().get_square_size())
+                on_input=update_square_size/>
             <ButtonGroup
                 children={vec![
                     ButtonProps::builder().text("Add Station").on_click(Box::new(add_station)).build(),

@@ -3,26 +3,45 @@ use std::ops::{
     Mul,
 };
 
+use crate::components::CanvasState;
+
 /// Represents a node on the grid.
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub struct GridNode(pub i32, pub i32);
 
 impl GridNode {
-    /// Create the [`GridNode`] from the given canvas coordinate and the size of
-    /// the grid squares.
-    pub fn from_canvas_pos(canvas_pos: (f64, f64), square_size: u32) -> Self {
+    /// Create the [`GridNode`] from the given canvas coordinate and the state
+    /// of the canvas.
+    pub fn from_canvas_pos(canvas_pos: (f64, f64), state: CanvasState) -> Self {
         Self(
-            (canvas_pos.0 / f64::from(square_size)).round() as i32,
-            (canvas_pos.1 / f64::from(square_size)).round() as i32,
+            (canvas_pos.0 / state.drawn_square_size()).round() as i32
+                + state
+                    .get_offset()
+                    .0,
+            (canvas_pos.1 / state.drawn_square_size()).round() as i32
+                + state
+                    .get_offset()
+                    .1,
         )
     }
 
-    /// Translate the [`GridNode`] to a canvas coordinate, given the size of the
-    /// grid squares.
-    pub fn to_canvas_pos(self, square_size: u32) -> (f64, f64) {
+    /// Translate the [`GridNode`] to a canvas coordinate, given the state of
+    /// the canvas.
+    pub fn to_canvas_pos(self, state: CanvasState) -> (f64, f64) {
+        let square_size = state.drawn_square_size();
         (
-            f64::from(self.0 * square_size as i32),
-            f64::from(self.1 * square_size as i32),
+            f64::from(
+                self.0
+                    - state
+                        .get_offset()
+                        .0,
+            ) * square_size,
+            f64::from(
+                self.1
+                    - state
+                        .get_offset()
+                        .1,
+            ) * square_size,
         )
     }
 
@@ -71,6 +90,14 @@ impl Mul<i32> for GridNode {
     }
 }
 
+impl Mul<GridNode> for GridNode {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0, self.1 * rhs.1)
+    }
+}
+
 impl PartialEq<(i32, i32)> for GridNode {
     fn eq(&self, other: &(i32, i32)) -> bool {
         self.0 == other.0 && self.1 == other.1
@@ -83,14 +110,14 @@ mod tests {
 
     #[test]
     fn test_to_canvas_pos() {
-        let result = GridNode::from((4, 5)).to_canvas_pos(30);
+        let result = GridNode::from((4, 5)).to_canvas_pos(CanvasState::new());
 
-        assert_eq!(result, (120.0, 150.0));
+        assert_eq!(result, (20.0, 25.0));
     }
 
     #[test]
     fn test_from_canvas_pos() {
-        let result = GridNode::from_canvas_pos((120.0, 157.5), 30);
+        let result = GridNode::from_canvas_pos((20.0, 24.6), CanvasState::new());
 
         assert_eq!(result, (4, 5));
     }
