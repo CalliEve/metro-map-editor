@@ -209,7 +209,7 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
                 let line = map
                     .get_mut_line(&data.key)
                     .expect("edge referenced non-existant line");
-                line.add_station(target.clone(), Some(&source));
+                line.add_station(source.clone(), Some(&target), None);
             }
         }
     }

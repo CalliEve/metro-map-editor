@@ -147,12 +147,12 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             .station_at_node(mouse_pos)
             .cloned()
         {
-            let (before, _) = selected_line.get_before_after();
+            let (before, after) = selected_line.get_before_after();
             let mut line = selected_line
                 .get_line()
                 .clone();
 
-            line.add_station(station_at_pos, before);
+            line.add_station(station_at_pos, before, after);
 
             map.add_line(line);
             map_state.set_map(map);
@@ -167,17 +167,9 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         .map(SelectedStation::new)
     {
         for line in map.get_lines() {
-            let (before, after) = line.get_neighbors(
-                selected_station
-                    .get_station()
-                    .get_pos(),
-            );
-            if let Some(before) = before {
+            let (before, after) = line.get_station_neighbors(selected_station.get_station());
                 selected_station.add_before(before);
-            }
-            if let Some(after) = after {
                 selected_station.add_after(after);
-            }
         }
 
         map_state.set_selected_station(selected_station);
@@ -215,12 +207,12 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
             .station_at_node(mouse_pos)
             .cloned()
         {
-            let (before, _) = selected_line.get_before_after();
+            let (before, after) = selected_line.get_before_after();
             let mut line = selected_line
                 .get_line()
                 .clone();
 
-            line.add_station(station_at_pos, before);
+            line.add_station(station_at_pos, before, after);
 
             map.add_line(line);
             map_state.set_map(map);

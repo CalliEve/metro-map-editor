@@ -36,7 +36,7 @@ impl SelectedLine {
     pub fn new(line: Line, current_hover: GridNode, grabbed_at: Option<GridNode>) -> Self {
         let mut before_after = (None, None);
         if let Some(grabbed_node) = grabbed_at {
-            before_after = line.get_neighbors(grabbed_node);
+            before_after = line.get_edge_stations(grabbed_node);
         }
 
         Self {

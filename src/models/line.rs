@@ -38,17 +38,24 @@ pub struct Line {
     /// Color of the line.
     color: (u8, u8, u8),
     /// All stations the line visits.
-    stations: Vec<(Station, Vec<GridNode>)>,
+    stations: Vec<(Station, Vec<GridNode>, Option<Station>)>,
 }
 
 impl Line {
     /// Create a new [`Line`] with the stations it visits and an identifier.
     /// Color and name are set to default values.
     pub fn new(stations: Vec<Station>, id: Option<String>) -> Self {
-        Self {
+        let mut l = Self {
             stations: stations
+                .clone()
                 .into_iter()
-                .map(|s| (s, Vec::new()))
+                .zip(
+                    stations
+                        .clone()
+                        .into_iter()
+                        .skip(1),
+                )
+                .map(|(s, a)| (s, Vec::new(), Some(a)))
                 .collect(),
             id: id.unwrap_or_else(|| {
                 LINE_ID
@@ -57,14 +64,24 @@ impl Line {
             }),
             color: (0, 0, 0),
             name: String::new(),
+        };
+
+        if let Some(s) = stations
+            .last()
+            .cloned()
+        {
+            l.stations
+                .push((s, Vec::new(), None));
         }
+
+        l
     }
 
     /// A getter method for the stations the line visits.
     pub fn get_stations(&self) -> Vec<&Station> {
         self.stations
             .iter()
-            .map(|(s, _)| s)
+            .map(|(s, ..)| s)
             .collect()
     }
 
@@ -72,30 +89,76 @@ impl Line {
     pub fn get_mut_stations(&mut self) -> Vec<&mut Station> {
         self.stations
             .iter_mut()
-            .map(|(s, _)| s)
+            .map(|(s, ..)| s)
             .collect()
     }
 
-    /// Add a station after the after station, or at the end of the line.
-    /// If after isn't in the line yet, it will add both.
-    pub fn add_station(&mut self, station: Station, after: Option<&Station>) {
-        if let Some(index) = after.and_then(|a| {
+    /// Add a station. It will be inserted before the before station and after
+    /// the after station, Or at the end of the line. If before isn't in the
+    /// line yet, it will add both.
+    pub fn add_station(
+        &mut self,
+        station: Station,
+        before: Option<&Station>,
+        after: Option<&Station>,
+    ) {
+        if let (Some(before_station), Some(after_station)) = (before, after) {
+            if let Some(index) = self
+                .stations
+                .iter()
+                .position(|s| {
+                    &s.0 == before_station
+                        && s.2
+                            .as_ref()
+                            == after
+                })
+            {
+                self.stations
+                    .remove(index);
+                self.stations
+                    .insert(
+                        index,
+                        (
+                            station.clone(),
+                            Vec::new(),
+                            Some(before_station.clone()),
+                        ),
+                    );
+                self.stations
+                    .insert(
+                        index,
+                        (
+                            after_station.clone(),
+                            Vec::new(),
+                            Some(station),
+                        ),
+                    );
+                return;
+            }
+        }
+
+        if let Some(index) = before.and_then(|a| {
             self.stations
                 .iter()
                 .position(|s| &s.0 == a)
         }) {
             // found after and will insert station after after
             self.stations
-                .insert(index + 1, (station, Vec::new()));
+                .insert(
+                    index,
+                    (station, Vec::new(), before.cloned()),
+                );
             return;
-        } else if let Some(a) = after.cloned() {
-            // after exists but not found, so inserting it at the end
+        } else if let Some(b) = before.cloned() {
+            // before exists but not found, so inserting it at the end
             self.stations
-                .push((a, Vec::new()));
+                .push((station, Vec::new(), Some(b.clone())));
+            self.stations
+                .push((b, Vec::new(), None));
+        } else {
+            self.stations
+                .push((station, Vec::new(), None));
         }
-
-        self.stations
-            .push((station, Vec::new()));
     }
 
     /// A setter for the station's color.
@@ -123,53 +186,52 @@ impl Line {
         &self.id
     }
 
-    /// Gets the stations on either side of the position on this line.
-    ///
-    /// Note: In case there is a station on this node, the stations before and
-    /// after that station are returned.
-    pub fn get_neighbors(&self, node: GridNode) -> (Option<Station>, Option<Station>) {
-        let mut found = false;
-        let mut before = None;
-        let mut after = None;
+    /// Get a list of neighbors of the given station.
+    pub fn get_station_neighbors(&self, station: &Station) -> (Vec<Station>, Vec<Station>) {
+        let (mut before, mut after) = (Vec::new(), Vec::new());
 
-        let mut iterator = self
-            .stations
-            .iter();
-        while let Some(line_station) = iterator.next() {
-            // station is located at the node; grab the station before it as the before.
-            if line_station
-                .0
-                .get_pos()
-                == node
+        for edge in &self.stations {
+            if &edge.0 == station {
+                if let Some(after_station) = edge
+                    .2
+                    .clone()
+                {
+                    after.push(after_station);
+                }
+            } else if edge
+                .2
+                .as_ref()
+                .is_some_and(|a| a == station)
             {
-                found = true;
-                after = iterator
-                    .next()
-                    .cloned()
-                    .map(|s| s.0);
-                break;
+                before.push(
+                    edge.0
+                        .clone(),
+                );
             }
-            before = Some(&line_station.0);
+        }
 
-            // node is in the steps; grab the current station and the one after it.
-            if line_station
+        (before, after)
+    }
+
+    /// Gets the stations on either side of the position on this line.
+    pub fn get_edge_stations(&self, node: GridNode) -> (Option<Station>, Option<Station>) {
+        for edge in &self.stations {
+            if edge
                 .1
                 .contains(&node)
             {
-                found = true;
-                after = iterator
-                    .next()
-                    .cloned()
-                    .map(|s| s.0);
-                break;
+                let before = Some(
+                    edge.0
+                        .clone(),
+                );
+                let after = edge
+                    .2
+                    .clone();
+                return (before, after);
             }
         }
 
-        if found {
-            (before.cloned(), after)
-        } else {
-            (None, None)
-        }
+        (None, None)
     }
 
     /// Returns true if the line goes through the given grid node.
@@ -181,7 +243,7 @@ impl Line {
         {
             self.stations
                 .iter()
-                .any(|(s, steps)| s.get_pos() == node || steps.contains(&node))
+                .any(|(s, steps, _)| s.get_pos() == node || steps.contains(&node))
         } else if let Some(s) = self
             .stations
             .first()
@@ -198,19 +260,17 @@ impl Line {
 
     /// Recalculates the edges between the stations.
     pub fn calculate_line_edges(&mut self) {
-        let to_stations = self
-            .stations
-            .iter()
-            .map(|(s, _)| s.get_pos())
-            .skip(1)
-            .collect::<Vec<GridNode>>();
-
-        for ((from, edges), to) in self
+        for (from, edges, to) in self
             .stations
             .iter_mut()
-            .zip(to_stations)
+            .filter(|(_, _, to)| to.is_some())
         {
-            *edges = run_a_star(from.get_pos(), to);
+            *edges = run_a_star(
+                from.get_pos(),
+                to.as_ref()
+                    .unwrap()
+                    .get_pos(),
+            );
         }
     }
 }
@@ -238,21 +298,18 @@ impl Drawable for Line {
         {
             // Draw a line between each two sequential stations on the line.
             Ordering::Greater => {
-                for (start_station, end_station) in self
+                for (start_station, steps, end_station) in self
                     .stations
                     .iter()
-                    .zip(
-                        stations
-                            .iter()
-                            .skip(1),
-                    )
+                    .filter(|(_, _, to)| to.is_some())
                 {
                     draw_edge(
-                        start_station
-                            .0
+                        start_station.get_pos(),
+                        end_station
+                            .as_ref()
+                            .unwrap()
                             .get_pos(),
-                        end_station.get_pos(),
-                        &start_station.1,
+                        &steps,
                         canvas,
                         state,
                     );

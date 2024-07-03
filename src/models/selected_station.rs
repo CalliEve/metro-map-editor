@@ -57,17 +57,17 @@ impl SelectedStation {
     }
 
     /// Add a station that came before the station that was grabbed.
-    pub fn add_before(&mut self, before: Station) {
+    pub fn add_before(&mut self, mut before: Vec<Station>) {
         self.before_after
             .0
-            .push(before);
+            .append(&mut before);
     }
 
     /// Add a station that came after the station that was grabbed.
-    pub fn add_after(&mut self, after: Station) {
+    pub fn add_after(&mut self, mut after: Vec<Station>) {
         self.before_after
             .1
-            .push(after);
+            .append(&mut after);
     }
 
     /// Update the current grid position of the station.
