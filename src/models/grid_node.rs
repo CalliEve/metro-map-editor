@@ -6,7 +6,7 @@ use std::ops::{
 use crate::components::CanvasState;
 
 /// Represents a node on the grid.
-#[derive(Clone, Debug, Copy, PartialEq, Eq)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct GridNode(pub i32, pub i32);
 
 impl GridNode {

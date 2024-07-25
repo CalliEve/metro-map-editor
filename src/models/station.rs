@@ -91,6 +91,13 @@ impl Station {
         &self.name
     }
 
+    /// If the given node is a neighboring grid node to the station.
+    pub fn is_neighbor(&self, node: GridNode) -> bool {
+        self.get_pos()
+            .get_neighbors()
+            .contains(&node)
+    }
+
     /// Clone the [`Station`] without keeping a reference to the coordinate
     /// position.
     pub fn clone_non_ref(&self) -> Self {
