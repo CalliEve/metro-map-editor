@@ -8,7 +8,12 @@ use crate::{
 /// Calculates the coordinate of the corner (on an octilinear grid) of a station
 /// closest to the given neigbor. An offset is provided for, if the corner is
 /// further from the middle of the station coordinate.
-pub fn calc_closest_corner(from: (f64, f64), to: (f64, f64), state: CanvasState) -> (f64, f64) {
+pub fn calc_closest_corner(
+    from: (f64, f64),
+    to: (f64, f64),
+    state: CanvasState,
+    height_offset: f64,
+) -> (f64, f64) {
     let cardinal_offset = state.drawn_square_size() / PI;
     let corner_offset = state.drawn_square_size() / PI * 0.8;
 
@@ -17,35 +22,47 @@ pub fn calc_closest_corner(from: (f64, f64), to: (f64, f64), state: CanvasState)
 
     if equal_pixel(from_x, to_x) {
         if from_y > to_y {
-            (from_x, from_y - cardinal_offset) // below
+            (
+                from_x + height_offset,
+                from_y - cardinal_offset,
+            ) // below
         } else {
-            (from_x, from_y + cardinal_offset) // above
+            (
+                from_x - height_offset,
+                from_y + cardinal_offset,
+            ) // above
         }
     } else if from_x > to_x {
         if equal_pixel(from_y, to_y) {
-            (from_x - cardinal_offset, from_y) // left
+            (
+                from_x - cardinal_offset,
+                from_y - height_offset,
+            ) // left
         } else if from_y > to_y {
             (
-                from_x - corner_offset,
-                from_y - corner_offset,
+                from_x - corner_offset + height_offset,
+                from_y - corner_offset - height_offset,
             ) // below left
         } else {
             (
-                from_x - corner_offset,
-                from_y + corner_offset,
+                from_x - corner_offset - height_offset,
+                from_y + corner_offset - height_offset,
             ) // above left
         }
     } else if equal_pixel(from_y, to_y) {
-        (from_x + cardinal_offset, from_y) // right
+        (
+            from_x + cardinal_offset,
+            from_y + height_offset,
+        ) // right
     } else if from_y > to_y {
         (
-            from_x + corner_offset,
-            from_y - corner_offset,
+            from_x + corner_offset + height_offset,
+            from_y - corner_offset + height_offset,
         ) // below right
     } else {
         (
-            from_x + corner_offset,
-            from_y + corner_offset,
+            from_x + corner_offset - height_offset,
+            from_y + corner_offset + height_offset,
         ) // above right
     }
 }
@@ -58,7 +75,7 @@ mod tests {
         let mut state = CanvasState::new();
         state.set_square_size(3);
 
-        let result = calc_closest_corner(from, to, state);
+        let result = calc_closest_corner(from, to, state, 0.0);
         let (result_x, result_y) = result;
         let (expected_x, expected_y) = expected;
 

@@ -5,7 +5,7 @@ use std::{
     f64,
     rc::Rc,
     sync::atomic::{
-        AtomicU32,
+        AtomicU64,
         Ordering,
     },
 };
@@ -13,14 +13,27 @@ use std::{
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
-use super::{
-    Drawable,
-    GridNode,
-};
+use super::GridNode;
 use crate::components::CanvasState;
 
 /// Next generated sequential identifier for a new station.
-static STATION_ID: AtomicU32 = AtomicU32::new(1);
+static STATION_ID: AtomicU64 = AtomicU64::new(1);
+
+/// An identifier for a station.
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct StationID(u64);
+
+impl From<u64> for StationID {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<StationID> for u64 {
+    fn from(value: StationID) -> Self {
+        value.0
+    }
+}
 
 /// Represents a metro station, including its grid position on the map, its id,
 /// name and if the station should be greyed out when drawn to the canvas.
@@ -29,7 +42,7 @@ pub struct Station {
     /// Position of the station
     pos: Rc<Cell<GridNode>>,
     /// ID of the station
-    id: String,
+    id: StationID,
     /// If when drawn the station should be greyed out (like when moving)
     is_ghost: bool,
     /// The station name
@@ -39,13 +52,19 @@ pub struct Station {
 impl Station {
     /// Create a new [`Station`] at the given grid coordinate.
     /// If id is None, the next sequential id from [`STATION_ID`] is used.
-    pub fn new(pos: GridNode, id: Option<String>) -> Self {
+    pub fn new(pos: GridNode, id: Option<StationID>) -> Self {
+        if let Some(new_id) = id {
+            if STATION_ID.load(Ordering::SeqCst) <= new_id.into() {
+                STATION_ID.store(u64::from(new_id) + 1, Ordering::SeqCst);
+            }
+        }
+
         Self {
             pos: Rc::new(Cell::new(pos)),
             id: id.unwrap_or_else(|| {
                 STATION_ID
                     .fetch_add(1, Ordering::SeqCst)
-                    .to_string()
+                    .into()
             }),
             is_ghost: false,
             name: String::new(),
@@ -53,8 +72,9 @@ impl Station {
     }
 
     /// A getter for the id.
-    pub fn get_id(&self) -> &str {
-        &self.id
+    #[inline]
+    pub fn get_id(&self) -> StationID {
+        self.id
     }
 
     /// A getter for the grid position.
@@ -112,17 +132,21 @@ impl Station {
                 .clone(),
         }
     }
-}
 
-impl Drawable for Station {
-    fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+    /// Draw the station to the given canvas.
+    pub fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
         if !state.is_on_canvas(self.get_pos()) {
             return;
         }
 
         let canvas_pos = self.get_canvas_pos(state);
 
-        canvas.set_line_width(4.0);
+        let mut width = state.drawn_square_size() / 10.0 + 1.0;
+        if width < 2.0 {
+            width = 2.0
+        }
+
+        canvas.set_line_width(width);
         if self.is_ghost {
             canvas.set_global_alpha(0.5);
         } else {
@@ -158,16 +182,16 @@ mod tests {
         let before_id = STATION_ID.load(Ordering::Relaxed);
 
         let first_station = Station::new((2, 3).into(), None);
-        let second_station = Station::new((2, 3).into(), Some("test".to_owned()));
+        let second_station = Station::new((2, 3).into(), Some(StationID(3)));
 
         let after_id = STATION_ID.load(Ordering::Acquire);
 
-        assert_eq!(before_id + 1, after_id);
+        assert_eq!(4, after_id);
         assert_eq!(
             first_station.get_id(),
-            before_id.to_string()
+            StationID(before_id)
         );
-        assert_eq!(second_station.get_id(), "test");
+        assert_eq!(second_station.get_id(), StationID(3));
     }
 
     #[test]

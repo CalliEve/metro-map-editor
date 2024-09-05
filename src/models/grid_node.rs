@@ -110,14 +110,18 @@ mod tests {
 
     #[test]
     fn test_to_canvas_pos() {
-        let result = GridNode::from((4, 5)).to_canvas_pos(CanvasState::new());
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
+        let result = GridNode::from((4, 5)).to_canvas_pos(canvas);
 
         assert_eq!(result, (20.0, 25.0));
     }
 
     #[test]
     fn test_from_canvas_pos() {
-        let result = GridNode::from_canvas_pos((20.0, 24.6), CanvasState::new());
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
+        let result = GridNode::from_canvas_pos((20.0, 24.6), canvas);
 
         assert_eq!(result, (4, 5));
     }

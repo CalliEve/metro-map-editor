@@ -3,9 +3,10 @@
 use wasm_bindgen::JsValue;
 
 use super::{
-    Drawable,
     GridNode,
+    Map,
     Station,
+    StationID,
 };
 use crate::{
     algorithm::{
@@ -22,7 +23,7 @@ pub struct SelectedStation {
     station: Station,
     /// The stations before and after the station that was grabbed if
     /// applicable.
-    before_after: (Vec<Station>, Vec<Station>),
+    before_after: (Vec<StationID>, Vec<StationID>),
 }
 
 impl SelectedStation {
@@ -51,20 +52,20 @@ impl SelectedStation {
     }
 
     /// Get the stations before and after the station that was grabbed.
-    pub fn get_before_after(&self) -> (&[Station], &[Station]) {
+    pub fn get_before_after(&self) -> (&[StationID], &[StationID]) {
         let (before, after) = &self.before_after;
         (before.as_ref(), after.as_ref())
     }
 
     /// Add a station that came before the station that was grabbed.
-    pub fn add_before(&mut self, mut before: Vec<Station>) {
+    pub fn add_before(&mut self, mut before: Vec<StationID>) {
         self.before_after
             .0
             .append(&mut before);
     }
 
     /// Add a station that came after the station that was grabbed.
-    pub fn add_after(&mut self, mut after: Vec<Station>) {
+    pub fn add_after(&mut self, mut after: Vec<StationID>) {
         self.before_after
             .1
             .append(&mut after);
@@ -88,10 +89,9 @@ impl SelectedStation {
             .set_is_ghost(false);
         self.station
     }
-}
 
-impl Drawable for SelectedStation {
-    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
+    /// Draw the selected station to the given canvas.
+    pub fn draw(&self, map: &Map, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
         self.station
             .draw(canvas, state);
 
@@ -100,10 +100,13 @@ impl Drawable for SelectedStation {
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
 
-        for before in self
+        for before_id in self
             .get_before_after()
             .0
         {
+            let before = map
+                .get_station(*before_id)
+                .expect("invalid id");
             draw_edge(
                 before.get_pos(),
                 self.station
@@ -115,13 +118,17 @@ impl Drawable for SelectedStation {
                 ),
                 canvas,
                 state,
+                0.0,
             );
         }
 
-        for after in self
+        for after_id in self
             .get_before_after()
             .1
         {
+            let after = map
+                .get_station(*after_id)
+                .expect("invalid id");
             draw_edge(
                 self.station
                     .get_pos(),
@@ -133,6 +140,7 @@ impl Drawable for SelectedStation {
                 ),
                 canvas,
                 state,
+                0.0,
             );
         }
 

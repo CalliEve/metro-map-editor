@@ -7,6 +7,7 @@ use web_sys::{
 };
 
 mod a_star;
+mod calc_direction;
 mod closest_corner;
 mod draw_edge;
 mod grid;
@@ -15,10 +16,7 @@ pub use a_star::run_a_star;
 pub use draw_edge::draw_edge;
 use grid::draw_grid;
 
-use crate::{
-    components::MapState,
-    models::Drawable,
-};
+use crate::components::MapState;
 
 /// Redraws the given canvas based on the given state
 pub fn redraw_canvas(canvas: &HtmlCanvasElement, state: &MapState) {
@@ -32,17 +30,15 @@ pub fn redraw_canvas(canvas: &HtmlCanvasElement, state: &MapState) {
 
     draw_grid(&context, state.get_canvas_state());
 
-    let draw_drawable = |d: &dyn Drawable| d.draw(&context, state.get_canvas_state());
+    let map = state.get_map();
 
-    state
-        .get_map()
-        .inspect(|d| draw_drawable(*d));
+    map.draw(&context, state.get_canvas_state());
 
     state
         .get_selected_station()
-        .inspect(|d| draw_drawable(*d));
+        .inspect(|d| d.draw(map, &context, state.get_canvas_state()));
 
     state
         .get_selected_line()
-        .inspect(|d| draw_drawable(*d));
+        .inspect(|d| d.draw(map, &context, state.get_canvas_state()));
 }

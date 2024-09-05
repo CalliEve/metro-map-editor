@@ -24,7 +24,7 @@ impl CanvasState {
     pub fn new() -> Self {
         let mut s = Self {
             size: (300, 300),
-            square_size: 5,
+            square_size: 7,
             zoom_factor: 1.0,
             offset: (0, 0),
             x_limit: (0, 0),
@@ -73,13 +73,17 @@ impl CanvasState {
 
     /// Move upwards on the canvas.
     pub fn move_up(&mut self) {
-        let amount = (self
+        let mut amount = (self
             .y_limit
             .1
             - self
                 .y_limit
                 .0)
             / 30;
+
+        if amount < 1 {
+            amount = 1;
+        }
 
         self.offset
             .1 -= amount;
@@ -88,13 +92,17 @@ impl CanvasState {
 
     /// Move downwards on the canvas.
     pub fn move_down(&mut self) {
-        let amount = (self
+        let mut amount = (self
             .y_limit
             .1
             - self
                 .y_limit
                 .0)
             / 30;
+
+        if amount < 1 {
+            amount = 1;
+        }
 
         self.offset
             .1 += amount;
@@ -103,13 +111,17 @@ impl CanvasState {
 
     /// Move leftwards on the canvas.
     pub fn move_left(&mut self) {
-        let amount = (self
+        let mut amount = (self
             .x_limit
             .1
             - self
                 .x_limit
                 .0)
             / 30;
+
+        if amount < 1 {
+            amount = 1;
+        }
 
         self.offset
             .0 -= amount;
@@ -118,13 +130,17 @@ impl CanvasState {
 
     /// Move rightwards on the canvas.
     pub fn move_right(&mut self) {
-        let amount = (self
+        let mut amount = (self
             .x_limit
             .1
             - self
                 .x_limit
                 .0)
             / 30;
+
+        if amount < 1 {
+            amount = 1;
+        }
 
         self.offset
             .0 += amount;

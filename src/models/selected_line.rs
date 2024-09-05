@@ -4,10 +4,11 @@ use wasm_bindgen::JsValue;
 use web_sys::js_sys::Uint8Array;
 
 use super::{
-    Drawable,
     GridNode,
     Line,
-    Station,
+    LineID,
+    Map,
+    StationID,
 };
 use crate::{
     algorithm::{
@@ -18,29 +19,34 @@ use crate::{
 };
 
 /// Holds information about the currently selected [`Line`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct SelectedLine {
     /// The selected line.
-    line: Line,
+    line: LineID,
     /// The coordinate the line was grabbed at.
     grabbed_at: Option<GridNode>,
     /// The stations before and after the point the line was grabbed if
     /// applicable.
-    before_after: (Option<Station>, Option<Station>),
+    before_after: (Option<StationID>, Option<StationID>),
     /// The grid coordinate the user is currently hovering over.
     current_hover: GridNode,
 }
 
 impl SelectedLine {
     /// Select a line.
-    pub fn new(line: Line, current_hover: GridNode, grabbed_at: Option<GridNode>) -> Self {
+    pub fn new(
+        line: Line,
+        map: &Map,
+        current_hover: GridNode,
+        grabbed_at: Option<GridNode>,
+    ) -> Self {
         let mut before_after = (None, None);
         if let Some(grabbed_node) = grabbed_at {
-            before_after = line.get_edge_stations(grabbed_node);
+            before_after = line.get_edge_stations(map, grabbed_node);
         }
 
         Self {
-            line,
+            line: line.get_id(),
             grabbed_at,
             before_after,
             current_hover,
@@ -48,15 +54,21 @@ impl SelectedLine {
     }
 
     /// Select a newly created line.
-    pub fn new_line() -> Self {
-        Self::new(
-            Line::new(Vec::new(), None),
-            GridNode::from((-1, -1)),
-            None,
-        )
+    pub fn new_line(map: &mut Map) -> Self {
+        let line = Line::new(None);
+        let line_id = line.get_id();
+        map.add_line(line);
+
+        Self {
+            line: line_id,
+            current_hover: GridNode::from((-1, -1)),
+            before_after: (None, None),
+            grabbed_at: None,
+        }
     }
 
     /// Get the current hover coordinate.
+    #[inline]
     pub fn get_current_hover(&self) -> GridNode {
         self.current_hover
     }
@@ -67,52 +79,53 @@ impl SelectedLine {
     }
 
     /// Get the underlying selected line.
-    pub fn get_line(&self) -> &Line {
-        &self.line
+    #[inline]
+    pub fn get_line(&self) -> LineID {
+        self.line
     }
 
     /// Get the coordinate the line was grabbet at.
+    #[inline]
     pub fn get_grabbed_at(&self) -> Option<GridNode> {
         self.grabbed_at
     }
 
     /// Get the stations before and after the point the line was grabbed.
-    pub fn get_before_after(&self) -> (Option<&Station>, Option<&Station>) {
-        let (before, after) = &self.before_after;
-        (before.as_ref(), after.as_ref())
+    #[inline]
+    pub fn get_before_after(&self) -> (Option<StationID>, Option<StationID>) {
+        self.before_after
     }
 
     /// Set the station that came before the point the line was grabbed.
-    pub fn set_before(&mut self, before: Station) {
+    pub fn set_before(&mut self, before: StationID) {
         self.before_after
             .0 = Some(before);
     }
 
     /// Set the station that came after the point the line was grabbed.
-    pub fn set_after(&mut self, after: Station) {
+    pub fn set_after(&mut self, after: StationID) {
         self.before_after
             .1 = Some(after);
     }
-}
 
-impl Drawable for SelectedLine {
-    fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
+    /// Draw the selected line to the given canvas.
+    pub fn draw(&self, map: &Map, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
         let (hover_x, hover_y) = self
             .get_current_hover()
             .to_canvas_pos(state);
         let half_square = state.drawn_square_size() / 2.0;
+        let line = map
+            .get_line(self.get_line())
+            .expect("drawing invalid line id");
 
         canvas.set_line_width(3.0);
         canvas.set_stroke_style(&JsValue::from_str(&format!(
             "rgb({} {} {})",
-            self.get_line()
-                .get_color()
+            line.get_color()
                 .0,
-            self.get_line()
-                .get_color()
+            line.get_color()
                 .1,
-            self.get_line()
-                .get_color()
+            line.get_color()
                 .2
         )));
         canvas.set_global_alpha(0.5);
@@ -123,28 +136,36 @@ impl Drawable for SelectedLine {
         canvas.move_to(hover_x + half_square, hover_y);
         canvas.line_to(hover_x - half_square, hover_y);
 
-        let draw_before = |before: &Station| {
+        let draw_before = |before: StationID| {
+            let before_station = map
+                .get_station(before)
+                .expect("invalid station id");
             draw_edge(
-                before.get_pos(),
+                before_station.get_pos(),
                 self.get_current_hover(),
                 &run_a_star(
-                    before.get_pos(),
+                    before_station.get_pos(),
                     self.get_current_hover(),
                 ),
                 canvas,
                 state,
+                0.0,
             );
         };
-        let draw_after = |after: &Station| {
+        let draw_after = |after: StationID| {
+            let after_station = map
+                .get_station(after)
+                .expect("invalid station id");
             draw_edge(
                 self.get_current_hover(),
-                after.get_pos(),
+                after_station.get_pos(),
                 &run_a_star(
                     self.get_current_hover(),
-                    after.get_pos(),
+                    after_station.get_pos(),
                 ),
                 canvas,
                 state,
+                0.0,
             );
         };
 

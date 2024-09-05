@@ -116,12 +116,9 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
 ///
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
 fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
-    let Some(mut map) = map_state
+    let mut map = map_state
         .get_map()
-        .cloned()
-    else {
-        return;
-    };
+        .clone();
     let canvas_state = map_state.get_canvas_state();
 
     // Handle a click while having a new station selected.
@@ -143,16 +140,13 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         .get_selected_line()
         .cloned()
     {
-        if let Some(station_at_pos) = map
-            .station_at_node(mouse_pos)
-            .cloned()
-        {
+        if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
             let (before, after) = selected_line.get_before_after();
-            let mut line = selected_line
-                .get_line()
+            let mut line = map
+                .get_or_add_line(selected_line.get_line())
                 .clone();
 
-            line.add_station(station_at_pos, before, after);
+            line.add_station(&mut map, station_at_pos, before, after);
 
             map.add_line(line);
             map_state.set_map(map);
@@ -163,13 +157,19 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
 
     if let Some(mut selected_station) = map
         .station_at_node(mouse_pos)
+        .and_then(|s| map.get_station(s))
         .map(Station::clone_non_ref)
         .map(SelectedStation::new)
     {
         for line in map.get_lines() {
-            let (before, after) = line.get_station_neighbors(selected_station.get_station());
-                selected_station.add_before(before);
-                selected_station.add_after(after);
+            let (before, after) = line.get_station_neighbors(
+                &map,
+                selected_station
+                    .get_station()
+                    .get_id(),
+            );
+            selected_station.add_before(before);
+            selected_station.add_after(after);
         }
 
         map_state.set_selected_station(selected_station);
@@ -179,7 +179,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     if let Some(selected_line) = map
         .line_at_node(mouse_pos)
         .cloned()
-        .map(|l| SelectedLine::new(l, mouse_pos, Some(mouse_pos)))
+        .map(|l| SelectedLine::new(l, &map, mouse_pos, Some(mouse_pos)))
     {
         map_state.set_selected_line(selected_line);
     }
@@ -191,8 +191,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
 fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
     let mut map = map_state
         .get_map()
-        .cloned()
-        .unwrap();
+        .clone();
 
     // Handle a mouseup while having a line selected
     if let Some(selected_line) = map_state
@@ -203,16 +202,13 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
         let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
         let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
-        if let Some(station_at_pos) = map
-            .station_at_node(mouse_pos)
-            .cloned()
-        {
+        if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
             let (before, after) = selected_line.get_before_after();
-            let mut line = selected_line
-                .get_line()
+            let mut line = map
+                .get_or_add_line(selected_line.get_line())
                 .clone();
 
-            line.add_station(station_at_pos, before, after);
+            line.add_station(&mut map, station_at_pos, before, after);
 
             map.add_line(line);
             map_state.set_map(map);

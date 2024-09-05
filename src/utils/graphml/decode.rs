@@ -1,6 +1,12 @@
 //! Contains the functions used to decode a [`GraphMlMap`] and all its child
 //! objects into a [`Map`].
 
+use std::hash::{
+    DefaultHasher,
+    Hash,
+    Hasher,
+};
+
 use super::graphml_map::{
     GraphItem,
     GraphMlMap,
@@ -17,15 +23,28 @@ use crate::{
     },
 };
 
+fn get_id(given: &str) -> u64 {
+    given
+        .parse()
+        .ok()
+        .or_else(|| {
+            given
+                .get(1..)
+                .and_then(|i| {
+                    i.parse()
+                        .ok()
+                })
+        })
+        .unwrap_or_else(|| {
+            let mut hasher = DefaultHasher::new();
+            given.hash(&mut hasher);
+            hasher.finish()
+        })
+}
+
 /// Transforms an edge represented by a [`Key`] to a [`Line`].
 fn edge_to_line(edge: &Key) -> Line {
-    let mut line = Line::new(
-        Vec::new(),
-        Some(
-            edge.id
-                .clone(),
-        ),
-    );
+    let mut line = Line::new(Some(get_id(&edge.id).into()));
     line.set_name(&edge.name);
     line.set_color((
         edge.r
@@ -77,10 +96,7 @@ fn node_to_station(node: &Node, state: CanvasState) -> Station {
 
     let mut station = Station::new(
         station_loc,
-        Some(
-            node.id
-                .clone(),
-        ),
+        Some(get_id(&node.id).into()),
     );
     station.set_name(
         &node
@@ -196,20 +212,18 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
         .content
     {
         if let GraphItem::Edge(e) = item {
-            let source = map
-                .get_station(&e.source)
-                .expect("edge source referenced non-existant station")
-                .clone();
-            let target = map
-                .get_station(&e.target)
-                .expect("edge target referenced non-existant station")
-                .clone();
-
             for data in &e.data {
-                let line = map
-                    .get_mut_line(&data.key)
-                    .expect("edge referenced non-existant line");
-                line.add_station(source.clone(), Some(&target), None);
+                let mut line = map
+                    .get_mut_line(get_id(&data.key).into())
+                    .expect("edge referenced non-existant line")
+                    .clone();
+                line.add_station(
+                    &mut map,
+                    get_id(&e.source).into(),
+                    Some(get_id(&e.target).into()),
+                    None,
+                );
+                map.add_line(line);
             }
         }
     }
@@ -229,7 +243,7 @@ mod tests {
     #[test]
     fn test_edge_to_line() {
         let input = Key {
-            id: "test".to_owned(),
+            id: "2".to_owned(),
             for_item: "edge".to_owned(),
             r: Some("30".to_owned()),
             g: Some("0".to_owned()),
@@ -239,7 +253,7 @@ mod tests {
 
         let result = edge_to_line(&input);
 
-        let mut example = Line::new(Vec::new(), Some("test".to_owned()));
+        let mut example = Line::new(Some(2.into()));
         example.set_color((30, 0, 235));
         example.set_name(&"test line");
 
@@ -251,7 +265,7 @@ mod tests {
     #[test]
     fn test_node_to_station() {
         let node = Node {
-            id: "test".to_owned(),
+            id: "2".to_owned(),
             data: vec![
                 Data {
                     key: "x".to_owned(),
@@ -267,10 +281,12 @@ mod tests {
                 },
             ],
         };
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
 
-        let result = node_to_station(&node, CanvasState::new());
+        let result = node_to_station(&node, canvas);
 
-        let mut example = Station::new((24, 31).into(), Some("test".to_owned()));
+        let mut example = Station::new((24, 31).into(), Some(2.into()));
         example.set_name(&"test station");
 
         assert_eq!(result.get_id(), example.get_id());
@@ -351,8 +367,10 @@ mod tests {
                 }],
             }),
         ];
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
 
-        let result = normalize_stations(items, CanvasState::new());
+        let result = normalize_stations(items, canvas);
 
         if let GraphItem::Node(node) = &result[0] {
             assert_eq!(get_node_coords(&node), (10.0, 290.0));
@@ -476,17 +494,19 @@ mod tests {
                 ],
             },
         };
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
 
-        let map = graphml_to_map(graphml, CanvasState::new());
+        let map = graphml_to_map(graphml, canvas);
 
         let result_line = map
-            .get_line("l0")
+            .get_line(0.into())
             .expect("no line with id l0");
         assert_eq!(result_line.get_color(), (84, 167, 33));
         assert_eq!(result_line.get_name(), "lineU1");
 
         let result_station = map
-            .get_station("n1")
+            .get_station(1.into())
             .expect("no station with id n1");
         assert_eq!(result_station.get_pos(), (30, 28));
         assert_eq!(result_station.get_name(), "test 2");

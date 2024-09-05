@@ -19,7 +19,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct MapState {
     /// The current state of the map.
-    map: Option<Map>,
+    map: Map,
     /// The currently selected [`Station`].
     selected_station: Option<SelectedStation>,
     /// The currently selected [`Line`].
@@ -33,7 +33,7 @@ impl MapState {
     /// properties to default values.
     pub fn new(map: Map) -> Self {
         Self {
-            map: Some(map),
+            map,
             selected_station: None,
             selected_line: None,
             canvas: CanvasState::default(),
@@ -41,14 +41,18 @@ impl MapState {
     }
 
     /// A getter method for the [`Map`].
-    pub fn get_map(&self) -> Option<&Map> {
-        self.map
-            .as_ref()
+    pub fn get_map(&self) -> &Map {
+        &self.map
+    }
+
+    /// A mutable getter method for the [`Map`].
+    pub fn get_mut_map(&mut self) -> &mut Map {
+        &mut self.map
     }
 
     /// A setter method for the [`Map`].
     pub fn set_map(&mut self, map: Map) {
-        self.map = Some(map);
+        self.map = map;
     }
 
     /// A getter method for the selected station.
@@ -122,10 +126,15 @@ impl MapState {
     }
 
     pub fn run_local_search(&mut self) {
-        if let Some(map) = &mut self.map {
-            for line in map.get_mut_lines() {
-                line.calculate_line_edges();
-            }
+        let map_clone = self
+            .map
+            .clone();
+
+        for edge in self
+            .map
+            .get_mut_edges()
+        {
+            edge.calculate_nodes(&map_clone);
         }
     }
 }

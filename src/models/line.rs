@@ -1,10 +1,9 @@
 //! Contains the [`Line`] struct and all its methods.
 
 use std::{
-    cmp::Ordering,
     f64::consts::PI,
     sync::atomic::{
-        AtomicU32,
+        AtomicU64,
         Ordering as AtomicOrdering,
     },
 };
@@ -13,66 +12,51 @@ use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
 use super::{
-    Drawable,
+    station::StationID,
+    EdgeID,
     GridNode,
-    Station,
+    Map,
 };
-use crate::{
-    algorithm::{
-        draw_edge,
-        run_a_star,
-    },
-    components::CanvasState,
-};
+use crate::components::CanvasState;
 
 /// Next generated sequential identifier for a new line.
-static LINE_ID: AtomicU32 = AtomicU32::new(1);
+static LINE_ID: AtomicU64 = AtomicU64::new(1);
+
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct LineID(u64);
+
+impl From<u64> for LineID {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
 
 /// Represents a metro line, including its stations, name and color.
 #[derive(Clone, Debug)]
 pub struct Line {
     /// ID of the line.
-    id: String,
+    id: LineID,
     /// Name of the line.
     name: String,
     /// Color of the line.
     color: (u8, u8, u8),
     /// All stations the line visits.
-    stations: Vec<Station>,
+    stations: Vec<StationID>,
     /// All edges between the stations.
-    edges: Vec<(Station, Vec<GridNode>, Option<Station>)>,
+    edges: Vec<EdgeID>,
 }
 
 impl Line {
     /// Create a new [`Line`] with the stations it visits and an identifier.
     /// Color and name are set to default values.
-    pub fn new(stations: Vec<Station>, id: Option<String>) -> Self {
+    pub fn new(id: Option<LineID>) -> Self {
         Self {
-            edges: if stations.len() > 1 {
-                stations
-                    .clone()
-                    .into_iter()
-                    .zip(
-                        stations
-                            .clone()
-                            .into_iter()
-                            .skip(1),
-                    )
-                    .map(|(s, a)| (s, Vec::new(), Some(a)))
-                    .collect()
-            } else if let Some(s) = stations
-                .first()
-                .cloned()
-            {
-                vec![(s, Vec::new(), None)]
-            } else {
-                Vec::new()
-            },
-            stations,
+            edges: Vec::new(),
+            stations: Vec::new(),
             id: id.unwrap_or_else(|| {
                 LINE_ID
                     .fetch_add(1, AtomicOrdering::SeqCst)
-                    .to_string()
+                    .into()
             }),
             color: (0, 0, 0),
             name: String::new(),
@@ -80,17 +64,13 @@ impl Line {
     }
 
     /// A getter method for the stations the line visits.
-    pub fn get_stations(&self) -> Vec<&Station> {
-        self.stations
-            .iter()
-            .collect()
+    pub fn get_stations(&self) -> &[StationID] {
+        &self.stations
     }
 
     /// A mutable getter method for the stations the line visits.
-    pub fn get_mut_stations(&mut self) -> Vec<&mut Station> {
-        self.stations
-            .iter_mut()
-            .collect()
+    pub fn get_mut_stations(&mut self) -> &mut [StationID] {
+        &mut self.stations
     }
 
     /// Add a station. It will be inserted before the before station and after
@@ -98,9 +78,10 @@ impl Line {
     /// line yet, it will add both.
     pub fn add_station(
         &mut self,
-        station: Station,
-        before: Option<&Station>,
-        after: Option<&Station>,
+        map: &mut Map,
+        station: StationID,
+        before: Option<StationID>,
+        after: Option<StationID>,
     ) {
         if !self
             .stations
@@ -114,53 +95,57 @@ impl Line {
             if let Some(index) = self
                 .edges
                 .iter()
-                .position(|s| {
-                    &s.0 == before_station
-                        && s.2
-                            .as_ref()
-                            == after
+                .map(|id| {
+                    map.get_edge(*id)
+                        .expect("line edge list contains invalid id")
                 })
+                .position(|e| e.is_from(before_station) && e.is_to(after_station))
             {
                 // replace edge with the station and the two edges connecting it
+                let edge_id = self.edges[index];
                 self.edges
                     .remove(index);
-                self.edges
-                    .push((
-                        station.clone(),
-                        Vec::new(),
-                        Some(before_station.clone()),
-                    ));
-                self.edges
-                    .push((
-                        after_station.clone(),
-                        Vec::new(),
-                        Some(station),
-                    ));
+                map.removed_edge(edge_id, self.get_id());
+
+                self.add_edge(
+                    map.get_edge_id_between(station, before_station),
+                    map,
+                );
+                self.add_edge(
+                    map.get_edge_id_between(after_station, station),
+                    map,
+                );
                 return;
             }
             unreachable!("Station inserted on an edge, but can't find the edge.");
         }
 
-        if after.is_some() {
+        if let Some(after_station) = after {
             // Insert edge between station and the station it comes before
-            self.edges
-                .push((station, Vec::new(), after.cloned()));
+            self.add_edge(
+                map.get_edge_id_between(station, after_station),
+                map,
+            );
             return;
         }
 
         if let Some(before_station) = before {
             // Insert edge between station and the station it comes after
-            self.edges
-                .push((
-                    before_station.clone(),
-                    Vec::new(),
-                    Some(station),
-                ));
-        } else {
-            // Insert as a lone station part of the line
-            self.edges
-                .push((station, Vec::new(), None));
+            self.add_edge(
+                map.get_edge_id_between(before_station, station),
+                map,
+            );
         }
+    }
+
+    /// Add an edge that is being used by this line.
+    pub fn add_edge(&mut self, edge_id: EdgeID, map: &mut Map) {
+        let edge = map
+            .get_mut_edge(edge_id)
+            .expect("adding invalid edge id to line");
+        edge.add_line(self.get_id());
+        self.edges
+            .push(edge_id);
     }
 
     /// A setter for the station's color.
@@ -169,11 +154,13 @@ impl Line {
     }
 
     /// A getter for the station's color.
+    #[inline]
     pub fn get_color(&self) -> (u8, u8, u8) {
         self.color
     }
 
     /// A setter for the station's name.
+    #[inline]
     pub fn set_name(&mut self, name: &impl ToString) {
         self.name = name.to_string();
     }
@@ -184,31 +171,33 @@ impl Line {
     }
 
     /// A getter for the station id.
-    pub fn get_id(&self) -> &str {
-        &self.id
+    #[inline]
+    pub fn get_id(&self) -> LineID {
+        self.id
+    }
+
+    /// A getter for the edges the line uses.
+    pub fn get_edges(&self) -> &[EdgeID] {
+        &self.edges
     }
 
     /// Get a list of neighbors of the given station.
-    pub fn get_station_neighbors(&self, station: &Station) -> (Vec<Station>, Vec<Station>) {
+    pub fn get_station_neighbors(
+        &self,
+        map: &Map,
+        station: StationID,
+    ) -> (Vec<StationID>, Vec<StationID>) {
         let (mut before, mut after) = (Vec::new(), Vec::new());
 
-        for edge in &self.edges {
-            if &edge.0 == station {
-                if let Some(after_station) = edge
-                    .2
-                    .clone()
-                {
-                    after.push(after_station);
-                }
-            } else if edge
-                .2
-                .as_ref()
-                .is_some_and(|a| a == station)
-            {
-                before.push(
-                    edge.0
-                        .clone(),
-                );
+        for id in &self.edges {
+            let edge = map
+                .get_edge(*id)
+                .expect("invalid edge id");
+
+            if edge.get_from() == station {
+                after.push(edge.get_to());
+            } else if edge.get_to() == station {
+                before.push(edge.get_from());
             }
         }
 
@@ -216,194 +205,189 @@ impl Line {
     }
 
     /// Gets the stations on either side of the position on this line.
-    pub fn get_edge_stations(&self, node: GridNode) -> (Option<Station>, Option<Station>) {
-        // First check if the node is on an edge between stations
-        for edge in &self.edges {
-            if edge
-                .1
-                .contains(&node)
-            {
-                let before = Some(
-                    edge.0
-                        .clone(),
-                );
-                let after = edge
-                    .2
-                    .clone();
-                return (before, after);
-            }
-        }
+    pub fn get_edge_stations(
+        &self,
+        map: &Map,
+        node: GridNode,
+    ) -> (Option<StationID>, Option<StationID>) {
+        let mut from = None;
+        let mut to = None;
 
-        // else it may be on a node around a station
-        for edge in &self.edges {
-            if edge
-                .0
-                .get_pos()
-                .get_neighbors()
-                .contains(&node)
-            {
-                return (
-                    None,
-                    Some(
-                        edge.0
-                            .clone(),
-                    ),
-                );
-            }
-
-            if let Some(after) = edge
-                .2
-                .clone()
-            {
-                if after
+        if self
+            .stations
+            .len()
+            == 1
+        {
+            if let Some(station) = map.get_station(self.stations[0]) {
+                if station
                     .get_pos()
                     .get_neighbors()
                     .contains(&node)
                 {
-                    return (Some(after.clone()), None);
+                    return (Some(station.get_id()), None);
+                }
+            }
+            return (None, None);
+        }
+        if self
+            .stations
+            .is_empty()
+            || self
+                .edges
+                .is_empty()
+        {
+            return (None, None);
+        }
+
+        for id in &self.edges {
+            if let Some(edge) = map.get_edge(*id) {
+                if let Some(res) = edge.get_neigboring_stations(map, node) {
+                    if res
+                        .0
+                        .is_some()
+                        && res
+                            .1
+                            .is_some()
+                    {
+                        return res;
+                    }
+
+                    if res
+                        .0
+                        .is_some()
+                        || res
+                            .1
+                            .is_some()
+                    {
+                        from = res.0;
+                        to = res.1;
+                    }
                 }
             }
         }
 
-        (None, None)
+        return (from, to);
     }
 
     /// Returns true if the line goes through the given grid node.
-    pub fn visits_node(&self, node: GridNode) -> bool {
+    pub fn visits_node(&self, map: &Map, node: GridNode) -> bool {
         if self
             .edges
             .iter()
-            .any(|(s, steps, _)| s.get_pos() == node || steps.contains(&node))
+            .any(|e| {
+                map.get_edge(*e)
+                    .expect("invalid edge id")
+                    .visits_node(map, node)
+            })
         {
             return true;
         }
 
         return self
-            .get_line_ends()
+            .get_line_ends(map)
             .into_iter()
-            .any(|e| e.is_neighbor(node));
-    }
-
-    /// Recalculates the edges between the stations.
-    pub fn calculate_line_edges(&mut self) {
-        for (from, edges, to) in self
-            .edges
-            .iter_mut()
-            .filter(|(_, _, to)| to.is_some())
-        {
-            *edges = run_a_star(
-                from.get_pos(),
-                to.as_ref()
-                    .unwrap()
-                    .get_pos(),
-            );
-        }
+            .any(|e| {
+                map.get_station(e)
+                    .expect("edge contains invalid station id")
+                    .is_neighbor(node)
+            });
     }
 
     /// Gets the start and end stations of the line.
-    fn get_line_ends(&self) -> Vec<&Station> {
+    fn get_line_ends(&self, map: &Map) -> Vec<StationID> {
         let mut ends = Vec::new();
         let mut middles = Vec::new();
 
-        for edge in &self.edges {
-            if !middles.contains(&&edge.0) {
+        if self
+            .stations
+            .is_empty()
+            || self
+                .edges
+                .is_empty()
+        {
+            return self
+                .stations
+                .clone();
+        }
+
+        for id in &self.edges {
+            let edge = map
+                .get_edge(*id)
+                .expect("invalid edge id");
+
+            if !middles.contains(&edge.get_from()) {
                 if let Some(i) = ends
                     .iter()
-                    .position(|e| e == &&edge.0)
+                    .position(|e| e == &edge.get_from())
                 {
                     ends.remove(i);
-                    middles.push(&edge.0);
+                    middles.push(edge.get_from());
                 } else {
-                    ends.push(&edge.0);
+                    ends.push(edge.get_from());
                 }
             }
 
-            if let Some(to) = edge
-                .2
-                .as_ref()
-            {
-                if !middles.contains(&to) {
-                    if let Some(i) = ends
-                        .iter()
-                        .position(|e| e == &to)
-                    {
-                        ends.remove(i);
-                        middles.push(to);
-                    } else {
-                        ends.push(to);
-                    }
+            if !middles.contains(&edge.get_to()) {
+                if let Some(i) = ends
+                    .iter()
+                    .position(|e| e == &edge.get_to())
+                {
+                    ends.remove(i);
+                    middles.push(edge.get_to());
+                } else {
+                    ends.push(edge.get_to());
                 }
             }
         }
 
         ends
     }
-}
 
-impl Drawable for Line {
-    fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+    /// Draws the line around a station if this line has only a single station.
+    pub fn draw(&self, map: &Map, canvas: &CanvasRenderingContext2d, state: CanvasState) {
         let stations = self.get_stations();
 
-        canvas.set_line_width(3.0);
-        canvas.set_global_alpha(1.0);
-        canvas.set_stroke_style(&JsValue::from_str(&format!(
-            "rgb({} {} {})",
-            self.color
-                .0,
-            self.color
-                .1,
-            self.color
-                .2
-        )));
-        canvas.begin_path();
+        if stations.len() == 1 {
+            let station = map
+                .get_station(stations[0])
+                .expect("invalid station id on line");
 
-        match stations
-            .len()
-            .cmp(&1)
-        {
-            // Draw a line between each two sequential stations on the line.
-            Ordering::Greater => {
-                for (start_station, steps, end_station) in self
-                    .edges
-                    .iter()
-                    .filter(|(_, _, to)| to.is_some())
-                {
-                    draw_edge(
-                        start_station.get_pos(),
-                        end_station
-                            .as_ref()
-                            .unwrap()
-                            .get_pos(),
-                        &steps,
-                        canvas,
-                        state,
-                    );
-                }
-            },
-            // Add two horizontal lines to the single station, showing its a lone station on the
-            // line.
-            Ordering::Equal => {
-                let square_size = state.drawn_square_size();
-                let (station_x, station_y) = stations[0].get_canvas_pos(state);
-                let offset = square_size / PI;
+            let mut width = state.drawn_square_size() / 10.0;
+            if width < 1.0 {
+                width = 1.0
+            }
 
-                canvas.move_to(station_x - offset, station_y);
-                canvas.line_to(
-                    station_x - (square_size - offset),
-                    station_y,
-                );
+            canvas.set_line_width(width);
+            canvas.set_global_alpha(1.0);
+            canvas.set_stroke_style(&JsValue::from_str(&format!(
+                "rgb({} {} {})",
+                self.color
+                    .0,
+                self.color
+                    .1,
+                self.color
+                    .2
+            )));
+            canvas.begin_path();
 
-                canvas.move_to(station_x + offset, station_y);
-                canvas.line_to(
-                    station_x + (square_size - offset),
-                    station_y,
-                );
-            },
-            // Empty line means nothing to draw
-            Ordering::Less => {},
+            let square_size = state.drawn_square_size();
+            let (station_x, station_y) = station.get_canvas_pos(state);
+            let offset = square_size / PI;
+
+            canvas.move_to(station_x - offset, station_y);
+            canvas.line_to(
+                station_x - (square_size - offset),
+                station_y,
+            );
+
+            canvas.move_to(station_x + offset, station_y);
+            canvas.line_to(
+                station_x + (square_size - offset),
+                station_y,
+            );
+
+            canvas.stroke();
         }
-
-        canvas.stroke();
     }
 }
 
