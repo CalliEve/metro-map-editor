@@ -181,6 +181,28 @@ impl Map {
             .expect("did not find newly inserted line");
     }
 
+    /// Remove a line from the map.
+    pub fn remove_line(&mut self, id: LineID) {
+        let line = self
+            .lines
+            .remove(&id)
+            .expect("line to remove not found");
+
+        for edge_id in line.get_edges() {
+            if let Some(edge) = self.get_mut_edge(*edge_id) {
+                edge.remove_line(id);
+
+                if edge
+                    .get_lines()
+                    .is_empty()
+                {
+                    self.edges
+                        .remove(edge_id);
+                }
+            }
+        }
+    }
+
     /// Add an edge to map.
     pub fn add_edge(&mut self, edge: Edge) {
         self.edges

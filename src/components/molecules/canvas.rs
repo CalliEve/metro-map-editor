@@ -158,17 +158,19 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
 
     // Handle a click while having a remove operation selected
     if let Some(remove_type) = map_state.get_selected_remove() {
-        if let Some(station) = map.station_at_node(mouse_pos) {
-            match remove_type {
-                RemoveType::Station => {
+        match remove_type {
+            RemoveType::Station => {
+                if let Some(station) = map.station_at_node(mouse_pos) {
                     map.remove_station(station);
-                },
-                RemoveType::Line => {
-                    // Not currently supported
-                },
-            }
-            map_state.set_map(map);
+                }
+            },
+            RemoveType::Line => {
+                if let Some(selected_line) = map.line_at_node(mouse_pos) {
+                    map.remove_line(selected_line.get_id());
+                }
+            },
         }
+        map_state.set_map(map);
         map_state.clear_selected_remove();
         return;
     }

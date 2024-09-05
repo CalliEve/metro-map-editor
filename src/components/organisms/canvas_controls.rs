@@ -49,10 +49,10 @@ pub fn CanvasControls() -> impl IntoView {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
         <div class="absolute right-5 bottom-20">
-            <Button text="+" on_click=Box::new(zoom_in) overlay=true />
+            <Button text="+" on_click=Box::new(zoom_in) overlay=true can_focus=false />
         </div>
         <div class="absolute right-5 bottom-5">
-            <Button text="-" on_click=Box::new(zoom_out) overlay=true />
+            <Button text="-" on_click=Box::new(zoom_out) overlay=true can_focus=false />
         </div>
     </div>
     }

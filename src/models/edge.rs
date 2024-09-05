@@ -98,6 +98,11 @@ impl Edge {
         self.lines = lines;
     }
 
+    /// A getter for the lines that use this edge.
+    pub fn get_lines(&self) -> &[LineID] {
+        &self.lines
+    }
+
     /// Add a line to the lines using the edge if it didn't already exist
     pub fn add_line(&mut self, line: LineID) {
         match self
@@ -109,6 +114,17 @@ impl Edge {
                 self.lines
                     .insert(pos, line)
             },
+        }
+    }
+
+    /// Remove a line from the lines using the edge if it exists
+    pub fn remove_line(&mut self, line: LineID) {
+        if let Ok(pos) = self
+            .lines
+            .binary_search(&line)
+        {
+            self.lines
+                .remove(pos);
         }
     }
 

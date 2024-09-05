@@ -33,12 +33,14 @@ pub fn Sidebar() -> impl IntoView {
             state.set_selected_station(SelectedStation::new_station());
         });
     };
+
     let add_line = move |_| {
         map_state.update(|state| {
             let line = SelectedLine::new_line(state.get_mut_map());
             state.set_selected_line(line)
         })
     };
+
     let remove_station = move |_| {
         map_state.update(|state| {
             state.set_selected_remove(RemoveType::Station);
@@ -49,6 +51,18 @@ pub fn Sidebar() -> impl IntoView {
             .get()
             .get_selected_remove()
             == Some(RemoveType::Station)
+    };
+
+    let remove_line = move |_| {
+        map_state.update(|state| {
+            state.set_selected_remove(RemoveType::Line);
+        });
+    };
+    let remove_line_selected = move || {
+        map_state
+            .get()
+            .get_selected_remove()
+            == Some(RemoveType::Line)
     };
 
     let update_square_size = move |mut n: f64| {
@@ -92,7 +106,8 @@ pub fn Sidebar() -> impl IntoView {
                         .build(),
                     ButtonProps::builder()
                         .text("Remove Line")
-                        .on_click(Box::new(|_| {}))
+                        .on_click(Box::new(remove_line))
+                        .active(Signal::derive(remove_line_selected))
                         .danger(true)
                         .build(),
                 ]}/>
