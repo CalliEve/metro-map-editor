@@ -10,6 +10,7 @@ use crate::{
             ButtonProps,
             NumberInput,
         },
+        state::RemoveType,
         MapState,
     },
     models::{
@@ -38,6 +39,18 @@ pub fn Sidebar() -> impl IntoView {
             state.set_selected_line(line)
         })
     };
+    let remove_station = move |_| {
+        map_state.update(|state| {
+            state.set_selected_remove(RemoveType::Station);
+        });
+    };
+    let remove_station_selected = move || {
+        map_state
+            .get()
+            .get_selected_remove()
+            == Some(RemoveType::Station)
+    };
+
     let update_square_size = move |mut n: f64| {
         if n < 1.0 {
             n = 1.0;
@@ -60,13 +73,28 @@ pub fn Sidebar() -> impl IntoView {
                 on_input=update_square_size/>
             <ButtonGroup
                 children={vec![
-                    ButtonProps::builder().text("Add Station").on_click(Box::new(add_station)).build(),
-                    ButtonProps::builder().text("Remove Station").on_click(Box::new(|_| {})).danger(true).build(),
+                    ButtonProps::builder()
+                        .text("Add Station")
+                        .on_click(Box::new(add_station))
+                        .build(),
+                    ButtonProps::builder()
+                        .text("Remove Station")
+                        .on_click(Box::new(remove_station))
+                        .active(Signal::derive(remove_station_selected))
+                        .danger(true)
+                        .build(),
                 ]}/>
             <ButtonGroup
                 children={vec![
-                    ButtonProps::builder().text("Add Line").on_click(Box::new(add_line)).build(),
-                    ButtonProps::builder().text("Remove Line").on_click(Box::new(|_| {})).danger(true).build(),
+                    ButtonProps::builder()
+                        .text("Add Line")
+                        .on_click(Box::new(add_line))
+                        .build(),
+                    ButtonProps::builder()
+                        .text("Remove Line")
+                        .on_click(Box::new(|_| {}))
+                        .danger(true)
+                        .build(),
                 ]}/>
         </div>
     }

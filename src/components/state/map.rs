@@ -15,6 +15,13 @@ use crate::{
     },
 };
 
+/// The type of remove operation that is currently selected.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RemoveType {
+    Station,
+    Line,
+}
+
 /// Holds all the state of the current map and canvas.
 #[derive(Clone, Debug)]
 pub struct MapState {
@@ -24,6 +31,8 @@ pub struct MapState {
     selected_station: Option<SelectedStation>,
     /// The currently selected [`Line`].
     selected_line: Option<SelectedLine>,
+    /// The type of remove operation that is currently selected.
+    selected_remove: Option<RemoveType>,
     /// The state of the canvas.
     canvas: CanvasState,
 }
@@ -36,6 +45,7 @@ impl MapState {
             map,
             selected_station: None,
             selected_line: None,
+            selected_remove: None,
             canvas: CanvasState::default(),
         }
     }
@@ -69,6 +79,21 @@ impl MapState {
     /// Set the selected station to None.
     pub fn clear_selected_station(&mut self) {
         self.selected_station = None;
+    }
+
+    /// A getter method for the selected remove operation.
+    pub fn get_selected_remove(&self) -> Option<RemoveType> {
+        self.selected_remove
+    }
+
+    /// A setter method for the selected remove operation.
+    pub fn set_selected_remove(&mut self, operation: RemoveType) {
+        self.selected_remove = Some(operation);
+    }
+
+    /// Set the selected remove operation to None.
+    pub fn clear_selected_remove(&mut self) {
+        self.selected_remove = None;
     }
 
     /// A mutable getter method for the selected line.

@@ -137,6 +137,22 @@ impl Map {
             .insert(station.get_id(), station);
     }
 
+    /// Remove a station from the map.
+    pub fn remove_station(&mut self, id: StationID) {
+        let lines: Vec<_> = self
+            .lines
+            .values()
+            .cloned()
+            .collect();
+        for mut line in lines.into_iter() {
+            line.remove_station(self, id);
+            self.add_line(line);
+        }
+
+        self.stations
+            .remove(&id);
+    }
+
     /// Add a line to the map.
     pub fn add_line(&mut self, line: Line) {
         for edge_id in line.get_edges() {

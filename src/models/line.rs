@@ -138,6 +138,50 @@ impl Line {
         }
     }
 
+    /// Remove a station from the line.
+    pub fn remove_station(&mut self, map: &mut Map, station: StationID) {
+        if let Some(index) = self
+            .stations
+            .iter()
+            .position(|s| s == &station)
+        {
+            self.stations
+                .remove(index);
+        }
+
+        let mut start = None;
+        let mut end = None;
+        let edges = self
+            .edges
+            .clone();
+        for edge_id in edges {
+            let edge = map
+                .get_edge(edge_id)
+                .expect("removing invalid edge id from line");
+
+            if edge.get_to() == station {
+                start = Some(edge.get_from());
+
+                self.edges
+                    .retain(|e| *e != edge_id);
+                map.removed_edge(edge_id, self.get_id());
+            } else if edge.get_from() == station {
+                end = Some(edge.get_to());
+
+                self.edges
+                    .retain(|e| *e != edge_id);
+                map.removed_edge(edge_id, self.get_id());
+            }
+        }
+
+        if start.is_some() && end.is_some() {
+            self.add_edge(
+                map.get_edge_id_between(start.unwrap(), end.unwrap()),
+                map,
+            );
+        }
+    }
+
     /// Add an edge that is being used by this line.
     pub fn add_edge(&mut self, edge_id: EdgeID, map: &mut Map) {
         let edge = map

@@ -17,6 +17,7 @@ use wasm_bindgen::{
 
 use crate::{
     components::{
+        state::RemoveType,
         CanvasState,
         MapState,
     },
@@ -152,6 +153,23 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             map_state.set_map(map);
             map_state.clear_selected_line();
         }
+        return;
+    }
+
+    // Handle a click while having a remove operation selected
+    if let Some(remove_type) = map_state.get_selected_remove() {
+        if let Some(station) = map.station_at_node(mouse_pos) {
+            match remove_type {
+                RemoveType::Station => {
+                    map.remove_station(station);
+                },
+                RemoveType::Line => {
+                    // Not currently supported
+                },
+            }
+            map_state.set_map(map);
+        }
+        map_state.clear_selected_remove();
         return;
     }
 

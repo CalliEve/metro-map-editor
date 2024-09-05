@@ -6,7 +6,10 @@ mod canvas;
 mod map;
 
 pub use canvas::CanvasState;
-pub use map::MapState;
+pub use map::{
+    MapState,
+    RemoveType,
+};
 
 use crate::models::Map;
 

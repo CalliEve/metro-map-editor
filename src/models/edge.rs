@@ -223,7 +223,7 @@ impl Edge {
             let color_offset = if color_count == 1 {
                 0.0
             } else {
-                ((i as f64) * width + 0.1) - ((color_count as f64 * width + 0.1) / 2.0)
+                ((i as f64) * width) - ((color_count as f64 * width) / 2.0) + (width / 2.0)
             };
 
             draw_edge(
