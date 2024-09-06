@@ -100,7 +100,7 @@ impl Map {
         self.get_edges()
             .into_iter()
             .find(|e| e.is_from(from) && e.is_to(to))
-            .map(|e| e.get_id())
+            .map(Edge::get_id)
     }
 
     /// Get the id of the [`Edge`] between the two given stations, else create
@@ -144,7 +144,7 @@ impl Map {
             .values()
             .cloned()
             .collect();
-        for mut line in lines.into_iter() {
+        for mut line in lines {
             line.remove_station(self, id);
             self.add_line(line);
         }
@@ -168,13 +168,9 @@ impl Map {
     /// Get mutable [`Line`] if exists, else add new line with that [`LineID`]
     /// and return it.
     pub fn get_or_add_line(&mut self, id: LineID) -> &Line {
-        if !self
-            .lines
-            .contains_key(&id)
-        {
-            self.lines
-                .insert(id, Line::new(Some(id)));
-        }
+        self.lines
+            .entry(id)
+            .or_insert_with(|| Line::new(Some(id)));
 
         return self
             .get_line(id)
@@ -214,7 +210,7 @@ impl Map {
         self.stations
             .values()
             .find(|s| s.get_pos() == node)
-            .map(|s| s.get_id())
+            .map(Station::get_id)
     }
 
     /// Get the line that goes through the given grid node.

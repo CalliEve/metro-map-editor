@@ -1,0 +1,39 @@
+//! Contains all objects that together represent the [`Map`] in the JSON file.
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+/// Represents a connection between two stations for the JSON file.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct JSONEdge {
+    pub source: String,
+    pub target: String,
+    pub lines: Vec<String>,
+}
+
+/// Represents a line for the JSON file.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct JSONLine {
+    pub id: String,
+    pub name: Option<String>,
+    pub color: Option<(u8, u8, u8)>,
+}
+
+/// Represents a station for the JSON file.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct JSONStation {
+    pub id: String,
+    pub name: Option<String>,
+    pub x: f64,
+    pub y: f64,
+}
+
+/// Represents the whole map in the JSON file.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct JSONMap {
+    pub stations: Vec<JSONStation>,
+    pub lines: Vec<JSONLine>,
+    pub edges: Vec<JSONEdge>,
+}

@@ -1,9 +1,9 @@
 //! Contains utility functions and structs that can be useful
 //! everywhere else in the project, but may not fit in other modules.
 
-mod graphml;
-
-pub use graphml::decode_map;
+pub mod graphml;
+pub mod json;
+mod parsing;
 
 /// Compares two floats to determine if they do not differ more than 1.0.
 /// This can be used to see if two coordinates are for the same pixel on the

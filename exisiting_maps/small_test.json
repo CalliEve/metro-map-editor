@@ -1,0 +1,41 @@
+{
+  "stations": [
+    {
+      "id": "n0",
+      "x": 90,
+      "y": 155,
+      "name": "test 1"
+    },
+    {
+      "id": "n1",
+      "x": 150,
+      "y": 126,
+      "name": "test 2"
+    },
+    {
+      "id": "n2",
+      "x": 210,
+      "y": 100,
+      "name": "test 3"
+    }
+  ],
+  "lines": [
+    {
+      "id": "l0",
+      "name": "lineU1",
+      "color": [84, 167, 33]
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n1",
+      "lines": ["l0"]
+    },
+    {
+      "source": "n1",
+      "target": "n2",
+      "lines": ["l0"]
+    }
+  ]
+}

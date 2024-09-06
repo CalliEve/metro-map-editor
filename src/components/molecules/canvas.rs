@@ -139,7 +139,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     // Handle a click while having a new line selected
     if let Some(selected_line) = map_state
         .get_selected_line()
-        .cloned()
+        .copied()
     {
         if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
             let (before, after) = selected_line.get_before_after();
@@ -199,7 +199,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     if let Some(selected_line) = map
         .line_at_node(mouse_pos)
         .cloned()
-        .map(|l| SelectedLine::new(l, &map, mouse_pos, Some(mouse_pos)))
+        .map(|l| SelectedLine::new(&l, &map, mouse_pos, Some(mouse_pos)))
     {
         map_state.set_selected_line(selected_line);
     }
@@ -216,7 +216,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
     // Handle a mouseup while having a line selected
     if let Some(selected_line) = map_state
         .get_selected_line()
-        .cloned()
+        .copied()
     {
         let canvas_state = map_state.get_canvas_state();
         let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);

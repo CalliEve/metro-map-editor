@@ -37,8 +37,8 @@ pub fn Sidebar() -> impl IntoView {
     let add_line = move |_| {
         map_state.update(|state| {
             let line = SelectedLine::new_line(state.get_mut_map());
-            state.set_selected_line(line)
-        })
+            state.set_selected_line(line);
+        });
     };
 
     let remove_station = move |_| {

@@ -30,7 +30,10 @@ where
     let parse_input = move |ev| {
         let val = event_target_value(&ev);
 
-        on_input(if let Ok(val) = val.parse() { val } else { 1.0 });
+        on_input(
+            val.parse()
+                .unwrap_or(1.0),
+        );
     };
 
     view! {

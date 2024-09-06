@@ -1,12 +1,6 @@
 //! Contains the functions used to decode a [`GraphMlMap`] and all its child
 //! objects into a [`Map`].
 
-use std::hash::{
-    DefaultHasher,
-    Hash,
-    Hasher,
-};
-
 use super::graphml_map::{
     GraphItem,
     GraphMlMap,
@@ -21,30 +15,15 @@ use crate::{
         Map,
         Station,
     },
+    utils::parsing::{
+        normalize_coords,
+        parse_id,
+    },
 };
-
-fn get_id(given: &str) -> u64 {
-    given
-        .parse()
-        .ok()
-        .or_else(|| {
-            given
-                .get(1..)
-                .and_then(|i| {
-                    i.parse()
-                        .ok()
-                })
-        })
-        .unwrap_or_else(|| {
-            let mut hasher = DefaultHasher::new();
-            given.hash(&mut hasher);
-            hasher.finish()
-        })
-}
 
 /// Transforms an edge represented by a [`Key`] to a [`Line`].
 fn edge_to_line(edge: &Key) -> Line {
-    let mut line = Line::new(Some(get_id(&edge.id).into()));
+    let mut line = Line::new(Some(parse_id(&edge.id).into()));
     line.set_name(&edge.name);
     line.set_color((
         edge.r
@@ -92,11 +71,12 @@ fn get_node_coords(node: &Node) -> (f64, f64) {
 
 /// Transforms a [`Node`] into a [`Station`].
 fn node_to_station(node: &Node, state: CanvasState) -> Station {
-    let station_loc = GridNode::from_canvas_pos(get_node_coords(node), state);
+    let coords = get_node_coords(node);
+    let station_loc = GridNode::from_canvas_pos(coords, state);
 
     let mut station = Station::new(
         station_loc,
-        Some(get_id(&node.id).into()),
+        Some(parse_id(&node.id).into()),
     );
     station.set_name(
         &node
@@ -115,59 +95,35 @@ fn node_to_station(node: &Node, state: CanvasState) -> Station {
 /// coordinates being negative or only difference being in the decimals), this
 /// normalizes them so they fit within the canvas as it currently is.
 fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Vec<GraphItem> {
-    let square_size = state.drawn_square_size();
+    let mut coords = items
+        .iter()
+        .filter_map(|item| {
+            if let GraphItem::Node(node) = item {
+                Some(get_node_coords(node))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
 
-    let size_x = f64::from(
-        state
-            .get_size()
-            .1,
-    ) - 4.0 * square_size;
-    let size_y = f64::from(
-        state
-            .get_size()
-            .0,
-    ) - 4.0 * square_size;
+    coords = normalize_coords(coords, state);
 
-    let mut min_x = f64::MAX;
-    let mut max_x = f64::MIN;
-    let mut min_y = f64::MAX;
-    let mut max_y = f64::MIN;
-
-    for item in &items {
+    for (item, (x, y)) in items
+        .iter_mut()
+        .filter(|item| matches!(item, GraphItem::Node(_)))
+        .zip(coords)
+    {
         if let GraphItem::Node(node) = item {
-            let (x, y) = get_node_coords(node);
-            if min_x > x {
-                min_x = x;
-            }
-            if max_x < x {
-                max_x = x;
-            }
-            if min_y > y {
-                min_y = y;
-            }
-            if max_y < y {
-                max_y = y;
-            }
-        }
-    }
-
-    for item in &mut items {
-        if let GraphItem::Node(node) = item {
-            let (x, y) = get_node_coords(node);
-
-            let new_x = (x - min_x) / (max_x - min_x) * size_x + 2.0 * square_size;
-            let new_y = (y - min_y) / (max_y - min_y) * size_y + 2.0 * square_size;
-
             node.data
                 .iter_mut()
                 .find(|d| d.key == "x")
                 .expect("no x coordinate provided")
-                .value = format!("{new_x}");
+                .value = format!("{x}");
             node.data
                 .iter_mut()
                 .find(|d| d.key == "y")
                 .expect("no y coordinate provided")
-                .value = format!("{new_y}");
+                .value = format!("{y}");
         }
     }
 
@@ -214,13 +170,13 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
         if let GraphItem::Edge(e) = item {
             for data in &e.data {
                 let mut line = map
-                    .get_mut_line(get_id(&data.key).into())
+                    .get_mut_line(parse_id(&data.key).into())
                     .expect("edge referenced non-existant line")
                     .clone();
                 line.add_station(
                     &mut map,
-                    get_id(&e.source).into(),
-                    Some(get_id(&e.target).into()),
+                    parse_id(&e.source).into(),
+                    Some(parse_id(&e.target).into()),
                     None,
                 );
                 map.add_line(line);
@@ -501,13 +457,13 @@ mod tests {
 
         let result_line = map
             .get_line(0.into())
-            .expect("no line with id l0");
+            .expect("no line with id 0");
         assert_eq!(result_line.get_color(), (84, 167, 33));
         assert_eq!(result_line.get_name(), "lineU1");
 
         let result_station = map
             .get_station(1.into())
-            .expect("no station with id n1");
+            .expect("no station with id 1");
         assert_eq!(result_station.get_pos(), (30, 28));
         assert_eq!(result_station.get_name(), "test 2");
     }

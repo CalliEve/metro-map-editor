@@ -1,5 +1,7 @@
 //! Contains the [`FileModal`] component.
 
+use std::path::Path;
+
 use ev::MouseEvent;
 use leptos::*;
 use wasm_bindgen::{
@@ -11,27 +13,52 @@ use web_sys::HtmlInputElement;
 
 use crate::components::atoms::Button;
 
+/// The accepted file types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileType {
+    Json,
+    GraphML,
+}
+
 /// Gets the file uploaded to the input element by the user and passes its
 /// contents to the provided `on_submit` callback function.
 fn get_file<S>(input: &HtmlInputElement, on_submit: S)
 where
-    S: Fn(String) + 'static,
+    S: Fn(FileType, String) + 'static,
 {
+    let Some(file) = input
+        .files()
+        .and_then(|l| l.item(0))
+    else {
+        return;
+    };
+
+    let file_name = file.name();
+    let file_ext = Path::new(&file_name).extension();
+
+    let file_type = if file_ext.map_or(false, |ext| {
+        ext.eq_ignore_ascii_case("json")
+    }) {
+        FileType::Json
+    } else if file_ext.map_or(false, |ext| {
+        ext.eq_ignore_ascii_case("graphml")
+    }) {
+        FileType::GraphML
+    } else {
+        return;
+    };
+
     let cb = Closure::new(move |v: JsValue| {
         on_submit(
+            file_type,
             v.as_string()
                 .expect("file contents should be a string"),
         );
     });
 
-    input
-        .files()
-        .and_then(|l| l.item(0))
-        .map(|f| f.text())
-        .iter()
-        .for_each(|p| {
-            let _ = p.then(&cb);
-        });
+    let _ = file
+        .text()
+        .then(&cb);
 
     cb.forget();
 }
@@ -48,7 +75,7 @@ pub fn FileModal<S, C>(
     on_close: C,
 ) -> impl IntoView
 where
-    S: Fn(String) + 'static + Copy,
+    S: Fn(FileType, String) + 'static + Copy,
     C: Fn() + 'static,
 {
     let modal_ref: NodeRef<html::Div> = create_node_ref();

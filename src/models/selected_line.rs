@@ -35,7 +35,7 @@ pub struct SelectedLine {
 impl SelectedLine {
     /// Select a line.
     pub fn new(
-        line: Line,
+        line: &Line,
         map: &Map,
         current_hover: GridNode,
         grabbed_at: Option<GridNode>,

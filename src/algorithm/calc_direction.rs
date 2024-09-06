@@ -1,3 +1,5 @@
+use crate::utils::equal_pixel;
+
 #[derive(Debug, Clone, Copy)]
 pub enum EdgeDirection {
     Up,
@@ -13,19 +15,19 @@ pub enum EdgeDirection {
 
 /// Calculates the direction the edge is moving.
 pub fn calc_direction(from_x: f64, from_y: f64, to_x: f64, to_y: f64) -> EdgeDirection {
-    if from_x == to_x && from_y > to_y {
+    if equal_pixel(from_x, to_x) && from_y > to_y {
         EdgeDirection::Up
     } else if from_x < to_x && from_y > to_y {
         EdgeDirection::DiagUpRight
-    } else if from_x < to_x && from_y == to_y {
+    } else if from_x < to_x && equal_pixel(from_y, to_y) {
         EdgeDirection::Right
     } else if from_x < to_x && from_y < to_y {
         EdgeDirection::DiagDownRight
-    } else if from_x == to_x && from_y < to_y {
+    } else if equal_pixel(from_x, to_x) && from_y < to_y {
         EdgeDirection::Down
     } else if from_x > to_x && from_y < to_y {
         EdgeDirection::DiagDownLeft
-    } else if from_x > to_x && from_y == to_y {
+    } else if from_x > to_x && equal_pixel(from_y, to_y) {
         EdgeDirection::Left
     } else if from_x > to_x && from_y > to_y {
         EdgeDirection::DiagUpLeft

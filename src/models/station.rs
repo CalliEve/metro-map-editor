@@ -122,9 +122,7 @@ impl Station {
     /// position.
     pub fn clone_non_ref(&self) -> Self {
         Self {
-            id: self
-                .id
-                .clone(),
+            id: self.id,
             is_ghost: self.is_ghost,
             pos: Rc::new(Cell::new(self.get_pos())),
             name: self
@@ -143,7 +141,7 @@ impl Station {
 
         let mut width = state.drawn_square_size() / 10.0 + 1.0;
         if width < 2.0 {
-            width = 2.0
+            width = 2.0;
         }
 
         canvas.set_line_width(width);

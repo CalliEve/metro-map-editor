@@ -88,7 +88,7 @@ impl Line {
             .contains(&station)
         {
             self.stations
-                .push(station.clone());
+                .push(station);
         }
 
         if let (Some(before_station), Some(after_station)) = (before, after) {
@@ -174,9 +174,9 @@ impl Line {
             }
         }
 
-        if start.is_some() && end.is_some() {
+        if let (Some(start_station), Some(end_station)) = (start, end) {
             self.add_edge(
-                map.get_edge_id_between(start.unwrap(), end.unwrap()),
+                map.get_edge_id_between(start_station, end_station),
                 map,
             );
         }
@@ -310,7 +310,7 @@ impl Line {
             }
         }
 
-        return (from, to);
+        (from, to)
     }
 
     /// Returns true if the line goes through the given grid node.
@@ -398,7 +398,7 @@ impl Line {
 
             let mut width = state.drawn_square_size() / 10.0;
             if width < 1.0 {
-                width = 1.0
+                width = 1.0;
             }
 
             canvas.set_line_width(width);

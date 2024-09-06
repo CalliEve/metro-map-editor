@@ -8,6 +8,7 @@ use web_sys::CanvasRenderingContext2d;
 
 use super::{
     GridNode,
+    Line,
     LineID,
     Map,
     StationID,
@@ -112,7 +113,7 @@ impl Edge {
             Ok(_) => {},
             Err(pos) => {
                 self.lines
-                    .insert(pos, line)
+                    .insert(pos, line);
             },
         }
     }
@@ -153,6 +154,7 @@ impl Edge {
     }
 
     /// Get the stations bordering the node on this edge if exists
+    #[allow(clippy::unnecessary_wraps)]
     pub fn get_neigboring_stations(
         &self,
         map: &Map,
@@ -215,7 +217,7 @@ impl Edge {
             .lines
             .iter()
             .filter_map(|l| map.get_line(*l))
-            .map(|l| l.get_color())
+            .map(Line::get_color)
             .collect::<Vec<_>>();
 
         let color_count = colors.len();
@@ -225,7 +227,7 @@ impl Edge {
         {
             let mut width = state.drawn_square_size() / 10.0 + 0.5;
             if width < 1.0 {
-                width = 1.0
+                width = 1.0;
             }
 
             canvas.set_line_width(width);

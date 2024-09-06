@@ -1,29 +1,29 @@
-//! This module provides the capability of decoding valid GraphML data into the
+//! This module provides the capability of decoding JSON data into the
 //! [`Map`] struct used in this project.
 
-use quick_xml::de::{
+use serde_json::{
     from_str,
-    DeError,
+    Error as DeError,
 };
 
 mod decode;
-mod graphml_map;
+mod json_models;
 
-use decode::graphml_to_map;
-use graphml_map::GraphMlMap;
+use decode::json_to_map;
+use json_models::JSONMap;
 
 use crate::{
     components::CanvasState,
     models::Map,
 };
 
-/// Decode the given GraphML string into a [`Map`] struct.
+/// Decode the given JSON string into a [`Map`] struct.
 /// This decoder also requires the target grid square size to know which station
 /// goes onto which grid node.
 pub fn decode_map(input: &str, state: CanvasState) -> Result<Map, DeError> {
-    let decoded: GraphMlMap = from_str(input)?;
+    let decoded: JSONMap = from_str(input)?;
 
-    Ok(graphml_to_map(decoded, state))
+    Ok(json_to_map(decoded, state))
 }
 
 #[cfg(test)]
@@ -32,12 +32,12 @@ mod tests {
 
     #[test]
     fn test_decode_map() {
-        let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.graphml")
+        let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.json")
             .expect("test data file does not exist");
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
 
-        let result = decode_map(&test_file_content, canvas).expect("failed to decode graphml");
+        let result = decode_map(&test_file_content, canvas).expect("failed to decode json");
 
         let result_line = result
             .get_line(0.into())

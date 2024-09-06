@@ -5,10 +5,16 @@ use leptos::*;
 use crate::{
     components::{
         atoms::Button,
-        molecules::FileModal,
+        molecules::{
+            FileModal,
+            FileType,
+        },
         MapState,
     },
-    utils::decode_map,
+    utils::{
+        graphml,
+        json,
+    },
 };
 
 /// The navbar at the top of the page.
@@ -19,9 +25,20 @@ pub fn Navbar() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
-    let on_submit = move |s: String| {
+    let on_submit = move |file_type: FileType, s: String| {
         set_show_file_modal(false);
-        map_state.update(|state| state.set_map(decode_map(&s, state.get_canvas_state()).unwrap()));
+
+        map_state.update(|state| {
+            state.set_map(match file_type {
+                FileType::Json => {
+                    json::decode_map(&s, state.get_canvas_state()).expect("to parse the JSON file")
+                },
+                FileType::GraphML => {
+                    graphml::decode_map(&s, state.get_canvas_state())
+                        .expect("to parse the GraphML file")
+                },
+            });
+        });
     };
 
     view! {
