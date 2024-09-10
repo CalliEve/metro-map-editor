@@ -208,10 +208,10 @@ impl Edge {
     pub fn draw(&self, map: &Map, canvas: &CanvasRenderingContext2d, state: CanvasState) {
         let from = map
             .get_station(self.get_from())
-            .expect("invalid station id when drawing");
+            .expect("invalid from station id when drawing");
         let to = map
             .get_station(self.get_to())
-            .expect("invalid station id when drawing");
+            .expect("invalid to station id when drawing");
 
         let colors = self
             .lines

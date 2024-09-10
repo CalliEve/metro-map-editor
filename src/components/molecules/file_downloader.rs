@@ -18,6 +18,7 @@ use crate::{
         atoms::Button,
         MapState,
     },
+    unwrap_or_return,
     utils::json::encode_map,
 };
 
@@ -28,7 +29,7 @@ pub fn FileDownloader() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
     let download_map = move |file_type: FileType| {
-        let encoded = match file_type {
+        let encoded = unwrap_or_return!(match file_type {
             FileType::Json => {
                 let state = map_state.get_untracked();
                 encode_map(
@@ -37,18 +38,18 @@ pub fn FileDownloader() -> impl IntoView {
                 )
             },
             FileType::GraphML => return,
-        };
+        });
         let options = BlobPropertyBag::new();
         options.set_type(file_type.to_mime_type());
 
         let str_sequence = std::iter::once(JsValue::from_str(&encoded)).collect::<Array>();
-        let blob = Blob::new_with_str_sequence_and_options(&str_sequence, &options)
-            .expect("to create a blob");
-        let url = Url::create_object_url_with_blob(&blob).expect("to create a URL");
+        let blob = unwrap_or_return!(Blob::new_with_str_sequence_and_options(
+            &str_sequence,
+            &options
+        ));
+        let url = unwrap_or_return!(Url::create_object_url_with_blob(&blob));
 
-        let elem = document()
-            .create_element("a")
-            .expect("to create an anchor element")
+        let elem = unwrap_or_return!(document().create_element("a"))
             .dyn_into::<web_sys::HtmlAnchorElement>()
             .expect("to convert the element to an anchor element");
 
@@ -62,7 +63,7 @@ pub fn FileDownloader() -> impl IntoView {
         ));
         elem.click();
 
-        Url::revoke_object_url(&url).expect("to revoke the URL");
+        unwrap_or_return!(Url::revoke_object_url(&url));
     };
 
     view! {

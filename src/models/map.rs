@@ -11,7 +11,11 @@ use super::{
     Line,
     Station,
 };
-use crate::components::CanvasState;
+use crate::{
+    components::CanvasState,
+    unwrap_or_return,
+    Error,
+};
 
 /// Represents the metro map as a whole with all its lines and stations.
 #[derive(Clone, Debug, Default)]
@@ -179,10 +183,10 @@ impl Map {
 
     /// Remove a line from the map.
     pub fn remove_line(&mut self, id: LineID) {
-        let line = self
+        let line = unwrap_or_return!(self
             .lines
             .remove(&id)
-            .expect("line to remove not found");
+            .ok_or(Error::other("line to remove not found")));
 
         for edge_id in line.get_edges() {
             if let Some(edge) = self.get_mut_edge(*edge_id) {

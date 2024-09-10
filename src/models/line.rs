@@ -163,7 +163,7 @@ impl Line {
         for edge_id in edges {
             let edge = map
                 .get_edge(edge_id)
-                .expect("removing invalid edge id from line");
+                .expect("invalid edge id in line");
 
             if edge.get_to() == station {
                 start = Some(edge.get_from());

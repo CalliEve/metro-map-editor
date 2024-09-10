@@ -48,7 +48,7 @@ fn encode_line(line: &Line) -> JSONLine {
     let color = if line.get_color() == (0, 0, 0) {
         None
     } else {
-        Some(line.get_color())
+        Some(line.get_color()).map(|(r, g, b)| format!("#{r:02X}{g:02X}{b:02X}"))
     };
 
     let name = if line

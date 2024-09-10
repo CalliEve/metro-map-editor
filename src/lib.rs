@@ -33,3 +33,4 @@ pub use components::{
     Home,
     StateProvider,
 };
+pub use utils::Error;

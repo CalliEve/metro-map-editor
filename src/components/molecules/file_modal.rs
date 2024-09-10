@@ -11,7 +11,11 @@ use wasm_bindgen::{
 };
 use web_sys::HtmlInputElement;
 
-use crate::components::atoms::Button;
+use crate::{
+    components::atoms::Button,
+    unwrap_or_return,
+    Error,
+};
 
 /// The accepted file types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,8 +65,11 @@ where
     let cb = Closure::new(move |v: JsValue| {
         on_submit(
             file_type,
-            v.as_string()
-                .expect("file contents should be a string"),
+            unwrap_or_return!(v
+                .as_string()
+                .ok_or(Error::other(
+                    "file contents should be a string"
+                ))),
         );
     });
 

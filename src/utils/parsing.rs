@@ -6,6 +6,7 @@ use std::hash::{
     Hasher,
 };
 
+use super::Result;
 use crate::components::CanvasState;
 
 /// Saved data sometimes has maps/stations located in weird places (like all x
@@ -74,6 +75,13 @@ pub(super) fn parse_id(given: &str) -> u64 {
             given.hash(&mut hasher);
             hasher.finish()
         })
+}
+
+/// Parses the given string into a rgb color.
+pub fn parse_color(given: &str) -> Result<(u8, u8, u8)> {
+    let color = csscolorparser::parse(given)?.to_rgba8();
+
+    Ok((color[0], color[1], color[2]))
 }
 
 #[cfg(test)]

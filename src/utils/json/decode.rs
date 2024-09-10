@@ -14,9 +14,14 @@ use crate::{
         Map,
         Station,
     },
-    utils::parsing::{
-        normalize_coords,
-        parse_id,
+    utils::{
+        parsing::{
+            normalize_coords,
+            parse_color,
+            parse_id,
+        },
+        Error,
+        Result,
     },
 };
 
@@ -43,7 +48,7 @@ fn normalize_stations(mut stations: Vec<JSONStation>, state: CanvasState) -> Vec
 }
 
 /// Translates the [`JSONMap`] to a [`Map`]
-pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Map {
+pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
     let mut map = Map::new();
 
     graph.stations = normalize_stations(graph.stations, state);
@@ -77,7 +82,7 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Map {
         }
 
         if let Some(color) = json_line.color {
-            line.set_color(color);
+            line.set_color(parse_color(&color)?);
         }
 
         map.add_line(line);
@@ -100,7 +105,9 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Map {
         for line_id in &json_edge.lines {
             let mut line = map
                 .get_line(parse_id(line_id).into())
-                .expect("edge has invalid line id")
+                .ok_or(Error::decode_error(format!(
+                    "edge references non-existent line {line_id}",
+                )))?
                 .clone();
 
             line.add_edge(edge_id, &mut map);
@@ -108,7 +115,7 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Map {
         }
     }
 
-    map
+    Ok(map)
 }
 
 #[cfg(test)]
@@ -205,7 +212,7 @@ mod tests {
                 lines: vec![JSONLine {
                     id: "0".to_string(),
                     name: Some("lineU1".to_string()),
-                    color: Some((84, 167, 33)),
+                    color: Some("rgb(84, 167, 33)".to_string()),
                 }],
                 edges: vec![
                     JSONEdge {
@@ -221,7 +228,8 @@ mod tests {
                 ],
             },
             canvas,
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             result

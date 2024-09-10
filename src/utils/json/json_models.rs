@@ -18,7 +18,7 @@ pub struct JSONEdge {
 pub struct JSONLine {
     pub id: String,
     pub name: Option<String>,
-    pub color: Option<(u8, u8, u8)>,
+    pub color: Option<String>,
 }
 
 /// Represents a station for the JSON file.

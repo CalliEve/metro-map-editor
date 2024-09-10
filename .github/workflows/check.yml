@@ -22,6 +22,8 @@ jobs:
         run: trunk build
       - name: Test
         run: cargo test
+      - name: Bench
+        run: cargo bench
       - name: Lint
         run: |
           cargo clippy -- -D warnings

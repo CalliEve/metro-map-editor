@@ -12,6 +12,7 @@ use crate::{
         },
         MapState,
     },
+    unwrap_or_return,
     utils::{
         graphml,
         json,
@@ -30,15 +31,16 @@ pub fn Navbar() -> impl IntoView {
         set_show_file_modal(false);
 
         map_state.update(|state| {
-            state.set_map(match file_type {
+            let map = unwrap_or_return!(match file_type {
                 FileType::Json => {
-                    json::decode_map(&s, state.get_canvas_state()).expect("to parse the JSON file")
+                    json::decode_map(&s, state.get_canvas_state())
                 },
                 FileType::GraphML => {
                     graphml::decode_map(&s, state.get_canvas_state())
-                        .expect("to parse the GraphML file")
                 },
             });
+
+            state.set_map(map);
         });
     };
 

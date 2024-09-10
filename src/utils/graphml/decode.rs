@@ -1,6 +1,8 @@
 //! Contains the functions used to decode a [`GraphMlMap`] and all its child
 //! objects into a [`Map`].
 
+use std::num::ParseIntError;
+
 use super::graphml_map::{
     GraphItem,
     GraphMlMap,
@@ -15,63 +17,92 @@ use crate::{
         Map,
         Station,
     },
-    utils::parsing::{
-        normalize_coords,
-        parse_id,
+    utils::{
+        parsing::{
+            normalize_coords,
+            parse_id,
+        },
+        Error,
+        Result,
     },
 };
 
 /// Transforms an edge represented by a [`Key`] to a [`Line`].
-fn edge_to_line(edge: &Key) -> Line {
+fn edge_to_line(edge: &Key) -> Result<Line> {
     let mut line = Line::new(Some(parse_id(&edge.id).into()));
     line.set_name(&edge.name);
     line.set_color((
         edge.r
             .as_ref()
-            .map_or(0, |r| {
-                r.parse()
-                    .expect("invalid r color value")
-            }),
+            .ok_or(Error::decode_error(
+                "missing r color value",
+            ))
+            .and_then(|r| {
+                r.parse::<u8>()
+                    .map_err(|e: ParseIntError| {
+                        Error::decode_error(format!(
+                            "Invalid value for r color value: {e}"
+                        ))
+                    })
+            })?,
         edge.g
             .as_ref()
-            .map_or(0, |g| {
-                g.parse()
-                    .expect("invalid g color value")
-            }),
+            .ok_or(Error::decode_error(
+                "missing g color value",
+            ))
+            .and_then(|r| {
+                r.parse::<u8>()
+                    .map_err(|e: ParseIntError| {
+                        Error::decode_error(format!(
+                            "Invalid value for g color value: {e}"
+                        ))
+                    })
+            })?,
         edge.b
             .as_ref()
-            .map_or(0, |b| {
-                b.parse()
-                    .expect("invalid b color value")
-            }),
+            .ok_or(Error::decode_error(
+                "missing b color value",
+            ))
+            .and_then(|r| {
+                r.parse::<u8>()
+                    .map_err(|e: ParseIntError| {
+                        Error::decode_error(format!(
+                            "Invalid value for b color value: {e}"
+                        ))
+                    })
+            })?,
     ));
 
-    line
+    Ok(line)
 }
 
 /// Get the coordinates of a node from its data.
-fn get_node_coords(node: &Node) -> (f64, f64) {
-    (
+fn get_node_coords(node: &Node) -> Result<(f64, f64)> {
+    Ok((
         node.data
             .iter()
             .find(|d| d.key == "x")
-            .expect("no x coordinate provided")
+            .ok_or(Error::decode_error(
+                "no x coordinate provided",
+            ))?
             .value
             .parse()
-            .expect("no valid x coordinate provided"),
+            .map_err(|_| Error::decode_error("x coordinate is invalid"))?,
         node.data
             .iter()
             .find(|d| d.key == "y")
-            .expect("no y coordinate provided")
+            .ok_or(Error::decode_error(
+                "no x coordinate provided",
+            ))?
             .value
             .parse()
-            .expect("no valid y coordinate provided"),
-    )
+            .map_err(|_| Error::decode_error("y coordinate is invalid"))?,
+    ))
 }
 
 /// Transforms a [`Node`] into a [`Station`].
-fn node_to_station(node: &Node, state: CanvasState) -> Station {
-    let coords = get_node_coords(node);
+fn node_to_station(node: &Node, state: CanvasState) -> Result<Station> {
+    let coords = get_node_coords(node)?;
     let station_loc = GridNode::from_canvas_pos(coords, state);
 
     let mut station = Station::new(
@@ -83,18 +114,20 @@ fn node_to_station(node: &Node, state: CanvasState) -> Station {
             .data
             .iter()
             .find(|d| d.key == "label")
-            .expect("no station name provided")
+            .ok_or(Error::decode_error(
+                "no station name provided",
+            ))?
             .value
             .clone(),
     );
 
-    station
+    Ok(station)
 }
 
 /// GraphML sometimes has maps/stations located in weird places (like all x
 /// coordinates being negative or only difference being in the decimals), this
 /// normalizes them so they fit within the canvas as it currently is.
-fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Vec<GraphItem> {
+fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Result<Vec<GraphItem>> {
     let mut coords = items
         .iter()
         .filter_map(|item| {
@@ -104,7 +137,7 @@ fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Vec<Grap
                 None
             }
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
 
     coords = normalize_coords(coords, state);
 
@@ -117,28 +150,32 @@ fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Vec<Grap
             node.data
                 .iter_mut()
                 .find(|d| d.key == "x")
-                .expect("no x coordinate provided")
+                .ok_or(Error::decode_error(
+                    "no x coordinate provided",
+                ))?
                 .value = format!("{x}");
             node.data
                 .iter_mut()
                 .find(|d| d.key == "y")
-                .expect("no y coordinate provided")
+                .ok_or(Error::decode_error(
+                    "no y coordinate provided",
+                ))?
                 .value = format!("{y}");
         }
     }
 
-    items
+    Ok(items)
 }
 
 /// Translates the [`GraphMlMap`] to a [`Map`]
-pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
+pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Result<Map> {
     state.set_zoom_factor(1.0);
     let mut map = Map::new();
 
     // First add a Line for every edge defined
     for key in &graph.key {
         if key.for_item == "edge" {
-            map.add_line(edge_to_line(key));
+            map.add_line(edge_to_line(key)?);
         }
     }
 
@@ -150,7 +187,7 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
             .graph
             .content,
         state,
-    );
+    )?;
 
     // Load in all the stations
     for item in &graph
@@ -158,7 +195,7 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
         .content
     {
         if let GraphItem::Node(n) = item {
-            map.add_station(node_to_station(n, state));
+            map.add_station(node_to_station(n, state)?);
         }
     }
 
@@ -171,7 +208,10 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
             for data in &e.data {
                 let mut line = map
                     .get_mut_line(parse_id(&data.key).into())
-                    .expect("edge referenced non-existant line")
+                    .ok_or(Error::decode_error(format!(
+                        "edge {} referenced non-existant line {}",
+                        e.id, data.key
+                    )))?
                     .clone();
                 line.add_station(
                     &mut map,
@@ -184,7 +224,7 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Map {
         }
     }
 
-    map
+    Ok(map)
 }
 
 #[cfg(test)]
@@ -207,7 +247,7 @@ mod tests {
             name: "test line".to_owned(),
         };
 
-        let result = edge_to_line(&input);
+        let result = edge_to_line(&input).unwrap();
 
         let mut example = Line::new(Some(2.into()));
         example.set_color((30, 0, 235));
@@ -240,7 +280,7 @@ mod tests {
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
 
-        let result = node_to_station(&node, canvas);
+        let result = node_to_station(&node, canvas).unwrap();
 
         let mut example = Station::new((24, 31).into(), Some(2.into()));
         example.set_name(&"test station");
@@ -326,16 +366,25 @@ mod tests {
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
 
-        let result = normalize_stations(items, canvas);
+        let result = normalize_stations(items, canvas).unwrap();
 
         if let GraphItem::Node(node) = &result[0] {
-            assert_eq!(get_node_coords(&node), (10.0, 290.0));
+            assert_eq!(
+                get_node_coords(&node),
+                Ok((10.0, 290.0))
+            );
         }
         if let GraphItem::Node(node) = &result[1] {
-            assert_eq!(get_node_coords(&node), (150.0, 66.0));
+            assert_eq!(
+                get_node_coords(&node),
+                Ok((150.0, 66.0))
+            );
         }
         if let GraphItem::Node(node) = &result[2] {
-            assert_eq!(get_node_coords(&node), (290.0, 10.0));
+            assert_eq!(
+                get_node_coords(&node),
+                Ok((290.0, 10.0))
+            );
         }
     }
 
@@ -453,7 +502,7 @@ mod tests {
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
 
-        let map = graphml_to_map(graphml, canvas);
+        let map = graphml_to_map(graphml, canvas).unwrap();
 
         let result_line = map
             .get_line(0.into())
