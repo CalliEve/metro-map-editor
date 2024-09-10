@@ -10,7 +10,7 @@ use crate::models::GridNode;
 struct AStarState {
     cost: f64,
     node: GridNode,
-    path_length: i32,
+    path_length: f64,
     parent: Option<Box<AStarState>>,
 }
 
@@ -46,7 +46,7 @@ impl Ord for AStarState {
             .then_with(|| {
                 other
                     .path_length
-                    .cmp(&self.path_length)
+                    .total_cmp(&self.path_length)
             })
     }
 }
@@ -76,7 +76,7 @@ pub fn run_a_star(from: GridNode, to: GridNode) -> Vec<GridNode> {
 
     let init = AStarState {
         cost: 0.0,
-        path_length: 0,
+        path_length: 0.0,
         node: from,
         parent: None,
     };
@@ -99,8 +99,8 @@ pub fn run_a_star(from: GridNode, to: GridNode) -> Vec<GridNode> {
         last = current.clone();
         for neighbor in node.get_neighbors() {
             let next = AStarState {
-                path_length: path_length + 1,
-                cost: f64::from(path_length) + neighbor.diagonal_distance_to(to),
+                path_length: path_length + 1.0,
+                cost: path_length + neighbor.diagonal_distance_to(to),
                 node: neighbor,
                 parent: Some(Box::new(current.clone())),
             };
@@ -119,21 +119,21 @@ mod tests {
     #[test]
     fn test_to_path() {
         let states = AStarState {
-            path_length: 3,
+            path_length: 3.0,
             cost: 0.0,
             node: (3, 3).into(),
             parent: Some(Box::new(AStarState {
                 cost: 0.0,
                 node: (2, 2).into(),
-                path_length: 2,
+                path_length: 2.0,
                 parent: Some(Box::new(AStarState {
                     cost: 0.0,
                     node: (1, 1).into(),
-                    path_length: 1,
+                    path_length: 1.0,
                     parent: Some(Box::new(AStarState {
                         cost: 0.0,
                         node: (0, 0).into(),
-                        path_length: 0,
+                        path_length: 0.0,
                         parent: None,
                     })),
                 })),
