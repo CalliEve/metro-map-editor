@@ -17,6 +17,12 @@
 #![allow(clippy::module_name_repetitions)]
 // having a lot of parameters in a function is idiomatic for leptos.
 #![allow(clippy::fn_params_excessive_bools)]
+// There is not need for must_use or panics docs on functions as this is lib is only for internal
+// use.
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::return_self_not_must_use)]
 
 pub mod algorithm;
 mod components;
