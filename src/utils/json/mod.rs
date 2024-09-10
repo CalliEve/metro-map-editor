@@ -1,5 +1,5 @@
 //! This module provides the capability of decoding JSON data into the
-//! [`Map`] struct used in this project.
+//! [`Map`] struct used in this project and vice versa.
 
 use serde_json::{
     from_str,
@@ -7,9 +7,11 @@ use serde_json::{
 };
 
 mod decode;
+mod encode;
 mod json_models;
 
 use decode::json_to_map;
+use encode::map_to_json;
 use json_models::JSONMap;
 
 use crate::{
@@ -24,6 +26,13 @@ pub fn decode_map(input: &str, state: CanvasState) -> Result<Map, DeError> {
     let decoded: JSONMap = from_str(input)?;
 
     Ok(json_to_map(decoded, state))
+}
+
+/// Encode the given [`Map`] into a JSON string.
+pub fn encode_map(map: &Map, state: CanvasState) -> String {
+    let json_map = map_to_json(map, state);
+
+    serde_json::to_string(&json_map).expect("failed to encode map to json")
 }
 
 #[cfg(test)]
@@ -48,7 +57,26 @@ mod tests {
         let result_station = result
             .get_station(1.into())
             .expect("no station with id 1");
-        assert_eq!(result_station.get_pos(), (30, 28));
-        assert_eq!(result_station.get_name(), "test 2");
+        assert_eq!(result_station.get_pos(), (30, 58));
+        assert_eq!(result_station.get_name(), "test-2");
+    }
+
+    #[test]
+    fn test_encode_map() {
+        let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.json")
+            .expect("test data file does not exist");
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
+        canvas.set_size((100, 100));
+
+        let map = decode_map(&test_file_content, canvas).expect("failed to decode json");
+        let result = encode_map(&map, canvas);
+
+        assert_eq!(
+            result,
+            test_file_content
+                .replace("\n", "")
+                .replace(" ", "")
+        );
     }
 }

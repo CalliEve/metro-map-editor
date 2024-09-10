@@ -31,6 +31,12 @@ impl From<u64> for LineID {
     }
 }
 
+impl From<LineID> for u64 {
+    fn from(value: LineID) -> Self {
+        value.0
+    }
+}
+
 /// Represents a metro line, including its stations, name and color.
 #[derive(Clone, Debug)]
 pub struct Line {

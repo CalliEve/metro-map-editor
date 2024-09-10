@@ -20,6 +20,16 @@ pub enum FileType {
     GraphML,
 }
 
+impl FileType {
+    /// Returns the MIME type of the file type.
+    pub fn to_mime_type(self) -> &'static str {
+        match self {
+            FileType::Json => "application/json",
+            FileType::GraphML => "application/graphml+xml",
+        }
+    }
+}
+
 /// Gets the file uploaded to the input element by the user and passes its
 /// contents to the provided `on_submit` callback function.
 fn get_file<S>(input: &HtmlInputElement, on_submit: S)

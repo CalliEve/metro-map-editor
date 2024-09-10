@@ -6,6 +6,7 @@ use crate::{
     components::{
         atoms::Button,
         molecules::{
+            FileDownloader,
             FileModal,
             FileType,
         },
@@ -47,7 +48,10 @@ pub fn Navbar() -> impl IntoView {
         <div class="ms-2">
           <a class="text-2xl font-extrabold text-black dark:text-white" href="#">Metro Map Editor</a>
         </div>
-        <Button text="Upload file" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
+        <div class="flex flex-row items-end space-x-3" >
+            <FileDownloader/>
+            <Button text="Upload file" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
+        </div>
       </div>
     </nav>
     <FileModal

@@ -1,3 +1,6 @@
+//! Contains the functions used to decode a [`JSONMap`] and all its child
+//! objects into a [`Map`].
+
 use super::json_models::{
     JSONMap,
     JSONStation,
