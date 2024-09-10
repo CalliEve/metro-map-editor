@@ -1,13 +1,13 @@
 use web_sys::CanvasRenderingContext2d;
 
-use super::{
-    calc_direction::{
-        calc_direction,
-        EdgeDirection,
-    },
-    closest_corner::calc_closest_corner,
-};
 use crate::{
+    algorithm::{
+        calc_direction::{
+            calc_direction,
+            EdgeDirection,
+        },
+        closest_corner::calc_closest_corner,
+    },
     components::CanvasState,
     models::GridNode,
 };

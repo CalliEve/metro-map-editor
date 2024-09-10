@@ -15,7 +15,7 @@ use super::{
 };
 use crate::{
     algorithm::{
-        draw_edge,
+        drawing::draw_edge,
         run_a_star,
     },
     components::CanvasState,

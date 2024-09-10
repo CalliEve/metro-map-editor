@@ -7,7 +7,7 @@ use leptos::{
 
 use super::CanvasState;
 use crate::{
-    algorithm::redraw_canvas,
+    algorithm::drawing::redraw_canvas,
     models::{
         Map,
         SelectedLine,
@@ -128,6 +128,7 @@ impl MapState {
     }
 
     /// A getter method for the state of the canvas.
+    #[inline]
     pub fn get_canvas_state(&self) -> CanvasState {
         self.canvas
     }
