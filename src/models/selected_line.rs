@@ -141,11 +141,11 @@ impl SelectedLine {
                 .get_station(before)
                 .expect("invalid station id");
             draw_edge(
-                before_station.get_pos(),
                 self.get_current_hover(),
+                before_station.get_pos(),
                 &run_a_star(
-                    before_station.get_pos(),
                     self.get_current_hover(),
+                    before_station.get_pos(),
                 ),
                 canvas,
                 state,
@@ -157,11 +157,11 @@ impl SelectedLine {
                 .get_station(after)
                 .expect("invalid station id");
             draw_edge(
-                self.get_current_hover(),
                 after_station.get_pos(),
+                self.get_current_hover(),
                 &run_a_star(
-                    self.get_current_hover(),
                     after_station.get_pos(),
+                    self.get_current_hover(),
                 ),
                 canvas,
                 state,
