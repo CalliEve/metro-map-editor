@@ -1,20 +1,18 @@
 //! Contains the [`Station`] struct and all its methods.
 
 use std::{
-    cell::Cell,
     f64,
-    rc::Rc,
     sync::atomic::{
         AtomicU64,
         Ordering,
     },
 };
 
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
-
 use super::GridNode;
-use crate::components::CanvasState;
+use crate::{
+    algorithm::drawing::CanvasContext,
+    components::CanvasState,
+};
 
 /// Next generated sequential identifier for a new station.
 static STATION_ID: AtomicU64 = AtomicU64::new(1);
@@ -40,7 +38,7 @@ impl From<StationID> for u64 {
 #[derive(Clone, Debug)]
 pub struct Station {
     /// Position of the station
-    pos: Rc<Cell<GridNode>>,
+    pos: GridNode,
     /// ID of the station
     id: StationID,
     /// If when drawn the station should be greyed out (like when moving)
@@ -51,7 +49,7 @@ pub struct Station {
 
 impl Station {
     /// Create a new [`Station`] at the given grid coordinate.
-    /// If id is None, the next sequential id from [`STATION_ID`] is used.
+    /// If id is None, the next sequential id is used.
     pub fn new(pos: GridNode, id: Option<StationID>) -> Self {
         if let Some(new_id) = id {
             if STATION_ID.load(Ordering::SeqCst) <= new_id.into() {
@@ -60,7 +58,7 @@ impl Station {
         }
 
         Self {
-            pos: Rc::new(Cell::new(pos)),
+            pos,
             id: id.unwrap_or_else(|| {
                 STATION_ID
                     .fetch_add(1, Ordering::SeqCst)
@@ -80,7 +78,6 @@ impl Station {
     /// A getter for the grid position.
     pub fn get_pos(&self) -> GridNode {
         self.pos
-            .get()
     }
 
     /// A setter for if the stations should be greyed out.
@@ -90,8 +87,7 @@ impl Station {
 
     /// A setter for the grid position of the station.
     pub fn set_pos(&mut self, pos: GridNode) {
-        self.pos
-            .set(pos);
+        self.pos = pos;
     }
 
     /// The location of the station on the canvas, given the size of a grid
@@ -118,21 +114,8 @@ impl Station {
             .contains(&node)
     }
 
-    /// Clone the [`Station`] without keeping a reference to the coordinate
-    /// position.
-    pub fn clone_non_ref(&self) -> Self {
-        Self {
-            id: self.id,
-            is_ghost: self.is_ghost,
-            pos: Rc::new(Cell::new(self.get_pos())),
-            name: self
-                .name
-                .clone(),
-        }
-    }
-
     /// Draw the station to the given canvas.
-    pub fn draw(&self, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState) {
         if !state.is_on_canvas(self.get_pos()) {
             return;
         }
@@ -150,7 +133,7 @@ impl Station {
         } else {
             canvas.set_global_alpha(1.0);
         }
-        canvas.set_stroke_style(&JsValue::from_str("black"));
+        canvas.set_stroke_style("black");
         canvas.begin_path();
         canvas
             .arc(
@@ -180,33 +163,21 @@ mod tests {
         let before_id = STATION_ID.load(Ordering::Relaxed);
 
         let first_station = Station::new((2, 3).into(), None);
-        let second_station = Station::new((2, 3).into(), Some(StationID(3)));
+        let second_station = Station::new(
+            (2, 3).into(),
+            Some(StationID(before_id + 5)),
+        );
 
         let after_id = STATION_ID.load(Ordering::Acquire);
 
-        assert_eq!(4, after_id);
+        assert_eq!(before_id + 6, after_id);
         assert_eq!(
             first_station.get_id(),
             StationID(before_id)
         );
-        assert_eq!(second_station.get_id(), StationID(3));
-    }
-
-    #[test]
-    fn test_clone_non_ref() {
-        let before_pos = GridNode::from((16, 20));
-        let before_station = Station::new(before_pos, None);
-
-        let mut after_station = before_station.clone_non_ref();
-
-        let after_pos = GridNode::from((20, 30));
-        after_station.set_pos(after_pos);
-
-        assert_eq!(before_station.get_pos(), before_pos);
-        assert_eq!(after_station.get_pos(), after_pos);
         assert_eq!(
-            before_station.get_id(),
-            after_station.get_id()
+            second_station.get_id(),
+            StationID(before_id + 5)
         );
     }
 }

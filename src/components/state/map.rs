@@ -4,6 +4,7 @@ use leptos::{
     html::Canvas,
     *,
 };
+use web_sys::HtmlCanvasElement;
 
 use super::CanvasState;
 use crate::{
@@ -22,14 +23,15 @@ pub enum RemoveType {
     Line,
 }
 
-/// Holds all the state of the current map and canvas.
+/// Holds all the state of the current [`Map`], canvas and any potentially
+/// selected objects.
 #[derive(Clone, Debug)]
 pub struct MapState {
     /// The current state of the map.
     map: Map,
-    /// The currently selected [`Station`].
+    /// The currently selected [`crate::models::Station`].
     selected_station: Option<SelectedStation>,
-    /// The currently selected [`Line`].
+    /// The currently selected [`crate::models::Line`]`.
     selected_line: Option<SelectedLine>,
     /// The type of remove operation that is currently selected.
     selected_remove: Option<RemoveType>,
@@ -146,11 +148,12 @@ impl MapState {
         redraw_canvas(
             &canvas_ref
                 .get()
-                .expect("should be loaded now"),
+                .expect("should be loaded now") as &HtmlCanvasElement,
             self,
         );
     }
 
+    /// Run the local search algorithm on the map.
     pub fn run_local_search(&mut self) {
         let map_clone = self
             .map

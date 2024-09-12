@@ -116,4 +116,40 @@ mod tests {
             14402189752926126668.0
         );
     }
+
+    #[test]
+    fn test_parse_color() {
+        assert_eq!(
+            parse_color("rgb(255, 0, 0)").unwrap(),
+            (255, 0, 0)
+        );
+        assert_eq!(
+            parse_color("rgb(0, 40, 0)").unwrap(),
+            (0, 40, 0)
+        );
+        assert_eq!(
+            parse_color("rgb(0, 0, 255)").unwrap(),
+            (0, 0, 255)
+        );
+        assert_eq!(
+            parse_color("rgb(255, 255, 255)").unwrap(),
+            (255, 255, 255)
+        );
+        assert_eq!(
+            parse_color("rgb(0, 0, 0)").unwrap(),
+            (0, 0, 0)
+        );
+        assert_eq!(
+            parse_color("#ff0000").unwrap(),
+            (255, 0, 0)
+        );
+        assert_eq!(
+            parse_color("#00ff00").unwrap(),
+            (0, 255, 0)
+        );
+        assert_eq!(
+            parse_color("#0000FF").unwrap(),
+            (0, 0, 255)
+        );
+    }
 }

@@ -1,8 +1,5 @@
 //! Contains the [`SelectedLine`] struct and all its methods.
 
-use wasm_bindgen::JsValue;
-use web_sys::js_sys::Uint8Array;
-
 use super::{
     GridNode,
     Line,
@@ -12,7 +9,10 @@ use super::{
 };
 use crate::{
     algorithm::{
-        drawing::draw_edge,
+        drawing::{
+            draw_edge,
+            CanvasContext,
+        },
         run_a_star,
     },
     components::CanvasState,
@@ -61,7 +61,7 @@ impl SelectedLine {
 
         Self {
             line: line_id,
-            current_hover: GridNode::from((-1, -1)),
+            current_hover: GridNode::from((i32::MIN, i32::MIN)),
             before_after: (None, None),
             grabbed_at: None,
         }
@@ -109,7 +109,7 @@ impl SelectedLine {
     }
 
     /// Draw the selected line to the given canvas.
-    pub fn draw(&self, map: &Map, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         let (hover_x, hover_y) = self
             .get_current_hover()
             .to_canvas_pos(state);
@@ -119,7 +119,7 @@ impl SelectedLine {
             .expect("drawing invalid line id");
 
         canvas.set_line_width(3.0);
-        canvas.set_stroke_style(&JsValue::from_str(&format!(
+        canvas.set_stroke_style(&format!(
             "rgb({} {} {})",
             line.get_color()
                 .0,
@@ -127,7 +127,7 @@ impl SelectedLine {
                 .1,
             line.get_color()
                 .2
-        )));
+        ));
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
 
@@ -188,7 +188,7 @@ impl SelectedLine {
 
         if let Some(origin) = self.get_grabbed_at() {
             canvas
-                .set_line_dash(&Uint8Array::from([5u8, 5].as_ref()))
+                .set_line_dash(&[5u8, 5])
                 .unwrap();
 
             let (origin_x, origin_y) = origin.to_canvas_pos(state);

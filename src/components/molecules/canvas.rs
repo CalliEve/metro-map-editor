@@ -25,7 +25,6 @@ use crate::{
         GridNode,
         SelectedLine,
         SelectedStation,
-        Station,
     },
 };
 
@@ -178,7 +177,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     if let Some(mut selected_station) = map
         .station_at_node(mouse_pos)
         .and_then(|s| map.get_station(s))
-        .map(Station::clone_non_ref)
+        .cloned()
         .map(SelectedStation::new)
     {
         for line in map.get_lines() {

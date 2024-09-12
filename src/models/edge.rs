@@ -3,9 +3,6 @@ use std::sync::atomic::{
     Ordering as AtomicOrdering,
 };
 
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
-
 use super::{
     GridNode,
     Line,
@@ -15,7 +12,10 @@ use super::{
 };
 use crate::{
     algorithm::{
-        drawing::draw_edge,
+        drawing::{
+            draw_edge,
+            CanvasContext,
+        },
         run_a_star,
     },
     components::CanvasState,
@@ -205,7 +205,8 @@ impl Edge {
         self.nodes = run_a_star(from.get_pos(), to.get_pos());
     }
 
-    pub fn draw(&self, map: &Map, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+    /// Draw the edge to the given canvas.
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         let from = map
             .get_station(self.get_from())
             .expect("invalid from station id when drawing");
@@ -232,10 +233,11 @@ impl Edge {
 
             canvas.set_line_width(width);
             canvas.set_global_alpha(1.0);
-            canvas.set_stroke_style(&JsValue::from_str(&format!(
+
+            canvas.set_stroke_style(&format!(
                 "rgb({} {} {})",
                 color.0, color.1, color.2,
-            )));
+            ));
             canvas.begin_path();
 
             let color_offset = if color_count == 1 {
@@ -255,5 +257,60 @@ impl Edge {
 
             canvas.stroke();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Station;
+
+    #[test]
+    fn test_draw() {
+        let mut map = Map::new();
+        let canvas = CanvasContext::new();
+        let mut state = CanvasState::new();
+        state.set_square_size(5);
+        state.set_size((100, 100));
+        assert_eq!(state.drawn_square_size(), 5.0);
+
+        let mut line1 = Line::new(None);
+        line1.set_color((255, 1, 1));
+        let mut line2 = Line::new(None);
+        line2.set_color((1, 255, 1));
+
+        let from = Station::new((0, 0).into(), None);
+        let to = Station::new((3, 3).into(), None);
+        let mut edge = Edge::new(from.get_id(), to.get_id(), None);
+
+        map.add_station(from);
+        map.add_station(to);
+
+        edge.set_lines(vec![line1.get_id(), line2.get_id()]);
+        map.add_line(line1);
+        map.add_line(line2);
+
+        edge.calculate_nodes(&map);
+        edge.draw(&map, &canvas, state);
+
+        assert_eq!(
+            canvas.get_record("move_to"),
+            Some(vec![
+                "1.8,0.8".to_owned(),
+                "0.8,1.8".to_owned(),
+            ])
+        );
+
+        assert_eq!(
+            canvas.get_record("line_to"),
+            Some(vec![
+                "5.5,4.5".to_owned(),
+                "10.5,9.5".to_owned(),
+                "14.2,13.2".to_owned(),
+                "4.5,5.5".to_owned(),
+                "9.5,10.5".to_owned(),
+                "13.2,14.2".to_owned()
+            ])
+        );
     }
 }

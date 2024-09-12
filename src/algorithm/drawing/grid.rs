@@ -1,17 +1,15 @@
 //! Contains everything for depicting the grid onto the canvas.
 
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
-
+use super::CanvasContext;
 use crate::components::CanvasState;
 
 /// Draws the grid onto the canvas based on the given screen size and grid
 /// square size. This should be called before anything else is drawn, so the
 /// grid is in the background.
-pub fn draw_grid(canvas: &CanvasRenderingContext2d, state: CanvasState) {
+pub fn draw_grid(canvas: &CanvasContext, state: CanvasState) {
     canvas.begin_path();
     canvas.set_line_width(0.3);
-    canvas.set_stroke_style(&JsValue::from_str("grey"));
+    canvas.set_stroke_style("grey");
 
     let (height, width) = state.get_size();
     let drawn_square_size = state.drawn_square_size();
@@ -33,12 +31,7 @@ pub fn draw_grid(canvas: &CanvasRenderingContext2d, state: CanvasState) {
 }
 
 /// Draw all vertical grid lines
-fn draw_vertical_lines(
-    canvas: &CanvasRenderingContext2d,
-    length: u32,
-    square_size: f64,
-    count: f64,
-) {
+fn draw_vertical_lines(canvas: &CanvasContext, length: u32, square_size: f64, count: f64) {
     for i in 0..(count
         .round()
         .abs() as u32)
@@ -50,12 +43,7 @@ fn draw_vertical_lines(
 }
 
 /// Draw all horizontal grid lines
-fn draw_horizontal_lines(
-    canvas: &CanvasRenderingContext2d,
-    length: u32,
-    square_size: f64,
-    count: f64,
-) {
+fn draw_horizontal_lines(canvas: &CanvasContext, length: u32, square_size: f64, count: f64) {
     for i in 0..(count
         .round()
         .abs() as u32)

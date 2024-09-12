@@ -30,6 +30,7 @@ pub mod models;
 pub mod utils;
 
 pub use components::{
+    CanvasState,
     Home,
     StateProvider,
 };

@@ -1,4 +1,4 @@
-//! Contains all objects that together represent the [`Map`] in the JSON file.
+//! Contains all objects that together represent the [`crate::models::Map`] in the JSON file.
 
 use serde::{
     Deserialize,

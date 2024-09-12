@@ -8,16 +8,16 @@ use std::{
     },
 };
 
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
-
 use super::{
     station::StationID,
     EdgeID,
     GridNode,
     Map,
 };
-use crate::components::CanvasState;
+use crate::{
+    algorithm::drawing::CanvasContext,
+    components::CanvasState,
+};
 
 /// Next generated sequential identifier for a new line.
 static LINE_ID: AtomicU64 = AtomicU64::new(1);
@@ -279,6 +279,7 @@ impl Line {
             }
             return (None, None);
         }
+
         if self
             .stations
             .is_empty()
@@ -394,55 +395,379 @@ impl Line {
     }
 
     /// Draws the line around a station if this line has only a single station.
-    pub fn draw(&self, map: &Map, canvas: &CanvasRenderingContext2d, state: CanvasState) {
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         let stations = self.get_stations();
 
-        if stations.len() == 1 {
-            let station = map
-                .get_station(stations[0])
-                .expect("invalid station id on line");
-
-            let mut width = state.drawn_square_size() / 10.0;
-            if width < 1.0 {
-                width = 1.0;
-            }
-
-            canvas.set_line_width(width);
-            canvas.set_global_alpha(1.0);
-            canvas.set_stroke_style(&JsValue::from_str(&format!(
-                "rgb({} {} {})",
-                self.color
-                    .0,
-                self.color
-                    .1,
-                self.color
-                    .2
-            )));
-            canvas.begin_path();
-
-            let square_size = state.drawn_square_size();
-            let (station_x, station_y) = station.get_canvas_pos(state);
-            let offset = square_size / PI;
-
-            canvas.move_to(station_x - offset, station_y);
-            canvas.line_to(
-                station_x - (square_size - offset),
-                station_y,
-            );
-
-            canvas.move_to(station_x + offset, station_y);
-            canvas.line_to(
-                station_x + (square_size - offset),
-                station_y,
-            );
-
-            canvas.stroke();
+        if stations.len() != 1 {
+            return;
         }
+
+        let station = map
+            .get_station(stations[0])
+            .expect("invalid station id on line");
+
+        let mut width = state.drawn_square_size() / 10.0;
+        if width < 1.0 {
+            width = 1.0;
+        }
+
+        canvas.set_line_width(width);
+        canvas.set_global_alpha(1.0);
+        canvas.set_stroke_style(&format!(
+            "rgb({} {} {})",
+            self.color
+                .0,
+            self.color
+                .1,
+            self.color
+                .2
+        ));
+        canvas.begin_path();
+
+        let square_size = state.drawn_square_size();
+        let (station_x, station_y) = station.get_canvas_pos(state);
+        let offset = square_size / PI;
+
+        canvas.move_to(station_x - offset, station_y);
+        canvas.line_to(
+            station_x - (square_size - offset),
+            station_y,
+        );
+
+        canvas.move_to(station_x + offset, station_y);
+        canvas.line_to(
+            station_x + (square_size - offset),
+            station_y,
+        );
+
+        canvas.stroke();
     }
 }
 
 impl PartialEq for Line {
     fn eq(&self, other: &Line) -> bool {
         other.id == self.id
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Station;
+
+    #[test]
+    fn test_add_station() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+        let station3: StationID = 3.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 1).into(),
+            Some(station2),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station3),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+        line.add_station(
+            &mut map,
+            station3,
+            Some(station1),
+            Some(station2),
+        );
+
+        assert_eq!(
+            line.get_stations(),
+            &[station1, station2, station3]
+        );
+        assert_eq!(
+            line.get_edges()
+                .len(),
+            2
+        );
+        assert_eq!(
+            map.get_edges()
+                .len(),
+            2
+        );
+
+        assert!(
+            (map.get_edge(line.get_edges()[0])
+                .unwrap()
+                .is_from(station3)
+                && map
+                    .get_edge(line.get_edges()[0])
+                    .unwrap()
+                    .is_to(station1))
+                || (map
+                    .get_edge(line.get_edges()[1])
+                    .unwrap()
+                    .is_from(station3)
+                    && map
+                        .get_edge(line.get_edges()[1])
+                        .unwrap()
+                        .is_to(station1))
+        );
+        assert!(
+            (map.get_edge(line.get_edges()[0])
+                .unwrap()
+                .is_from(station2)
+                && map
+                    .get_edge(line.get_edges()[0])
+                    .unwrap()
+                    .is_to(station3))
+                || (map
+                    .get_edge(line.get_edges()[1])
+                    .unwrap()
+                    .is_from(station2)
+                    && map
+                        .get_edge(line.get_edges()[1])
+                        .unwrap()
+                        .is_to(station3))
+        );
+    }
+
+    #[test]
+    fn test_remove_station() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+        let station3: StationID = 3.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 1).into(),
+            Some(station2),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station3),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+        line.add_station(
+            &mut map,
+            station3,
+            Some(station1),
+            Some(station2),
+        );
+
+        line.remove_station(&mut map, station3);
+
+        assert_eq!(
+            line.get_stations(),
+            &[station1, station2]
+        );
+        assert_eq!(
+            line.get_edges()
+                .len(),
+            1
+        );
+        assert_eq!(
+            map.get_edges()
+                .len(),
+            1
+        );
+
+        assert!(
+            map.get_edge(line.get_edges()[0])
+                .unwrap()
+                .is_from(station2)
+                && map
+                    .get_edge(line.get_edges()[0])
+                    .unwrap()
+                    .is_to(station1)
+        );
+    }
+
+    #[test]
+    fn test_get_edge_stations() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+        let station3: StationID = 3.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station2),
+        ));
+        map.add_station(Station::new(
+            (0, 4).into(),
+            Some(station3),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+        line.add_station(&mut map, station3, Some(station2), None);
+
+        let temp_map = map.clone();
+        for edge in map.get_mut_edges() {
+            edge.calculate_nodes(&temp_map);
+        }
+
+        assert_eq!(
+            line.get_edge_stations(&map, (0, 1).into()),
+            (Some(station1), Some(station2))
+        );
+        assert_eq!(
+            line.get_edge_stations(&map, (0, 3).into()),
+            (Some(station2), Some(station3))
+        );
+        assert_eq!(
+            line.get_edge_stations(&map, (0, 5).into()),
+            (Some(station3), None)
+        );
+    }
+
+    #[test]
+    fn test_visits_node() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+        let station3: StationID = 3.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station2),
+        ));
+        map.add_station(Station::new(
+            (0, 4).into(),
+            Some(station3),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+        line.add_station(&mut map, station3, Some(station2), None);
+
+        let temp_map = map.clone();
+        for edge in map.get_mut_edges() {
+            edge.calculate_nodes(&temp_map);
+        }
+
+        assert!(!line.visits_node(&map, (0, -2).into()));
+        assert!(line.visits_node(&map, (0, -1).into()));
+        assert!(line.visits_node(&map, (0, 0).into()));
+        assert!(line.visits_node(&map, (0, 1).into()));
+        assert!(line.visits_node(&map, (0, 2).into()));
+        assert!(!line.visits_node(&map, (1, 2).into()));
+        assert!(line.visits_node(&map, (0, 3).into()));
+        assert!(line.visits_node(&map, (0, 4).into()));
+        assert!(line.visits_node(&map, (0, 5).into()));
+        assert!(!line.visits_node(&map, (0, 6).into()));
+    }
+
+    #[test]
+    fn test_get_line_ends() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+        let station3: StationID = 3.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station2),
+        ));
+        map.add_station(Station::new(
+            (0, 4).into(),
+            Some(station3),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+        line.add_station(&mut map, station3, Some(station2), None);
+
+        let ends = line.get_line_ends(&map);
+        assert_eq!(ends, vec![station1, station3]);
+    }
+
+    #[test]
+    fn test_draw_single_station() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+
+        let canvas = CanvasContext::new();
+        let mut state = CanvasState::new();
+        state.set_square_size(5);
+        line.draw(&map, &canvas, state);
+
+        let offset = 5.0 / PI;
+        assert_eq!(
+            canvas.get_record("move_to"),
+            Some(vec![
+                format!("{:.1},0.0", -offset),
+                format!("{:.1},0.0", offset),
+            ])
+        );
+        assert_eq!(
+            canvas.get_record("line_to"),
+            Some(vec![
+                format!("{:.1},0.0", -5.0 + offset),
+                format!("{:.1},0.0", 5.0 - offset),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_draw_multiple_stations() {
+        let mut map = Map::new();
+        let mut line = Line::new(None);
+        let station1: StationID = 1.into();
+        let station2: StationID = 2.into();
+
+        map.add_station(Station::new(
+            (0, 0).into(),
+            Some(station1),
+        ));
+        map.add_station(Station::new(
+            (0, 2).into(),
+            Some(station2),
+        ));
+
+        line.add_station(&mut map, station1, None, None);
+        line.add_station(&mut map, station2, Some(station1), None);
+
+        let canvas = CanvasContext::new();
+        let state = CanvasState::new();
+        line.draw(&map, &canvas, state);
+
+        assert_eq!(canvas.get_record("move_to"), None);
+        assert_eq!(canvas.get_record("line_to"), None);
     }
 }

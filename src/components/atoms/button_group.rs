@@ -7,7 +7,7 @@ use super::button::ButtonProps;
 /// A group of buttons
 #[component]
 pub fn ButtonGroup(
-    /// These will be transformed into [`Button`] elements.
+    /// These will be transformed into [`super::Button`] elements.
     children: Vec<ButtonProps>,
 ) -> impl IntoView {
     let class = "max-w-full flex align-center gap-px [&>*]:flex-1 \

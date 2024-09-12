@@ -12,6 +12,7 @@ use super::{
     Station,
 };
 use crate::{
+    algorithm::drawing::CanvasContext,
     components::CanvasState,
     unwrap_or_return,
     Error,
@@ -224,21 +225,6 @@ impl Map {
             .find(|l| l.visits_node(self, node))
     }
 
-    /// Draw the map to the given canvas.
-    pub fn draw(&self, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
-        for edge in self.get_edges() {
-            edge.draw(self, canvas, state);
-        }
-
-        for line in self.get_lines() {
-            line.draw(self, canvas, state);
-        }
-
-        for station in self.get_stations() {
-            station.draw(canvas, state);
-        }
-    }
-
     /// Notify that the given edge was removed from a line and thus all lines
     /// should be check and the edge fully removed if not in use any other than
     /// from.
@@ -262,6 +248,21 @@ impl Map {
                 .remove(&id);
         } else if let Some(edge) = self.get_mut_edge(id) {
             edge.set_lines(lines_found);
+        }
+    }
+
+    /// Draw the map to the given canvas.
+    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState) {
+        for edge in self.get_edges() {
+            edge.draw(self, canvas, state);
+        }
+
+        for line in self.get_lines() {
+            line.draw(self, canvas, state);
+        }
+
+        for station in self.get_stations() {
+            station.draw(canvas, state);
         }
     }
 }

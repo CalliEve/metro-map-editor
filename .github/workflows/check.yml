@@ -23,7 +23,7 @@ jobs:
       - name: Test
         run: cargo test
       - name: Bench
-        run: cargo bench
+        run: cargo bench -F benchmarking
       - name: Lint
         run: |
           cargo clippy -- -D warnings

@@ -58,8 +58,8 @@ impl CanvasState {
 
     /// Zooms in on the canvas.
     pub fn zoom_in(&mut self) {
-        let old_x_limits = self.x_limit;
-        let old_y_limits = self.y_limit;
+        let old_x = self.x_limit;
+        let old_y = self.y_limit;
 
         self.zoom_factor += 0.1;
         self.recalculate_limits();
@@ -67,12 +67,12 @@ impl CanvasState {
         let x_change = (self
             .x_limit
             .1
-            - old_x_limits.1)
+            - old_x.1)
             / 2;
         let y_change = (self
             .y_limit
             .1
-            - old_y_limits.1)
+            - old_y.1)
             / 2;
 
         self.offset
@@ -85,8 +85,8 @@ impl CanvasState {
 
     /// Zooms out on the canvas.
     pub fn zoom_out(&mut self) {
-        let old_x_limits = self.x_limit;
-        let old_y_limits = self.y_limit;
+        let old_x = self.x_limit;
+        let old_y = self.y_limit;
 
         self.zoom_factor -= 0.1;
         if self.zoom_factor <= 0.21 {
@@ -98,12 +98,12 @@ impl CanvasState {
         let x_change = (self
             .x_limit
             .1
-            - old_x_limits.1)
+            - old_x.1)
             / 2;
         let y_change = (self
             .y_limit
             .1
-            - old_y_limits.1)
+            - old_y.1)
             / 2;
 
         self.offset

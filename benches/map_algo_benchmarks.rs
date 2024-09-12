@@ -9,7 +9,7 @@ use metro_map_editor::{
     models::GridNode,
 };
 
-pub fn criterion_benchmark(c: &mut Criterion) {
+pub fn a_star_benchmark(c: &mut Criterion) {
     let from = GridNode::from((0, 0));
     let to = GridNode::from((10, 15));
 
@@ -18,5 +18,5 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+criterion_group!(a_star_benches, a_star_benchmark);
+criterion_main!(a_star_benches);

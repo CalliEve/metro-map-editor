@@ -33,8 +33,15 @@ csscolorparser = "0.7"
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
+[features]
+benchmarking = []
+
 [[bench]]
 name = "map_algo_benchmarks"
+harness = false
+
+[[bench]]
+name = "draw_benchmarks"
 harness = false
 
 [profile.bench]

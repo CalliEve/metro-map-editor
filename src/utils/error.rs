@@ -13,12 +13,12 @@ pub enum Error {
 }
 
 impl Error {
-    /// Creates a new [`DecodeError`] with the given message.
+    /// Creates a new [`Error::DecodeError`] with the given message.
     pub fn decode_error<T: Display>(e: T) -> Self {
         Self::DecodeError(e.to_string())
     }
 
-    /// Creates a new [`Other`] error with the given message.
+    /// Creates a new [`Error::Other`] error with the given message.
     pub fn other<T: Display>(e: T) -> Self {
         Self::Other(e.to_string())
     }

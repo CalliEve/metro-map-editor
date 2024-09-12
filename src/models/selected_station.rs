@@ -1,7 +1,5 @@
 //! Contains the [`SelectedStation`] struct and all its methods.
 
-use wasm_bindgen::JsValue;
-
 use super::{
     GridNode,
     Map,
@@ -10,7 +8,10 @@ use super::{
 };
 use crate::{
     algorithm::{
-        drawing::draw_edge,
+        drawing::{
+            draw_edge,
+            CanvasContext,
+        },
         run_a_star,
     },
     components::CanvasState,
@@ -38,7 +39,7 @@ impl SelectedStation {
 
     /// Select a newly created station.
     pub fn new_station() -> Self {
-        let mut station = Station::new((-1, -1).into(), None);
+        let mut station = Station::new((i32::MIN, i32::MIN).into(), None);
         station.set_is_ghost(true);
         Self {
             station,
@@ -91,12 +92,12 @@ impl SelectedStation {
     }
 
     /// Draw the selected station to the given canvas.
-    pub fn draw(&self, map: &Map, canvas: &web_sys::CanvasRenderingContext2d, state: CanvasState) {
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         self.station
             .draw(canvas, state);
 
         canvas.set_line_width(3.0);
-        canvas.set_stroke_style(&JsValue::from_str("black"));
+        canvas.set_stroke_style("black");
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
 
