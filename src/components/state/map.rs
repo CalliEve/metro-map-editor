@@ -31,7 +31,7 @@ pub struct MapState {
     map: Map,
     /// The currently selected [`crate::models::Station`].
     selected_station: Option<SelectedStation>,
-    /// The currently selected [`crate::models::Line`]`.
+    /// The currently selected [`crate::models::Line`].
     selected_line: Option<SelectedLine>,
     /// The type of remove operation that is currently selected.
     selected_remove: Option<RemoveType>,
