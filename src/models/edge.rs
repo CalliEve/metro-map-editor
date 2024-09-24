@@ -93,6 +93,18 @@ impl Edge {
         self.to
     }
 
+    /// Get the other end of the edge from the station given, returns None if
+    /// the station is not an end of the edge.
+    pub fn opposite(&self, station: StationID) -> Option<StationID> {
+        if self.from == station {
+            Some(self.to)
+        } else if self.to == station {
+            Some(self.from)
+        } else {
+            None
+        }
+    }
+
     /// A setter for the lines that use this edge.
     pub fn set_lines(&mut self, mut lines: Vec<LineID>) {
         lines.sort_unstable();
@@ -257,6 +269,12 @@ impl Edge {
 
             canvas.stroke();
         }
+    }
+}
+
+impl PartialEq for Edge {
+    fn eq(&self, other: &Edge) -> bool {
+        self.id == other.id
     }
 }
 

@@ -44,7 +44,7 @@ pub fn CanvasControls() -> impl IntoView {
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_in));
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
-    let run_algorithm = move |_| map_state.update(|state| state.run_algorithm());
+    let run_algorithm = move |_| map_state.update(MapState::run_algorithm);
 
     view! {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">

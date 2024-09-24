@@ -104,7 +104,7 @@ impl Map {
     pub fn get_edge_id_between_if_exists(&self, from: StationID, to: StationID) -> Option<EdgeID> {
         self.get_edges()
             .into_iter()
-            .find(|e| e.is_from(from) && e.is_to(to))
+            .find(|e| (e.is_from(from) && e.is_to(to)) || (e.is_from(to) && e.is_to(from)))
             .map(Edge::get_id)
     }
 
@@ -116,10 +116,10 @@ impl Map {
         }
 
         let new = Edge::new(from, to, None);
-        self.edges
-            .insert(new.get_id(), new);
-        self.get_edge_id_between_if_exists(from, to)
-            .expect("can't find newly created edge")
+        let new_id = new.get_id();
+        self.add_edge(new);
+
+        new_id
     }
 
     /// A getter for the stations on the map.
@@ -197,8 +197,7 @@ impl Map {
                     .get_lines()
                     .is_empty()
                 {
-                    self.edges
-                        .remove(edge_id);
+                    self.remove_edge(*edge_id);
                 }
             }
         }
@@ -206,8 +205,33 @@ impl Map {
 
     /// Add an edge to map.
     pub fn add_edge(&mut self, edge: Edge) {
+        self.get_mut_station(edge.get_from())
+            .expect("from station not found")
+            .add_edge(edge.get_id());
+        self.get_mut_station(edge.get_to())
+            .expect("to station not found")
+            .add_edge(edge.get_id());
+
         self.edges
             .insert(edge.get_id(), edge);
+    }
+
+    /// Remove an edge from the map.
+    pub fn remove_edge(&mut self, id: EdgeID) {
+        {
+            let edge = unwrap_or_return!(self
+                .edges
+                .remove(&id)
+                .ok_or(Error::other("edge to remove not found")));
+            if let Some(from_station) = self.get_mut_station(edge.get_from()) {
+                from_station.remove_edge(id);
+            }
+            if let Some(to_station) = self.get_mut_station(edge.get_to()) {
+                to_station.remove_edge(id);
+            }
+        }
+        self.edges
+            .remove(&id);
     }
 
     /// Get the station located on the given grid node.
@@ -244,8 +268,7 @@ impl Map {
         }
 
         if lines_found.is_empty() {
-            self.edges
-                .remove(&id);
+            self.remove_edge(id);
         } else if let Some(edge) = self.get_mut_edge(id) {
             edge.set_lines(lines_found);
         }

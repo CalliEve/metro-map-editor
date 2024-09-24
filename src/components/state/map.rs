@@ -8,12 +8,16 @@ use web_sys::HtmlCanvasElement;
 
 use super::CanvasState;
 use crate::{
-    algorithm::drawing::redraw_canvas,
+    algorithm::{
+        drawing::redraw_canvas,
+        recalculate_map,
+    },
     models::{
         Map,
         SelectedLine,
         SelectedStation,
     },
+    unwrap_or_return,
 };
 
 /// The type of remove operation that is currently selected.
@@ -169,6 +173,6 @@ impl MapState {
 
     /// Run the full algorithm on the map.
     pub fn run_algorithm(&mut self) {
-        self.run_local_search();
+        unwrap_or_return!(recalculate_map(&mut self.map));
     }
 }

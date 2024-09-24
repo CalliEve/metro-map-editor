@@ -128,7 +128,7 @@ pub fn Button(
             <>
                 {children.map_or(Fragment::from(Text::new(text.into()).into_view()), |c| c())}
                 <div class=hover_class>
-                    {has_children.then(|| text)}
+                    {has_children.then_some(text)}
                 </div>
             </>
         </button>

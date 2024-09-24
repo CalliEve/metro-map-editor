@@ -1,0 +1,158 @@
+{
+  "stations": [
+    {
+      "id": "s1",
+      "name": "test-1",
+      "x": 50.0,
+      "y": 10.0
+    },
+    {
+      "id": "s2",
+      "name": "test-2",
+      "x": 20.0,
+      "y": 30.0
+    },
+    {
+      "id": "s3",
+      "name": "test-3",
+      "x": 70.0,
+      "y": 30.0
+    },
+    {
+      "id": "s4",
+      "name": "test-4",
+      "x": 40.0,
+      "y": 40.0
+    },
+    {
+      "id": "s5",
+      "name": "test-5",
+      "x": 70.0,
+      "y": 50.0
+    },
+    {
+      "id": "s6",
+      "name": "test-6",
+      "x": 100.0,
+      "y": 50.0
+    },
+    {
+      "id": "s7",
+      "name": "test-7",
+      "x": 10.0,
+      "y": 70.0
+    },
+    {
+      "id": "s8",
+      "name": "test-8",
+      "x": 40.0,
+      "y": 70.0
+    },
+    {
+      "id": "s9",
+      "name": "test-9",
+      "x": 70.0,
+      "y": 70.0
+    },
+    {
+      "id": "s10",
+      "name": "test-10",
+      "x": 100.0,
+      "y": 70.0
+    }
+  ],
+  "lines": [
+    {
+      "id": "l1",
+      "name": "lineU1",
+      "color": "#FF0000"
+    },
+    {
+      "id": "l2",
+      "name": "lineU2",
+      "color": "#000000"
+    },
+    {
+      "id": "l3",
+      "name": "lineU3",
+      "color": "#FFFFFF"
+    },
+    {
+      "id": "l4",
+      "name": "lineU4",
+      "color": "#0000FF"
+    }
+  ],
+  "edges": [
+    {
+      "source": "s1",
+      "target": "s3",
+      "lines": ["l1"]
+    },
+    {
+      "source": "s3",
+      "target": "s5",
+      "lines": ["l1"]
+    },
+    {
+      "source": "s5",
+      "target": "s9",
+      "lines": ["l1"]
+    },
+    {
+      "source": "s9",
+      "target": "s10",
+      "lines": ["l1"]
+    },
+    {
+      "source": "s2",
+      "target": "s4",
+      "lines": ["l2"]
+    },
+    {
+      "source": "s4",
+      "target": "s5",
+      "lines": ["l2"]
+    },
+    {
+      "source": "s5",
+      "target": "s6",
+      "lines": ["l2"]
+    },
+    {
+      "source": "s7",
+      "target": "s8",
+      "lines": ["l3"]
+    },
+    {
+      "source": "s8",
+      "target": "s9",
+      "lines": ["l3"]
+    },
+    {
+      "source": "s9",
+      "target": "s5",
+      "lines": ["l3"]
+    },
+    {
+      "source": "s5",
+      "target": "s4",
+      "lines": ["l3"]
+    },
+    {
+      "source": "s7",
+      "target": "s8",
+      "lines": ["l4"]
+    },
+    {
+      "source": "s8",
+      "target": "s4",
+      "lines": ["l4"]
+    },
+    {
+      "source": "s4",
+      "target": "s3",
+      "lines": ["l4"]
+    }
+  ]
+}

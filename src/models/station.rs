@@ -8,7 +8,10 @@ use std::{
     },
 };
 
-use super::GridNode;
+use super::{
+    EdgeID,
+    GridNode,
+};
 use crate::{
     algorithm::drawing::CanvasContext,
     components::CanvasState,
@@ -45,6 +48,8 @@ pub struct Station {
     is_ghost: bool,
     /// The station name
     name: String,
+    /// The edges that are connected to this station
+    edges: Vec<EdgeID>,
 }
 
 impl Station {
@@ -66,6 +71,7 @@ impl Station {
             }),
             is_ghost: false,
             name: String::new(),
+            edges: Vec::new(),
         }
     }
 
@@ -112,6 +118,30 @@ impl Station {
         self.get_pos()
             .get_neighbors()
             .contains(&node)
+    }
+
+    /// Add an edge to the station.
+    pub fn add_edge(&mut self, edge: EdgeID) {
+        if self
+            .edges
+            .contains(&edge)
+        {
+            return;
+        }
+
+        self.edges
+            .push(edge);
+    }
+
+    /// Remove an edge from the station.
+    pub fn remove_edge(&mut self, edge: EdgeID) {
+        self.edges
+            .retain(|e| *e != edge);
+    }
+
+    /// Get the edges connected to the station.
+    pub fn get_edges(&self) -> &[EdgeID] {
+        &self.edges
     }
 
     /// Draw the station to the given canvas.

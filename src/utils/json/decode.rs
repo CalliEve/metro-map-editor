@@ -8,7 +8,6 @@ use super::json_models::{
 use crate::{
     components::CanvasState,
     models::{
-        Edge,
         GridNode,
         Line,
         Map,
@@ -93,13 +92,10 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
         .edges
         .drain(..)
     {
-        let edge = Edge::new(
+        let edge_id = map.get_edge_id_between(
             parse_id(&json_edge.source).into(),
             parse_id(&json_edge.target).into(),
-            None,
         );
-        let edge_id = edge.get_id();
-        map.add_edge(edge);
 
         // Add edge to lines
         for line_id in &json_edge.lines {
