@@ -4,6 +4,7 @@ use leptos::{
     ev::MouseEvent,
     *,
 };
+use leptos_dom::Text;
 
 type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 
@@ -24,6 +25,10 @@ pub fn Button(
     /// If the button is an overlay button.
     #[prop(optional)]
     overlay: bool,
+    /// If the button should be bigger, especially useful when having larger
+    /// text or icons.
+    #[prop(optional)]
+    bigger: bool,
     /// If the button has been selected.
     #[prop(optional)]
     #[prop(into)]
@@ -31,6 +36,10 @@ pub fn Button(
     /// If focus can be held on the button.
     #[prop(default = true)]
     can_focus: bool,
+    /// The children of the button, if any.
+    /// If present, the button will show the text on hover.
+    #[prop(optional)]
+    children: Option<Children>,
 ) -> impl IntoView {
     let color = if danger {
         "red"
@@ -47,14 +56,16 @@ pub fn Button(
     let dark_hover = dark + 100;
     let dark_active = if dark >= 800 { 950 } else { dark + 200 };
 
-    let mut class = "inline-block px-4 \
+    let mut class = "inline-block group px-4 \
         py-1.5 text-center uppercase \
         leading-snug shadow-neutral-800 \
         dark:shadow-neutral-950 hover:shadow-blue-900 \
         dark:hover:shadow-neutral-900"
         .to_owned();
 
-    if overlay {
+    if overlay && bigger {
+        class += " rounded-full text-xl font-bold h-16 w-16";
+    } else if overlay {
         class += " rounded-full text-xl font-bold h-11 w-11";
     } else {
         class += " rounded text-sm font-semibold";
@@ -90,8 +101,7 @@ pub fn Button(
             active:bg-{color}-{base_active} \
             dark:bg-{color}-{dark} \
             dark:hover:bg-{color}-{dark_hover} \
-            dark:active:bg-{color}-{dark_active} \
-            dark:focus:bg-{color}-{dark_active}"
+            dark:active:bg-{color}-{dark_active}"
         );
 
         if can_focus {
@@ -100,13 +110,27 @@ pub fn Button(
         }
     }
 
+    let has_children = children.is_some();
+
+    let mut hover_class = "hidden group-hover:block text-xs absolute z-10 ".to_owned();
+    if bigger {
+        hover_class += "-top-8 -left-2.5";
+    } else {
+        hover_class += "-top-7 left-0.5";
+    }
+
     view! {
         <button
             type="button"
             class=class
             focus=active
             on:click=on_click>
-            {text}
+            <>
+                {children.map_or(Fragment::from(Text::new(text.into()).into_view()), |c| c())}
+                <div class=hover_class>
+                    {has_children.then(|| text)}
+                </div>
+            </>
         </button>
     }
 }

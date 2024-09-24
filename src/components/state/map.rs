@@ -166,4 +166,9 @@ impl MapState {
             edge.calculate_nodes(&map_clone);
         }
     }
+
+    /// Run the full algorithm on the map.
+    pub fn run_algorithm(&mut self) {
+        self.run_local_search();
+    }
 }

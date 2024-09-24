@@ -44,15 +44,25 @@ pub fn CanvasControls() -> impl IntoView {
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_in));
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
+    let run_algorithm = move |_| map_state.update(|state| state.run_algorithm());
 
     view! {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
+        <div class="absolute right-5 top-5 group">
+            <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true can_focus=false bigger=true>
+                <svg class="h-8 w-8 text-blue-500 group-focus:animate-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z"/>
+                    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
+                    <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />
+                </svg>
+            </Button>
+        </div>
         <div class="absolute right-5 bottom-20">
-            <Button text="+" on_click=Box::new(zoom_in) overlay=true can_focus=false />
+            <Button text="zoom in" on_click=Box::new(zoom_in) overlay=true can_focus=false >+</Button>
         </div>
         <div class="absolute right-5 bottom-5">
-            <Button text="-" on_click=Box::new(zoom_out) overlay=true can_focus=false />
+            <Button text="zoom out" on_click=Box::new(zoom_out) overlay=true can_focus=false>-</Button>
         </div>
     </div>
     }
