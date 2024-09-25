@@ -50,6 +50,10 @@ pub struct Station {
     name: String,
     /// The edges that are connected to this station
     edges: Vec<EdgeID>,
+    /// Marks the location of the station as locked by the user in the algorithm.
+    is_locked: bool,
+    /// Marks the location of the station as settled in the algorithm.
+    is_settled: bool,
 }
 
 impl Station {
@@ -72,6 +76,8 @@ impl Station {
             is_ghost: false,
             name: String::new(),
             edges: Vec::new(),
+            is_locked: false,
+            is_settled: false,
         }
     }
 
@@ -111,6 +117,33 @@ impl Station {
     /// A getter for the name.
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    /// Lock the position of the station.
+    pub fn lock(&mut self) {
+        self.is_locked = true;
+    }
+
+    /// Unlock the position of the station.
+    pub fn unlock(&mut self) {
+        self.is_locked = false;
+    }
+
+    /// Settle the station onto the given grid node.
+    pub fn settle(&mut self, pos: GridNode) {
+        self.set_pos(pos);
+        self.is_settled = true;
+    }
+
+    /// Unsettle the station.
+    pub fn unsettle(&mut self) {
+        self.is_settled = false;
+    }
+
+    /// Check if the station is settled.
+    #[inline]
+    pub fn is_settled(&self) -> bool {
+        self.is_settled
     }
 
     /// If the given node is a neighboring grid node to the station.

@@ -141,6 +141,16 @@ impl Edge {
         }
     }
 
+    /// A getter for the nodes visited between the stations.
+    pub fn get_nodes(&self) -> &[GridNode] {
+        &self.nodes
+    }
+
+    /// A setter for the nodes visited between the stations.
+    pub fn set_nodes(&mut self, nodes: Vec<GridNode>) {
+        self.nodes = nodes;
+    }
+
     /// Returns if the edge visits the node.
     pub fn visits_node(&self, map: &Map, node: GridNode) -> bool {
         if self
@@ -214,7 +224,7 @@ impl Edge {
             .get_station(self.get_to())
             .expect("invalid station id");
 
-        self.nodes = run_a_star(from.get_pos(), to.get_pos());
+        self.set_nodes(run_a_star(from.get_pos(), to.get_pos()));
     }
 
     /// Draw the edge to the given canvas.

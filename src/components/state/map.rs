@@ -11,6 +11,7 @@ use crate::{
     algorithm::{
         drawing::redraw_canvas,
         recalculate_map,
+        AlgorithmSettings,
     },
     models::{
         Map,
@@ -41,6 +42,8 @@ pub struct MapState {
     selected_remove: Option<RemoveType>,
     /// The state of the canvas.
     canvas: CanvasState,
+    /// The settings for the algorithm.
+    algorithm_settings: AlgorithmSettings,
 }
 
 impl MapState {
@@ -53,6 +56,7 @@ impl MapState {
             selected_line: None,
             selected_remove: None,
             canvas: CanvasState::default(),
+            algorithm_settings: AlgorithmSettings::default(),
         }
     }
 
@@ -173,6 +177,9 @@ impl MapState {
 
     /// Run the full algorithm on the map.
     pub fn run_algorithm(&mut self) {
-        unwrap_or_return!(recalculate_map(&mut self.map));
+        unwrap_or_return!(recalculate_map(
+            self.algorithm_settings,
+            &mut self.map
+        ));
     }
 }

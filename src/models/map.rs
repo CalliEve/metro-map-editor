@@ -15,6 +15,7 @@ use crate::{
     algorithm::drawing::CanvasContext,
     components::CanvasState,
     unwrap_or_return,
+    utils::Result,
     Error,
 };
 
@@ -232,6 +233,25 @@ impl Map {
         }
         self.edges
             .remove(&id);
+    }
+
+    /// Update the nodes of all edges on the map, this errors if trying to
+    /// update a non-existing edge.
+    pub fn update_edges(&mut self, edges: Vec<Edge>) -> Result<()> {
+        for edge in edges {
+            let existing_edge = self
+                .get_mut_edge(edge.get_id())
+                .ok_or(Error::other(
+                    "edge not found when updating edge",
+                ))?;
+
+            existing_edge.set_nodes(
+                edge.get_nodes()
+                    .to_owned(),
+            );
+        }
+
+        Ok(())
     }
 
     /// Get the station located on the given grid node.

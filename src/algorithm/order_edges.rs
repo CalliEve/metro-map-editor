@@ -40,6 +40,7 @@ fn line_degree(map: &Map, station_id: StationID) -> Result<usize> {
     Ok(degree)
 }
 
+/// The id of a station together with its degree, used in the binary heap.
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct HeapStation {
     station: StationID,
