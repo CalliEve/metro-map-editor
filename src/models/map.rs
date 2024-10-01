@@ -308,4 +308,13 @@ impl Map {
             station.draw(canvas, state);
         }
     }
+
+    /// Use the A* algorithm to calculate the edges between all stations
+    /// quickly.
+    pub fn quickcalc_edges(&mut self) {
+        let temp_map = self.clone();
+        for edge in self.get_mut_edges() {
+            edge.calculate_nodes(&temp_map);
+        }
+    }
 }

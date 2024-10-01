@@ -2,11 +2,14 @@
 
 use std::{
     f64,
+    fmt::Display,
     sync::atomic::{
         AtomicU64,
         Ordering,
     },
 };
+
+use leptos::logging;
 
 use super::{
     EdgeID,
@@ -36,6 +39,12 @@ impl From<StationID> for u64 {
     }
 }
 
+impl Display for StationID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Represents a metro station, including its grid position on the map, its id,
 /// name and if the station should be greyed out when drawn to the canvas.
 #[derive(Clone, Debug)]
@@ -50,7 +59,8 @@ pub struct Station {
     name: String,
     /// The edges that are connected to this station
     edges: Vec<EdgeID>,
-    /// Marks the location of the station as locked by the user in the algorithm.
+    /// Marks the location of the station as locked by the user in the
+    /// algorithm.
     is_locked: bool,
     /// Marks the location of the station as settled in the algorithm.
     is_settled: bool,
@@ -143,7 +153,7 @@ impl Station {
     /// Check if the station is settled.
     #[inline]
     pub fn is_settled(&self) -> bool {
-        self.is_settled
+        self.is_settled || self.is_locked
     }
 
     /// If the given node is a neighboring grid node to the station.
@@ -175,6 +185,20 @@ impl Station {
     /// Get the edges connected to the station.
     pub fn get_edges(&self) -> &[EdgeID] {
         &self.edges
+    }
+
+    #[allow(dead_code)]
+    pub fn print_info(&self) {
+        logging::log!(
+            "Station: {} at {:?} with edges [{:?}]",
+            self.id,
+            self.pos,
+            self.get_edges()
+                .into_iter()
+                .map(|e| e.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+        );
     }
 
     /// Draw the station to the given canvas.

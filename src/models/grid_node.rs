@@ -1,6 +1,9 @@
-use std::ops::{
-    Add,
-    Mul,
+use std::{
+    fmt::Display,
+    ops::{
+        Add,
+        Mul,
+    },
 };
 
 use crate::components::CanvasState;
@@ -101,6 +104,12 @@ impl Mul<GridNode> for GridNode {
 impl PartialEq<(i32, i32)> for GridNode {
     fn eq(&self, other: &(i32, i32)) -> bool {
         self.0 == other.0 && self.1 == other.1
+    }
+}
+
+impl Display for GridNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.0, self.1)
     }
 }
 

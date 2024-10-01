@@ -191,6 +191,10 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             selected_station.add_after(after);
         }
 
+        selected_station
+            .get_station()
+            .print_info();
+
         map_state.set_selected_station(selected_station);
         return;
     }

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use leptos::logging;
+use ordered_float::FloatIsNan;
 use wasm_bindgen::JsValue;
 
 /// A custom error type for the application.
@@ -8,6 +9,7 @@ use wasm_bindgen::JsValue;
 pub enum Error {
     Json(serde_json::Error),
     GraphML(quick_xml::DeError),
+    InvalidFloat(FloatIsNan),
     DecodeError(String),
     Other(String),
 }
@@ -34,6 +36,7 @@ impl Display for Error {
         match self {
             Self::Json(e) => write!(f, "JSON error: {e}"),
             Self::GraphML(e) => write!(f, "GraphML error: {e}"),
+            Self::InvalidFloat(e) => write!(f, "Invalid float error: {e}"),
             Self::DecodeError(e) => write!(f, "Decode error: {e}"),
             Self::Other(e) => write!(f, "Other error: {e}"),
         }
@@ -49,6 +52,12 @@ impl From<quick_xml::DeError> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Self::Json(e)
+    }
+}
+
+impl From<FloatIsNan> for Error {
+    fn from(e: FloatIsNan) -> Self {
+        Self::InvalidFloat(e)
     }
 }
 
@@ -74,6 +83,7 @@ impl PartialEq<Error> for Error {
         match (self, other) {
             (Self::Json(e1), Self::Json(e2)) => e1.to_string() == e2.to_string(),
             (Self::GraphML(e1), Self::GraphML(e2)) => e1.to_string() == e2.to_string(),
+            (Self::InvalidFloat(e1), Self::InvalidFloat(e2)) => e1 == e2,
             (Self::DecodeError(e1), Self::DecodeError(e2)) | (Self::Other(e1), Self::Other(e2)) => {
                 e1 == e2
             },

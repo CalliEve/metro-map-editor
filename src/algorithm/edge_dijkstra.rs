@@ -1,19 +1,28 @@
 use std::{
     cmp::Reverse,
+    collections::HashSet,
     hash::{
         Hash,
         Hasher,
     },
 };
 
+use ordered_float::NotNan;
 use priority_queue::PriorityQueue;
 
+use super::{
+    cost_calculation::calc_node_cost,
+    AlgorithmSettings,
+};
 use crate::{
     models::{
+        Edge,
         GridNode,
         Map,
+        Station,
     },
     utils::Result,
+    Error,
 };
 
 /// Holds the state for an item in the Dijkstra algorithm queue.
@@ -44,7 +53,7 @@ impl QueueItem {
             start: parent.start,
         };
         new.path
-            .push(node);
+            .push(parent.node);
         new
     }
 }
@@ -69,29 +78,55 @@ impl Hash for QueueItem {
 /// A Dijkstra implementation that finds the shortest path between two start and
 /// end node sets. This is the Edge Dijkstra algorithm in the paper.
 pub fn edge_dijkstra(
+    settings: AlgorithmSettings,
     map: &Map,
-    from: Vec<GridNode>,
-    to: Vec<GridNode>,
+    edge: &Edge,
+    from: &[(GridNode, f64)],
+    from_station: &Station,
+    to: &[(GridNode, f64)],
+    to_station: &Station,
+    occupied: &HashSet<GridNode>,
 ) -> Result<(GridNode, Vec<GridNode>, GridNode)> {
     let mut queue = PriorityQueue::new();
-    let mut visited = Vec::new();
-    let mut to_visited = Vec::new();
+    let mut visited = HashSet::new();
+    let mut to_visited = None;
+    let to_nodes = to
+        .iter()
+        .map(|(node, _)| *node)
+        .collect::<HashSet<_>>();
 
-    for node in from {
+    for (node, cost) in from {
         // FIXME: the cost is dependent upon the distance from the original station
         // location.
-        queue.push(QueueItem::new(node), Reverse(0));
+        queue.push(
+            QueueItem::new(*node),
+            Reverse(NotNan::new(*cost)?),
+        );
     }
 
     while let Some((current, current_cost)) = queue.pop() {
-        visited.push(current.node);
+        visited.insert(current.node);
 
-        if to.contains(&current.node) {
-            to_visited.push((current.clone(), current_cost));
-        }
-        if to_visited.len() == to.len() {
+        if current_cost
+            .0
+            .is_infinite()
+        {
             break;
         }
+
+        if to_nodes.contains(&current.node) {
+            // FIXME: this returns on first found from to set, not sure if we shouldn't
+            // search for more or when it is enough then
+            to_visited = Some((current.clone(), current_cost));
+            break;
+        }
+
+        let previous = &current
+            .path
+            .last()
+            .map_or(vec![current.node], |p| {
+                vec![*p, current.node]
+            });
 
         for neighbor in current
             .node
@@ -101,32 +136,47 @@ pub fn edge_dijkstra(
                 continue;
             }
 
-            let cost = todo!("calculate the cost");
+            let cost = NotNan::new(calc_node_cost(
+                settings,
+                map,
+                edge,
+                neighbor,
+                previous,
+                from_station,
+                to_station,
+                occupied,
+            )?)? + current_cost.0;
 
             let neighbor_item = QueueItem::from_parent(&current, neighbor);
             if let Some((_, old_cost)) = queue.get(&neighbor_item) {
                 if old_cost.0 > cost {
                     queue.push_increase(neighbor_item, Reverse(cost));
                 }
-                todo!("update path if needed");
             } else {
                 queue.push(neighbor_item, Reverse(cost));
-                todo!("set path if needed");
             }
         }
     }
 
-    // Get the node from the to node set with the cheapest path and return it.
-    to_visited.sort_unstable_by_key(|(_, cost)| cost.0);
-    let mut best = to_visited[0]
-        .0
-        .clone();
-    best.path
-        .truncate(
-            best.path
-                .len()
-                - 1,
-        );
+    if to_visited.is_none() {
+        return Err(Error::other("no path found"));
+    }
+
+    let mut best = to_visited
+        .unwrap()
+        .0;
+
+    if best
+        .path
+        .len()
+        > 1
+    {
+        best.path
+            .drain(..1);
+    } else {
+        best.path
+            .clear();
+    }
 
     Ok((best.start, best.path, best.node))
 }
@@ -137,11 +187,34 @@ mod tests {
 
     #[test]
     fn test_edge_dijkstra() {
-        let map = Map::new();
-        let from = vec![GridNode::from((0, 0))];
-        let to = vec![GridNode::from((3, 3))];
+        let mut map = Map::new();
+        let occupied = HashSet::new();
+        let from_station = Station::new(GridNode::from((0, 0)), None);
+        let from_nodes = vec![(from_station.get_pos(), 0.0)];
+        let to_station = Station::new(GridNode::from((8, 4)), None);
+        let to_nodes = vec![
+            (GridNode::from((7, 4)), 1.0),
+            (to_station.get_pos(), 0.0),
+            (GridNode::from((9, 4)), 1.0),
+        ];
+        let edge = Edge::new(
+            from_station.get_id(),
+            to_station.get_id(),
+            None,
+        );
+        map.add_station(from_station.clone());
+        map.add_station(to_station.clone());
 
-        let result = edge_dijkstra(&map, from, to);
+        let result = edge_dijkstra(
+            AlgorithmSettings::default(),
+            &map,
+            &edge,
+            &from_nodes,
+            &from_station,
+            &to_nodes,
+            &to_station,
+            &occupied,
+        );
 
         assert_eq!(
             result,
@@ -149,9 +222,13 @@ mod tests {
                 GridNode::from((0, 0)),
                 vec![
                     GridNode::from((1, 1)),
-                    GridNode::from((2, 2))
+                    GridNode::from((2, 2)),
+                    GridNode::from((3, 3)),
+                    GridNode::from((4, 4)),
+                    GridNode::from((5, 4)),
+                    GridNode::from((6, 4))
                 ],
-                GridNode::from((3, 3))
+                GridNode::from((7, 4))
             ))
         );
     }

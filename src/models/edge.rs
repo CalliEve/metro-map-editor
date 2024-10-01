@@ -1,6 +1,13 @@
-use std::sync::atomic::{
-    AtomicU64,
-    Ordering as AtomicOrdering,
+use std::{
+    fmt::{
+        self,
+        Display,
+        Formatter,
+    },
+    sync::atomic::{
+        AtomicU64,
+        Ordering as AtomicOrdering,
+    },
 };
 
 use super::{
@@ -34,6 +41,12 @@ impl From<u64> for EdgeID {
     }
 }
 
+impl Display for EdgeID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Represents an edge, which is the connection between two stations.
 #[derive(Clone, Debug)]
 pub struct Edge {
@@ -47,6 +60,8 @@ pub struct Edge {
     nodes: Vec<GridNode>,
     /// Lines that use this edge
     lines: Vec<LineID>,
+    /// If the edge is settled in the Dijkstra algorithm
+    is_settled: bool,
 }
 
 impl Edge {
@@ -62,6 +77,7 @@ impl Edge {
             }),
             nodes: Vec::new(),
             lines: Vec::new(),
+            is_settled: false,
         }
     }
 
@@ -151,6 +167,22 @@ impl Edge {
         self.nodes = nodes;
     }
 
+    /// A getter for if the edge is settled.
+    #[inline]
+    pub fn is_settled(&self) -> bool {
+        self.is_settled
+    }
+
+    /// Settle the edge.
+    pub fn settle(&mut self) {
+        self.is_settled = true;
+    }
+
+    /// Unsettle the edge.
+    pub fn unsettle(&mut self) {
+        self.is_settled = false;
+    }
+
     /// Returns if the edge visits the node.
     pub fn visits_node(&self, map: &Map, node: GridNode) -> bool {
         if self
@@ -215,7 +247,7 @@ impl Edge {
         Some((None, None))
     }
 
-    /// Recalculates the nodes between the stations.
+    /// Recalculates the nodes between the stations using the A* algorithm.
     pub fn calculate_nodes(&mut self, map: &Map) {
         let from = map
             .get_station(self.get_from())

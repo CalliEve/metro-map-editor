@@ -31,6 +31,7 @@ pub mod utils;
 
 pub use components::{
     CanvasState,
+    MapState,
     Home,
     StateProvider,
 };

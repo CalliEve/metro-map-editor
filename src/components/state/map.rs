@@ -1,5 +1,7 @@
 //! Contains the [`MapState`] and all its methods.
 
+use std::i32;
+
 use leptos::{
     html::Canvas,
     *,
@@ -175,8 +177,42 @@ impl MapState {
         }
     }
 
+    /// Recalculate the algorithm settings based on the current map.
+    pub fn calculate_algorithm_settings(&mut self) {
+        self.algorithm_settings = AlgorithmSettings::default();
+
+        let mut x_limits = (i32::MAX, i32::MIN);
+        let mut y_limits = (i32::MAX, i32::MIN);
+
+        for station in self
+            .map
+            .get_mut_stations()
+        {
+            let pos = station.get_pos();
+
+            x_limits.0 = x_limits
+                .0
+                .min(pos.0);
+            x_limits.1 = x_limits
+                .1
+                .max(pos.0);
+            y_limits.0 = y_limits
+                .0
+                .min(pos.1);
+            y_limits.1 = y_limits
+                .1
+                .max(pos.1);
+        }
+
+        self.algorithm_settings
+            .grid_x_limits = (x_limits.0 - 2, x_limits.1 + 2);
+        self.algorithm_settings
+            .grid_y_limits = (y_limits.0 - 2, y_limits.1 + 2);
+    }
+
     /// Run the full algorithm on the map.
     pub fn run_algorithm(&mut self) {
+        self.calculate_algorithm_settings();
         unwrap_or_return!(recalculate_map(
             self.algorithm_settings,
             &mut self.map

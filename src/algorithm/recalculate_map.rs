@@ -7,12 +7,13 @@ use super::{
     order_edges::order_edges,
     randomize_edges,
     route_edges::route_edges,
-    unsettle_stations,
+    unsettle_map,
     AlgorithmSettings,
 };
 use crate::{
     models::Map,
     utils::Result,
+    Error,
 };
 
 /// Recalculate the map, all the positions of the stations and the edges between
@@ -26,29 +27,45 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         return Ok(());
     }
 
-    unsettle_stations(map);
+    logging::log!(
+        "Recalculating map with {} edges",
+        map.get_edges()
+            .len()
+    );
+
+    map.quickcalc_edges();
+    unsettle_map(map);
 
     let mut edges = order_edges(map)?;
     let mut attempt = 0;
     let mut found = false;
 
-    while !found && attempt < settings.edge_routing_attempts {
+    // logging::log!("Ordered {} edges", edges.len());
+
+    while !found {
+        if attempt >= settings.edge_routing_attempts {
+            return Err(Error::other(
+                "Reached max amount of retries when routing edges.",
+            ));
+        }
+
         let mut alg_map = map.clone();
 
         attempt += 1;
         let res = route_edges(settings, &mut alg_map, edges.clone());
 
-        if res.is_err() {
+        if let Err(e) = res {
+            logging::warn!("Failed to route edges: {e}");
             randomize_edges(&mut edges);
         } else {
             found = true;
-
             *map = alg_map;
-            map.update_edges(res.unwrap())?;
         }
     }
 
     // TODO: Implement the rest of the algorithm
+
+    logging::log!("Recalculated map");
 
     Ok(())
 }

@@ -1,8 +1,11 @@
 //! This module contains the Route Edges algorithm and all it needs.
 
+use std::collections::HashSet;
+
+use leptos::logging;
+
 use super::{
     edge_dijkstra::edge_dijkstra,
-    have_overlap,
     AlgorithmSettings,
 };
 use crate::{
@@ -17,13 +20,9 @@ use crate::{
 };
 
 /// Get a set of nodes in the radius around the given station.
-fn get_node_set(
-    settings: AlgorithmSettings,
-    _map: &Map, // FIXME: unused parameter
-    station: &Station,
-) -> Result<Vec<GridNode>> {
+fn get_node_set(settings: AlgorithmSettings, station: &Station) -> Vec<(GridNode, f64)> {
     if station.is_settled() {
-        return Ok(vec![station.get_pos()]);
+        return vec![(station.get_pos(), 0.0)];
     }
 
     let radius = settings.node_set_radius;
@@ -34,41 +33,55 @@ fn get_node_set(
     for x in (station_pos.0 - radius)..=(station_pos.0 + radius) {
         for y in (station_pos.1 - radius)..=(station_pos.1 + radius) {
             let node = GridNode::from((x, y));
-            if node
-                .diagonal_distance_to(station_pos)
-                .ceil() as i32
-                <= radius
-            {
-                nodes.push(node);
+            let distance = node.diagonal_distance_to(station_pos); // FIXME: use better distance calculation
+            if distance.ceil() as i32 <= radius {
+                nodes.push((node, distance * settings.move_cost));
             }
         }
     }
 
-    // TODO: include distance cost on the nodes
-    Ok(nodes)
+    nodes
+}
+
+/// Check if two slices of grid nodes have any overlap.
+fn have_overlap(left: &[(GridNode, f64)], right: &[(GridNode, f64)]) -> bool {
+    for (node, _) in left {
+        if right
+            .iter()
+            .any(|(n, _)| n == node)
+        {
+            return true;
+        }
+    }
+    false
 }
 
 /// Split the overlap between the two node sets based on the distance to their
 /// source.
+#[allow(clippy::type_complexity)] // the return type is complex but makes sense here
 fn split_overlap(
-    mut from_set: Vec<GridNode>,
+    mut from_set: Vec<(GridNode, f64)>,
     from: GridNode,
-    mut to_set: Vec<GridNode>,
+    mut to_set: Vec<(GridNode, f64)>,
     to: GridNode,
-) -> (Vec<GridNode>, Vec<GridNode>) {
-    for node in from_set
-        .clone()
-        .iter()
-    {
+) -> (
+    Vec<(GridNode, f64)>,
+    Vec<(GridNode, f64)>,
+) {
+    for (node, _) in &from_set.clone() {
         if node == &from {
             continue;
         }
 
-        if *node == to || to_set.contains(node) {
+        if *node == to
+            || to_set
+                .iter()
+                .any(|(n, _)| n == node)
+        {
             if node.diagonal_distance_to(from) > node.diagonal_distance_to(to) {
-                from_set.retain(|n| n != node);
+                from_set.retain(|(n, _)| n != node);
             } else {
-                to_set.retain(|n| n != node);
+                to_set.retain(|(n, _)| n != node);
             }
         }
     }
@@ -83,7 +96,9 @@ pub fn route_edges(
     map: &mut Map,
     mut edges: Vec<Edge>,
 ) -> Result<Vec<Edge>> {
-    for edge in edges.iter_mut() {
+    let mut occupied = HashSet::new();
+
+    for edge in &mut edges {
         let from_station = map
             .get_station(edge.get_from())
             .ok_or(Error::other(
@@ -95,8 +110,8 @@ pub fn route_edges(
                 "to station on edge not found",
             ))?;
 
-        let mut from_nodes = get_node_set(settings, map, from_station)?;
-        let mut to_nodes = get_node_set(settings, map, to_station)?;
+        let mut from_nodes = get_node_set(settings, from_station);
+        let mut to_nodes = get_node_set(settings, to_station);
 
         if have_overlap(&from_nodes, &to_nodes) {
             (from_nodes, to_nodes) = split_overlap(
@@ -107,10 +122,35 @@ pub fn route_edges(
             );
         }
 
-        let (start, nodes, end) = edge_dijkstra(map, from_nodes, to_nodes)?;
+        logging::log!(
+            "routing edge from {}{} to {}{}, sets:\nfrom: {:?}\nto: {:?}",
+            from_station.get_id(),
+            from_station.get_pos(),
+            to_station.get_id(),
+            to_station.get_pos(),
+            from_nodes,
+            to_nodes
+        );
 
+        let (start, nodes, end) = edge_dijkstra(
+            settings,
+            map,
+            edge,
+            &from_nodes,
+            from_station,
+            &to_nodes,
+            to_station,
+            &occupied,
+        )?;
+
+        logging::log!("routed edge from {start} to {end}",);
+
+        occupied.extend(&nodes);
         edge.set_nodes(nodes);
+        edge.settle();
 
+        occupied.insert(start);
+        occupied.insert(end);
         map.get_mut_station(edge.get_from())
             .ok_or(Error::other(
                 "edge from-station not found",
@@ -121,6 +161,7 @@ pub fn route_edges(
                 "edge to-station not found",
             ))?
             .settle(end);
+        map.add_edge(edge.clone());
     }
     Ok(edges)
 }
@@ -136,57 +177,65 @@ mod tests {
         let station = Station::new((0, 0).into(), None);
         map.add_station(station.clone());
 
-        let result = get_node_set(
-            AlgorithmSettings::default(),
-            &map,
-            &station,
-        );
+        let result = get_node_set(AlgorithmSettings::default(), &station);
 
         assert_eq!(
             result,
-            Ok(vec![
-                GridNode::from((-3, 0)),
-                GridNode::from((-2, 0)),
-                GridNode::from((-1, -1)),
-                GridNode::from((-1, 0)),
-                GridNode::from((-1, 1)),
-                GridNode::from((0, -3)),
-                GridNode::from((0, -2)),
-                GridNode::from((0, -1)),
-                GridNode::from((0, 0)),
-                GridNode::from((0, 1)),
-                GridNode::from((0, 2)),
-                GridNode::from((0, 3)),
-                GridNode::from((1, -1)),
-                GridNode::from((1, 0)),
-                GridNode::from((1, 1)),
-                GridNode::from((2, 0)),
-                GridNode::from((3, 0)),
-            ])
+            vec![
+                (GridNode::from((-3, 0)), 3.0),
+                (GridNode::from((-2, 0)), 2.0),
+                (
+                    GridNode::from((-1, -1)),
+                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
+                ),
+                (GridNode::from((-1, 0)), 1.0),
+                (
+                    GridNode::from((-1, 1)),
+                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
+                ),
+                (GridNode::from((0, -3)), 3.0),
+                (GridNode::from((0, -2)), 2.0),
+                (GridNode::from((0, -1)), 1.0),
+                (GridNode::from((0, 0)), 0.0),
+                (GridNode::from((0, 1)), 1.0),
+                (GridNode::from((0, 2)), 2.0),
+                (GridNode::from((0, 3)), 3.0),
+                (
+                    GridNode::from((1, -1)),
+                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
+                ),
+                (GridNode::from((1, 0)), 1.0),
+                (
+                    GridNode::from((1, 1)),
+                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
+                ),
+                (GridNode::from((2, 0)), 2.0),
+                (GridNode::from((3, 0)), 3.0),
+            ]
         );
     }
 
     #[test]
     fn test_split_overlap() {
         let from_set = vec![
-            GridNode::from((0, 0)),
-            GridNode::from((1, 1)),
-            GridNode::from((1, 2)),
-            GridNode::from((2, 2)),
-            GridNode::from((3, 3)),
-            GridNode::from((3, 4)),
-            GridNode::from((4, 4)),
-            GridNode::from((4, 5)),
+            (GridNode::from((0, 0)), 0.0),
+            (GridNode::from((1, 1)), 0.0),
+            (GridNode::from((1, 2)), 0.0),
+            (GridNode::from((2, 2)), 0.0),
+            (GridNode::from((3, 3)), 0.0),
+            (GridNode::from((3, 4)), 0.0),
+            (GridNode::from((4, 4)), 0.0),
+            (GridNode::from((4, 5)), 0.0),
         ];
         let to_set = vec![
-            GridNode::from((1, 1)),
-            GridNode::from((1, 2)),
-            GridNode::from((2, 2)),
-            GridNode::from((3, 3)),
-            GridNode::from((3, 4)),
-            GridNode::from((4, 4)),
-            GridNode::from((4, 5)),
-            GridNode::from((5, 5)),
+            (GridNode::from((1, 1)), 0.0),
+            (GridNode::from((1, 2)), 0.0),
+            (GridNode::from((2, 2)), 0.0),
+            (GridNode::from((3, 3)), 0.0),
+            (GridNode::from((3, 4)), 0.0),
+            (GridNode::from((4, 4)), 0.0),
+            (GridNode::from((4, 5)), 0.0),
+            (GridNode::from((5, 5)), 0.0),
         ];
 
         let (from_set, to_set) = split_overlap(
@@ -199,20 +248,20 @@ mod tests {
         assert_eq!(
             from_set,
             vec![
-                GridNode::from((0, 0)),
-                GridNode::from((1, 1)),
-                GridNode::from((1, 2)),
-                GridNode::from((2, 2)),
+                (GridNode::from((0, 0)), 0.0),
+                (GridNode::from((1, 1)), 0.0),
+                (GridNode::from((1, 2)), 0.0),
+                (GridNode::from((2, 2)), 0.0),
             ]
         );
         assert_eq!(
             to_set,
             vec![
-                GridNode::from((3, 3)),
-                GridNode::from((3, 4)),
-                GridNode::from((4, 4)),
-                GridNode::from((4, 5)),
-                GridNode::from((5, 5)),
+                (GridNode::from((3, 3)), 0.0),
+                (GridNode::from((3, 4)), 0.0),
+                (GridNode::from((4, 4)), 0.0),
+                (GridNode::from((4, 5)), 0.0),
+                (GridNode::from((5, 5)), 0.0),
             ]
         );
     }
