@@ -177,6 +177,12 @@ impl MapState {
         }
     }
 
+    /// Getter for the algorithm settings.
+    #[inline]
+    pub fn get_algorithm_settings(&self) -> AlgorithmSettings {
+        self.algorithm_settings
+    }
+
     /// Recalculate the algorithm settings based on the current map.
     pub fn calculate_algorithm_settings(&mut self) {
         self.algorithm_settings = AlgorithmSettings::default();
@@ -213,6 +219,8 @@ impl MapState {
     /// Run the full algorithm on the map.
     pub fn run_algorithm(&mut self) {
         self.calculate_algorithm_settings();
+        self.algorithm_settings
+            .debug = true;
         unwrap_or_return!(recalculate_map(
             self.algorithm_settings,
             &mut self.map

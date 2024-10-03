@@ -190,7 +190,8 @@ impl Station {
     #[allow(dead_code)]
     pub fn print_info(&self) {
         logging::log!(
-            "Station: {} at {:?} with edges [{:?}]",
+            "Station: {}({}) at {:?} with edges [{:?}]",
+            self.name,
             self.id,
             self.pos,
             self.get_edges()

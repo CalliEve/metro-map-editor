@@ -199,6 +199,26 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Result<M
         }
     }
 
+    // Check there is no station overlap
+    for station in map.get_stations() {
+        if let Some(other) = map
+            .get_stations()
+            .iter()
+            .filter(|s| s.get_id() != station.get_id())
+            .find(|s| s.get_pos() == station.get_pos())
+        {
+            return Err(Error::decode_error(format!(
+                "station {}({}) has the same position as another station {}({}) on this map of size {:?} with squares of size {}",
+                station.get_name(),
+                station.get_id(),
+                other.get_name(),
+                other.get_id(),
+                state.get_size(),
+                state.get_square_size()
+            )));
+        }
+    }
+
     // Only load all the lines once we have loaded the stations they reference
     for item in &graph
         .graph

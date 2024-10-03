@@ -69,6 +69,22 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
         map.add_station(station);
     }
 
+    // Check there is no station overlap
+    for station in map.get_stations() {
+        if map
+            .get_stations()
+            .iter()
+            .filter(|s| s.get_id() != station.get_id())
+            .any(|s| s.get_pos() == station.get_pos())
+        {
+            return Err(Error::decode_error(format!(
+                "station {}({}) has the same position as another station",
+                station.get_name(),
+                station.get_id()
+            )));
+        }
+    }
+
     // Add lines
     for json_line in graph
         .lines

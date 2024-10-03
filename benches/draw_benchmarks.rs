@@ -63,9 +63,10 @@ fn draw_edge_benchmark(c: &mut Criterion) {
 fn draw_map_benchmark(c: &mut Criterion) {
     let context = CanvasContext::new();
     let mut canvas = CanvasState::new();
-    canvas.set_square_size(5);
+    canvas.set_square_size(7);
+    canvas.set_size((700, 1500)); // Without enlarging the canvas, some stations will overlap due to map size
 
-    let test_file_content = std::fs::read_to_string("exisiting_maps/berlin.graphml")
+    let test_file_content = std::fs::read_to_string("existing_maps/berlin.graphml")
         .expect("test data file does not exist");
     let map = graphml::decode_map(&test_file_content, canvas).expect("failed to decode graphml");
 

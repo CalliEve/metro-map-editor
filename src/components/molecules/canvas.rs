@@ -88,6 +88,7 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
             .round()) as u32;
 
     // update the state with the new size.
+    logging::log!("Canvas size: ({}, {})", height, width);
     map_state.update(|state| state.update_canvas_state(|canvas| canvas.set_size((height, width))));
 }
 

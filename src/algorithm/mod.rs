@@ -31,6 +31,8 @@ pub struct AlgorithmSettings {
     pub grid_x_limits: (i32, i32),
     /// The highest and lowest possible y values of the grid.
     pub grid_y_limits: (i32, i32),
+    /// Whether to print debug information.
+    pub debug: bool,
 }
 
 impl AlgorithmSettings {
@@ -45,6 +47,12 @@ impl AlgorithmSettings {
         self.grid_y_limits = y_limits;
         self
     }
+
+    /// Toggle the debug mode.
+    pub fn toggle_debug(mut self) -> Self {
+        self.debug = !self.debug;
+        self
+    }
 }
 
 impl Default for AlgorithmSettings {
@@ -53,8 +61,9 @@ impl Default for AlgorithmSettings {
             node_set_radius: 3,
             edge_routing_attempts: 3,
             move_cost: 1.0,
-            grid_x_limits: (0, 0),
-            grid_y_limits: (0, 0),
+            debug: false,
+            grid_x_limits: (i32::MIN, i32::MAX),
+            grid_y_limits: (i32::MIN, i32::MAX),
         }
     }
 }

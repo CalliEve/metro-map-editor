@@ -11,6 +11,7 @@ use super::{
     AlgorithmSettings,
 };
 use crate::{
+    algorithm::debug_print,
     models::Map,
     utils::Result,
     Error,
@@ -27,10 +28,14 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         return Ok(());
     }
 
-    logging::log!(
-        "Recalculating map with {} edges",
-        map.get_edges()
-            .len()
+    debug_print(
+        settings,
+        &format!(
+            "Recalculating map with {} edges",
+            map.get_edges()
+                .len()
+        ),
+        false,
     );
 
     map.quickcalc_edges();
@@ -40,7 +45,11 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
     let mut attempt = 0;
     let mut found = false;
 
-    // logging::log!("Ordered {} edges", edges.len());
+    debug_print(
+        settings,
+        &format!("Ordered {} edges", edges.len()),
+        false,
+    );
 
     while !found {
         if attempt >= settings.edge_routing_attempts {
@@ -65,7 +74,11 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
 
     // TODO: Implement the rest of the algorithm
 
-    logging::log!("Recalculated map");
+    debug_print(
+        settings,
+        &format!("Recalculated map"),
+        false,
+    );
 
     Ok(())
 }
@@ -73,11 +86,62 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Map;
+    use crate::{
+        utils::{
+            graphml,
+            json,
+        },
+        CanvasState,
+        MapState,
+    };
 
     #[test]
     fn test_recalculate_map() {
-        let mut map = Map::new();
-        recalculate_map(AlgorithmSettings::default(), &mut map).unwrap();
+        let map_files = vec![
+            "existing_maps/disjointed_test.json",
+            "existing_maps/routing_test.json",
+            "existing_maps/montreal.graphml",
+            "existing_maps/wien.graphml",
+            "existing_maps/washington.graphml",
+            "existing_maps/karlsruhe.graphml",
+            "existing_maps/sydney.graphml",
+            "existing_maps/berlin.graphml",
+        ];
+
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(5);
+        canvas.set_size((700, 800));
+
+        for map_file in &map_files {
+            let test_file_content = std::fs::read_to_string(map_file).expect(&format!(
+                "test data file {map_file} does not exist"
+            ));
+
+            let mut map = if map_file.ends_with(".json") {
+                json::decode_map(&test_file_content, canvas).expect(&format!(
+                    "failed to decode json of {map_file}"
+                ))
+            } else {
+                graphml::decode_map(&test_file_content, canvas).expect(&format!(
+                    "failed to decode graphml of {map_file}"
+                ))
+            };
+
+            let mut state = MapState::new(map.clone());
+            state.calculate_algorithm_settings();
+            let settings = state.get_algorithm_settings();
+
+            println!(
+                "testing on map {map_file} with {} stations and {} edges",
+                map.get_stations()
+                    .len(),
+                map.get_edges()
+                    .len()
+            );
+
+            recalculate_map(settings, &mut map).expect(&format!(
+                "failed to recalculate map {map_file}"
+            ));
+        }
     }
 }

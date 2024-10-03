@@ -30,7 +30,7 @@ mod tests {
 
     #[test]
     fn test_decode_map() {
-        let test_file_content = std::fs::read_to_string("exisiting_maps/small_test.graphml")
+        let test_file_content = std::fs::read_to_string("existing_maps/small_test.graphml")
             .expect("test data file does not exist");
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);

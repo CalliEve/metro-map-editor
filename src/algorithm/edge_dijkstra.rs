@@ -159,7 +159,11 @@ pub fn edge_dijkstra(
     }
 
     if to_visited.is_none() {
-        return Err(Error::other("no path found"));
+        return Err(Error::other(format!(
+            "No path found between {} and {}.",
+            from_station.get_id(),
+            to_station.get_id()
+        )));
     }
 
     let mut best = to_visited
@@ -202,8 +206,11 @@ mod tests {
             to_station.get_id(),
             None,
         );
+
         map.add_station(from_station.clone());
         map.add_station(to_station.clone());
+        map.add_edge(edge.clone());
+        map.quickcalc_edges();
 
         let result = edge_dijkstra(
             AlgorithmSettings::default(),

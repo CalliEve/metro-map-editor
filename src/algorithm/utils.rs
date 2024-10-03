@@ -1,5 +1,6 @@
 //! Utility functions specifically for the algorithm module.
 
+use leptos::logging;
 use rand::{
     seq::SliceRandom,
     thread_rng,
@@ -76,6 +77,14 @@ pub fn calculate_angle(
         angle - 180.0
     } else {
         angle
+    }
+}
+
+pub fn debug_print(settings: AlgorithmSettings, msg: &str, warn: bool) {
+    if settings.debug && warn {
+        logging::debug_warn!("{}", msg);
+    } else if settings.debug {
+        logging::log!("{}", msg);
     }
 }
 

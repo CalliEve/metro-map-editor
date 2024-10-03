@@ -2,9 +2,8 @@
 
 use std::collections::HashSet;
 
-use leptos::logging;
-
 use super::{
+    debug_print,
     edge_dijkstra::edge_dijkstra,
     AlgorithmSettings,
 };
@@ -20,7 +19,11 @@ use crate::{
 };
 
 /// Get a set of nodes in the radius around the given station.
-fn get_node_set(settings: AlgorithmSettings, station: &Station) -> Vec<(GridNode, f64)> {
+fn get_node_set(
+    settings: AlgorithmSettings,
+    station: &Station,
+    occupied: &HashSet<GridNode>,
+) -> Vec<(GridNode, f64)> {
     if station.is_settled() {
         return vec![(station.get_pos(), 0.0)];
     }
@@ -33,6 +36,10 @@ fn get_node_set(settings: AlgorithmSettings, station: &Station) -> Vec<(GridNode
     for x in (station_pos.0 - radius)..=(station_pos.0 + radius) {
         for y in (station_pos.1 - radius)..=(station_pos.1 + radius) {
             let node = GridNode::from((x, y));
+            if occupied.contains(&node) {
+                continue;
+            }
+
             let distance = node.diagonal_distance_to(station_pos); // FIXME: use better distance calculation
             if distance.ceil() as i32 <= radius {
                 nodes.push((node, distance * settings.move_cost));
@@ -69,14 +76,17 @@ fn split_overlap(
     Vec<(GridNode, f64)>,
 ) {
     for (node, _) in &from_set.clone() {
-        if node == &from {
+        if *node == to {
+            from_set.retain(|(n, _)| n != node);
+            continue;
+        } else if *node == from {
+            to_set.retain(|(n, _)| n != node);
             continue;
         }
 
-        if *node == to
-            || to_set
-                .iter()
-                .any(|(n, _)| n == node)
+        if to_set
+            .iter()
+            .any(|(n, _)| n == node)
         {
             if node.diagonal_distance_to(from) > node.diagonal_distance_to(to) {
                 from_set.retain(|(n, _)| n != node);
@@ -110,8 +120,8 @@ pub fn route_edges(
                 "to station on edge not found",
             ))?;
 
-        let mut from_nodes = get_node_set(settings, from_station);
-        let mut to_nodes = get_node_set(settings, to_station);
+        let mut from_nodes = get_node_set(settings, from_station, &occupied);
+        let mut to_nodes = get_node_set(settings, to_station, &occupied);
 
         if have_overlap(&from_nodes, &to_nodes) {
             (from_nodes, to_nodes) = split_overlap(
@@ -121,15 +131,44 @@ pub fn route_edges(
                 to_station.get_pos(),
             );
         }
+        // if from_nodes.is_empty() || to_nodes.is_empty() {
+        //     debug_print(
+        //         settings,
+        //         &format!(
+        //             "no nodes to route edge between stations {}{} and {}{}: from:
+        // {:?}, to: {:?}",             from_station.get_id(),
+        //             from_station.get_pos(),
+        //             to_station.get_id(),
+        //             to_station.get_pos(),
+        //             from_nodes,
+        //             to_nodes
+        //         ),
+        //         true,
+        //     );
+        //     return Err(Error::other(
+        //         "no nodes to route edge between stations",
+        //     ));
+        // }
 
-        logging::log!(
-            "routing edge from {}{} to {}{}, sets:\nfrom: {:?}\nto: {:?}",
-            from_station.get_id(),
-            from_station.get_pos(),
-            to_station.get_id(),
-            to_station.get_pos(),
-            from_nodes,
-            to_nodes
+        if from_nodes.is_empty() {
+            from_nodes.push((from_station.get_pos(), 0.0));
+        }
+        if to_nodes.is_empty() {
+            to_nodes.push((to_station.get_pos(), 0.0));
+        }
+
+        debug_print(
+            settings,
+            &format!(
+                "routing edge from {}{} to {}{}, sets:\nfrom: {:?}\nto: {:?}",
+                from_station.get_id(),
+                from_station.get_pos(),
+                to_station.get_id(),
+                to_station.get_pos(),
+                from_nodes,
+                to_nodes
+            ),
+            false,
         );
 
         let (start, nodes, end) = edge_dijkstra(
@@ -143,7 +182,11 @@ pub fn route_edges(
             &occupied,
         )?;
 
-        logging::log!("routed edge from {start} to {end}",);
+        debug_print(
+            settings,
+            &format!("routed edge from {start} to {end}",),
+            false,
+        );
 
         occupied.extend(&nodes);
         edge.set_nodes(nodes);
@@ -177,7 +220,11 @@ mod tests {
         let station = Station::new((0, 0).into(), None);
         map.add_station(station.clone());
 
-        let result = get_node_set(AlgorithmSettings::default(), &station);
+        let result = get_node_set(
+            AlgorithmSettings::default(),
+            &station,
+            &mut HashSet::new(),
+        );
 
         assert_eq!(
             result,

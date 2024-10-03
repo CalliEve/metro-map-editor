@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
      http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
   <key id="x" for="node" attr.name="x coordinate" attr.type="int"/>
   <key id="y" for="node" attr.name="y coordinate" attr.type="int"/>
@@ -43,7 +42,7 @@
     <node id="n4">
       <data key="x">4131.0</data>
       <data key="y">-2893.0</data>
-      <data key="label">De L'Église</data>
+      <data key="label">De L'Ã‰glise</data>
     </node>
     <node id="n5">
       <data key="x">4224.0</data>
@@ -113,7 +112,7 @@
     <node id="n18">
       <data key="x">4941.0</data>
       <data key="y">-1948.0</data>
-      <data key="label">Préfontaine</data>
+      <data key="label">PrÃ©fontaine</data>
     </node>
     <node id="n19">
       <data key="x">4994.0</data>
@@ -153,7 +152,7 @@
     <node id="n26">
       <data key="x">5568.0</data>
       <data key="y">-1361.0</data>
-      <data key="label">Honoré Beaugrand</data>
+      <data key="label">HonorÃ© Beaugrand</data>
     </node>
     <node id="n27">
       <data key="x">4863.0</data>
@@ -168,12 +167,12 @@
     <node id="n29">
       <data key="x">3532.0</data>
       <data key="y">-1528.0</data>
-      <data key="label">Côte Vertu</data>
+      <data key="label">CÃ´te Vertu</data>
     </node>
     <node id="n30">
       <data key="x">3563.0</data>
       <data key="y">-1640.0</data>
-      <data key="label">Du Collège</data>
+      <data key="label">Du CollÃ¨ge</data>
     </node>
     <node id="n31">
       <data key="x">3610.0</data>
@@ -193,7 +192,7 @@
     <node id="n34">
       <data key="x">3794.0</data>
       <data key="y">-2108.0</data>
-      <data key="label">Côte Sainte Catherine</data>
+      <data key="label">CÃ´te Sainte Catherine</data>
     </node>
     <node id="n35">
       <data key="x">3791.0</data>
@@ -208,7 +207,7 @@
     <node id="n37">
       <data key="x">3903.0</data>
       <data key="y">-2522.0</data>
-      <data key="label">Vendôme</data>
+      <data key="label">VendÃ´me</data>
     </node>
     <node id="n38">
       <data key="x">4083.0</data>
@@ -283,12 +282,12 @@
     <node id="n52">
       <data key="x">4205.0</data>
       <data key="y">-1386.0</data>
-      <data key="label">Crémazie</data>
+      <data key="label">CrÃ©mazie</data>
     </node>
     <node id="n53">
       <data key="x">4093.0</data>
       <data key="y">-1217.0</data>
-      <data key="label">Sauvé</data>
+      <data key="label">SauvÃ©</data>
     </node>
     <node id="n54">
       <data key="x">4011.0</data>
@@ -298,17 +297,17 @@
     <node id="n55">
       <data key="x">3911.0</data>
       <data key="y">-2114.0</data>
-      <data key="label">Côte des Neiges</data>
+      <data key="label">CÃ´te des Neiges</data>
     </node>
     <node id="n56">
       <data key="x">4028.0</data>
       <data key="y">-2062.0</data>
-      <data key="label">Université de Montréal</data>
+      <data key="label">UniversitÃ© de MontrÃ©al</data>
     </node>
     <node id="n57">
       <data key="x">4131.0</data>
       <data key="y">-2004.0</data>
-      <data key="label">Édouard Montpetit</data>
+      <data key="label">Ã‰douard Montpetit</data>
     </node>
     <node id="n58">
       <data key="x">4200.0</data>
@@ -348,202 +347,202 @@
 
 
     <edge id="e0" source="n0" target="n1">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e1" source="n1" target="n2">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e2" source="n2" target="n3">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e3" source="n3" target="n4">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e4" source="n4" target="n5">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e5" source="n5" target="n6">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e6" source="n6" target="n7">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e7" source="n7" target="n8">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e8" source="n8" target="n9">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e9" source="n9" target="n10">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e10" source="n10" target="n11">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e11" source="n11" target="n12">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e12" source="n12" target="n13">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e13" source="n13" target="n14">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e14" source="n14" target="n15">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e15" source="n15" target="n16">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e16" source="n16" target="n17">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e17" source="n17" target="n18">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e18" source="n18" target="n19">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e19" source="n19" target="n20">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e20" source="n20" target="n21">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e21" source="n21" target="n22">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e22" source="n22" target="n23">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e23" source="n23" target="n24">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e24" source="n24" target="n25">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e25" source="n25" target="n26">
-        <data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e26" source="n14" target="n27">
-        <data key="l3">true</data>
+      <data key="l3">true</data>
     </edge>
     <edge id="e27" source="n27" target="n28">
-        <data key="l3">true</data>
+      <data key="l3">true</data>
     </edge>
     <edge id="e28" source="n29" target="n30">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e29" source="n30" target="n31">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e30" source="n31" target="n32">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e31" source="n32" target="n33">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e32" source="n33" target="n34">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e33" source="n34" target="n35">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e34" source="n35" target="n36">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e35" source="n36" target="n37">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e36" source="n37" target="n38">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e37" source="n38" target="n7">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e38" source="n7" target="n39">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e39" source="n39" target="n40">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e40" source="n40" target="n41">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e41" source="n41" target="n42">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e42" source="n42" target="n43">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e43" source="n43" target="n44">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e44" source="n44" target="n14">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e45" source="n14" target="n45">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e46" source="n45" target="n46">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e47" source="n46" target="n47">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e48" source="n47" target="n48">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e49" source="n48" target="n49">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e50" source="n49" target="n50">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e51" source="n50" target="n51">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e52" source="n51" target="n52">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e53" source="n52" target="n53">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e54" source="n53" target="n54">
-        <data key="l1">true</data>
+      <data key="l1">true</data>
     </edge>
     <edge id="e55" source="n35" target="n55">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e56" source="n55" target="n56">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e57" source="n56" target="n57">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e58" source="n57" target="n58">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e59" source="n58" target="n59">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e60" source="n59" target="n60">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e61" source="n60" target="n61">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e62" source="n61" target="n50">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e63" source="n50" target="n62">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e64" source="n62" target="n63">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
     <edge id="e65" source="n63" target="n64">
-        <data key="l2">true</data>
+      <data key="l2">true</data>
     </edge>
   </graph>
 </graphml>
