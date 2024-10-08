@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use leptos::logging;
 
 use super::{
@@ -28,16 +29,15 @@ fn station_has_degree_two(map: &Map, station: &Station) -> bool {
         return false;
     }
 
-    let edges = station
+    station
         .get_edges()
         .iter()
         .map(|id| {
             map.get_edge(*id)
                 .unwrap()
         })
-        .collect::<Vec<_>>();
-
-    edges[0].get_lines() == edges[1].get_lines()
+        .map(Edge::get_lines)
+        .all_equal()
 }
 
 /// Check if the station can be contracted into an edge between its neighboring
@@ -56,8 +56,6 @@ fn can_contract_into(
         return false;
     }
 
-    let min_distance = settings.node_set_radius * 2 + 1;
-
     let start_station = map
         .get_station(start)
         .unwrap();
@@ -65,10 +63,13 @@ fn can_contract_into(
         .get_station(end)
         .unwrap();
 
+    // Check if the stations are far enough apart. If they are too close, the
+    // stations might become too close for the contracted station to be re-inserted
+    // after the algorithm has ran its course.
     start_station
         .get_pos()
         .manhattan_distance_to(end_station.get_pos())
-        <= min_distance
+        > settings.node_set_radius * 2 + 1
 }
 
 /// Contract all stations with degree two into an edge between their neighboring
@@ -91,6 +92,10 @@ pub fn contract_stations(
             .get_station(station_id)
             .unwrap()
             .clone();
+        if station.is_locked() {
+            continue;
+        }
+
         if !station_has_degree_two(map, &station) {
             continue;
         }
@@ -105,6 +110,7 @@ pub fn contract_stations(
             .cloned()
             .collect::<Vec<_>>();
 
+        // The start and end of the new edge the station will be contracted into.
         let start = edges[0]
             .opposite(station_id)
             .unwrap();
@@ -116,8 +122,9 @@ pub fn contract_stations(
             continue;
         }
 
+        // Create the new edge and retrieve it so we have a mutable reference to the
+        // station object.
         let new_edge_id = map.get_edge_id_between(start, end);
-
         let new_edge = map
             .get_mut_edge(new_edge_id)
             .unwrap();
@@ -127,7 +134,6 @@ pub fn contract_stations(
         new_edge.add_contracted_station(station_id);
 
         map.remove_station(station_id);
-
         contracted_stations.insert(station.get_id(), station);
     }
 
@@ -143,6 +149,7 @@ fn reinsert_stations(
     to_expand: &mut [Station],
     station_locs: &[usize],
 ) {
+    // Reinsert the contracted stations into the map at the given locations.
     for (station, loc) in to_expand
         .iter_mut()
         .zip(station_locs)
@@ -157,6 +164,8 @@ fn reinsert_stations(
         map.add_station(station.clone());
     }
 
+    // To get a vec of all station IDs that we need to add a new edge between, also
+    // add the start and end station IDs of the edge to expand.
     let mut expand_station_ids = to_expand
         .iter()
         .map(Station::get_id)
@@ -164,6 +173,8 @@ fn reinsert_stations(
     expand_station_ids.insert(0, edge.get_from());
     expand_station_ids.push(edge.get_to());
 
+    // Add in an edge for every pair of station ids. We also keep track of the
+    // location of the end station and the index of that location.
     for ((start, end), (i, loc)) in expand_station_ids
         .iter()
         .zip(&expand_station_ids[1..])
@@ -175,6 +186,7 @@ fn reinsert_stations(
     {
         let new_edge_id = map.get_edge_id_between(*start, *end);
 
+        // Add the edge to the lines of the old edge.
         for line_id in edge.get_lines() {
             let mut line = map
                 .get_line(*line_id)
@@ -184,18 +196,29 @@ fn reinsert_stations(
             map.add_line(line);
         }
 
+        if *loc == 0 {
+            // end station location is 0, the amount of nodes on the new edge is thus 0 and
+            // we can skip the rest.
+            continue;
+        }
+
+        // Calculate the nodes to take from the old edge and set them on the new edge.
         let to_skip = if i == 0 { 0 } else { station_locs[i - 1] + 1 };
         let to_take = if *loc
             >= edge
                 .get_nodes()
                 .len()
         {
+            // If the end station is the last contracted station, can take all nodes from
+            // the start station up to the end of the nodes list.
             loc - station_locs[i - 1]
-        } else if *loc == 0 {
-            *loc
         } else if i == 0 {
+            // If the end station is the first contracted station, can take all nodes up to
+            // the location of this station.
             loc - 1
         } else {
+            // Otherwise, take all nodes between the previous contracted station and the
+            // current one.
             loc - station_locs[i - 1] - 1
         };
 
@@ -227,6 +250,7 @@ pub fn expand_stations(
         .collect::<Vec<_>>();
 
     for edge in edges {
+        // Get all stations that were contracted into the edge.
         let mut to_expand = edge
             .get_contracted_stations()
             .iter()
@@ -256,39 +280,34 @@ pub fn expand_stations(
             )));
         }
 
-        let mut ref_station = map
+        let start_station = map
             .get_station(edge.get_from())
             .ok_or(Error::other(
                 "Edge with contracted stations has no start station",
             ))?
             .clone();
-        let mut end_station = map
+        let end_station = map
             .get_station(edge.get_to())
             .ok_or(Error::other(
                 "Edge with contracted stations has no end station",
             ))?
             .clone();
-        let first_node = edge
-            .get_nodes()
-            .first()
-            .unwrap();
-        if first_node.diagonal_distance_to(ref_station.get_pos())
-            > first_node.diagonal_distance_to(end_station.get_pos())
-        {
-            std::mem::swap(&mut ref_station, &mut end_station);
-        }
 
-        // Sort by distance to reference station
+        // Sort the stations by distance to starting station of the edge. This ensures
+        // that they will be added back in in the correct order.
         to_expand.sort_by(|a, b| {
             a.get_pos()
-                .diagonal_distance_to(ref_station.get_pos())
+                .diagonal_distance_to(start_station.get_pos())
                 .partial_cmp(
                     &b.get_pos()
-                        .diagonal_distance_to(ref_station.get_pos()),
+                        .diagonal_distance_to(start_station.get_pos()),
                 )
                 .unwrap()
         });
 
+        // Calculate the new locations of the contracted stations on the edge, these are
+        // equi-distance between the start and end stations of the edge they were
+        // contracted into.
         let step = (edge
             .get_nodes()
             .len() as f64)

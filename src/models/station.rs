@@ -169,7 +169,13 @@ impl Station {
     /// Check if the station is settled.
     #[inline]
     pub fn is_settled(&self) -> bool {
-        self.is_settled || self.is_locked
+        self.is_settled || self.is_locked()
+    }
+
+    /// Check if the station is locked.
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.is_locked
     }
 
     /// If the given node is a neighboring grid node to the station.

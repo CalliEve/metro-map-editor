@@ -172,6 +172,26 @@ impl Edge {
         self.nodes = nodes;
     }
 
+    /// Get the start and end nodes of the edge.
+    pub fn get_edge_ends(&self) -> Vec<GridNode> {
+        if self
+            .get_nodes()
+            .len()
+            < 3
+        {
+            self.get_nodes()
+                .to_vec()
+        } else {
+            vec![
+                self.get_nodes()[0],
+                self.get_nodes()[self
+                    .get_nodes()
+                    .len()
+                    - 1],
+            ]
+        }
+    }
+
     /// A getter for if the edge is settled.
     #[inline]
     pub fn is_settled(&self) -> bool {

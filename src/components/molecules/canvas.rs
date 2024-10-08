@@ -22,7 +22,9 @@ use crate::{
         MapState,
     },
     models::{
+        EdgeID,
         GridNode,
+        Map,
         SelectedLine,
         SelectedStation,
     },
@@ -115,6 +117,17 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
         (f64::from(ev.page_x()) - (win_width - f64::from(map_size.1))),
         (f64::from(ev.page_y()) - (win_height - f64::from(map_size.0))),
     )
+}
+
+// Helper function for recalculating an edge nodes.
+fn recalculate_edge_nodes(map: &mut Map, edge_id: EdgeID) {
+    let edge = map
+        .get_edge(edge_id)
+        .cloned()
+        .expect("edge should exist");
+    let mut edge = edge.clone();
+    edge.calculate_nodes(map);
+    map.add_edge(edge);
 }
 
 /// Listener for the [mousedown] event on the canvas.
@@ -247,6 +260,16 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
 
             line.add_station(&mut map, station_at_pos, before, after);
 
+            if let Some(before_station) = before {
+                let edge_id = map.get_edge_id_between(before_station, station_at_pos);
+                recalculate_edge_nodes(&mut map, edge_id);
+            }
+
+            if let Some(after_station) = after {
+                let edge_id = map.get_edge_id_between(station_at_pos, after_station);
+                recalculate_edge_nodes(&mut map, edge_id);
+            }
+
             map.add_line(line);
             map_state.set_map(map);
         }
@@ -277,12 +300,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
     }
 
     for edge_id in edge_ids {
-        let mut edge = map
-            .get_edge(edge_id)
-            .cloned()
-            .expect("edge should exist");
-        edge.calculate_nodes(&map);
-        map.add_edge(edge);
+        recalculate_edge_nodes(&mut map, edge_id);
     }
 
     map_state.set_map(map);

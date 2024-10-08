@@ -36,6 +36,9 @@ fn station_approach_available(
     let mut left_wards = Vec::new();
     let mut right_wards = Vec::new();
 
+    // Get 2 lists of all edges connected to the station together with the angle
+    // with which they are connected to it. 1 rightwards and the other
+    // leftwards.
     for edge_id in station.get_edges() {
         if *edge_id == incoming_edge {
             continue;
@@ -62,6 +65,8 @@ fn station_approach_available(
         }
     }
 
+    // Sort the lists by angle, so we can check the edges in order of angle small to
+    // large.
     left_wards.sort_by(|a, b| {
         a.1.partial_cmp(&b.1)
             .unwrap()
@@ -87,6 +92,9 @@ fn station_approach_available(
         }
     };
 
+    // For both the right and leftwards edges, we check if the angle between the
+    // incoming edge and the other edges already settled leaves enough room for the
+    // edges that still need to be settled.
     for (edge, angle) in left_wards {
         if edge.is_settled() {
             if !possible_angle(angle, cost) {
@@ -175,10 +183,13 @@ fn diagonal_occupied(
 ) -> bool {
     if let Some(diag_one) = occupied.get(&GridNode::from((first.0, second.1))) {
         if let Some(diag_two) = occupied.get(&GridNode::from((second.0, first.1))) {
+            // if both diagonal nodes are occupied by same edge, the diagonal is occupied.
             if diag_one == diag_two {
                 return true;
             }
 
+            // if one of the diagonal nodes is a station, we check if the edge on the other
+            // diagonal node is connected to it, if so, the diagonal is occupied.
             if let Some(station_id) = diag_one.get_station_id() {
                 return map
                     .get_station(station_id)
@@ -215,55 +226,62 @@ fn calc_station_exit_cost(
         return Ok(0.0);
     }
 
-    let mut biggest_settled = None;
+    let mut biggest_overlap = None;
     let mut current = 0;
 
+    // find the edge with the most overlap in lines with the current edge, this is
+    // the opposite edge from our edge that's leaving the station.
     for edge_id in station.get_edges() {
         let edge = map
             .get_edge(*edge_id)
             .ok_or(Error::other(
                 "edge connected to station not found",
             ))?;
-        if !edge.is_settled() {
-            continue;
-        }
 
         let overlap = overlap_amount(
             edge.get_lines(),
             current_edge.get_lines(),
         );
         if overlap > current {
-            biggest_settled = Some(edge);
+            biggest_overlap = Some(edge);
             current = overlap;
         }
     }
 
-    if let Some(opposite_edge) = biggest_settled {
+    // if we found an opposite edge, we can calculate the cost of the angle between
+    // the station and the node of the station.
+    if let Some(opposite_edge) = biggest_overlap {
         let neighbor_nodes = station
             .get_pos()
             .get_neighbors();
 
-        if let Some(opp_station_id) = opposite_edge.opposite(station.get_id()) {
-            if let Some(opp_station) = map.get_station(opp_station_id) {
-                if neighbor_nodes.contains(&opp_station.get_pos()) {
-                    return calc_angle_cost(
-                        opp_station.get_pos(),
-                        station.get_pos(),
-                        node,
-                    );
-                }
+        // If the ends of the opposite edge are in the neighbors of the station, we
+        // calculate the angle with that node.
+        for edge_node in opposite_edge.get_edge_ends() {
+            if neighbor_nodes.contains(&edge_node) {
+                return calc_angle_cost(edge_node, station.get_pos(), node);
             }
         }
 
-        for edge_node in opposite_edge.get_nodes() {
-            if neighbor_nodes.contains(edge_node) {
-                return calc_angle_cost(*edge_node, station.get_pos(), node);
+        // Else we calculate the angle with the opposite station, this should only occur
+        // when the list of nodes in the edge is empty.
+        if let Some(opp_station_id) = opposite_edge.opposite(station.get_id()) {
+            if let Some(opp_station) = map.get_station(opp_station_id) {
+                // FIXME: we should instead round angles for such cases. Also: investigate why
+                // an edge nodes might be empty / not be neighbors of the station.
+                return Ok(calc_angle_cost(
+                    opp_station.get_pos(),
+                    station.get_pos(),
+                    node,
+                )
+                .unwrap_or(0.0));
             }
         }
-        Err(Error::other("no neighbor node found"))
-    } else {
-        Ok(0.0)
     }
+
+    // If we didn't find an opposite edge, we can't calculate the angle and thus
+    // every exit angle is equally good and might as well be free.
+    Ok(0.0)
 }
 
 /// Calculate the cost of the node on the path between two stations.
