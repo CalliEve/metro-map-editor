@@ -88,7 +88,11 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
             .round()) as u32;
 
     // update the state with the new size.
-    logging::log!("Canvas size: ({}, {})", height, width);
+    logging::log!(
+        "new canvas size: ({}, {})",
+        height,
+        width
+    );
     map_state.update(|state| state.update_canvas_state(|canvas| canvas.set_size((height, width))));
 }
 
@@ -206,6 +210,15 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         .map(|l| SelectedLine::new(&l, &map, mouse_pos, Some(mouse_pos)))
     {
         map_state.set_selected_line(selected_line);
+        for edge in map.get_edges() {
+            if edge
+                .get_nodes()
+                .contains(&mouse_pos)
+            {
+                edge.print_info();
+                break;
+            }
+        }
     }
 }
 
@@ -251,11 +264,25 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
         return;
     };
 
+    let mut edge_ids = Vec::new();
     for station in map.get_mut_stations() {
         if *station == selected_station {
             station.set_pos(selected_station.get_pos());
+            station.set_original_pos(selected_station.get_pos());
+            edge_ids = station
+                .get_edges()
+                .to_vec();
             break;
         }
+    }
+
+    for edge_id in edge_ids {
+        let mut edge = map
+            .get_edge(edge_id)
+            .cloned()
+            .expect("edge should exist");
+        edge.calculate_nodes(&map);
+        map.add_edge(edge);
     }
 
     map_state.set_map(map);
@@ -349,8 +376,6 @@ pub fn Canvas() -> impl IntoView {
             .get_size();
         canvas_node.set_height(s.0);
         canvas_node.set_width(s.1);
-
-        map_state.update(MapState::run_local_search);
 
         map_state
             .get()

@@ -2,11 +2,14 @@
 
 use std::{
     f64::consts::PI,
+    fmt::Display,
     sync::atomic::{
         AtomicU64,
         Ordering as AtomicOrdering,
     },
 };
+
+use itertools::Itertools;
 
 use super::{
     station::StationID,
@@ -34,6 +37,12 @@ impl From<u64> for LineID {
 impl From<LineID> for u64 {
     fn from(value: LineID) -> Self {
         value.0
+    }
+}
+
+impl Display for LineID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -155,8 +164,7 @@ impl Line {
                 .remove(index);
         }
 
-        let mut start = None;
-        let mut end = None;
+        let mut ends = Vec::new();
         let edges = self
             .edges
             .clone();
@@ -166,13 +174,13 @@ impl Line {
                 .expect("invalid edge id in line");
 
             if edge.get_to() == station {
-                start = Some(edge.get_from());
+                ends.push(edge.get_from());
 
                 self.edges
                     .retain(|e| *e != edge_id);
                 map.removed_edge(edge_id, self.get_id());
             } else if edge.get_from() == station {
-                end = Some(edge.get_to());
+                ends.push(edge.get_to());
 
                 self.edges
                     .retain(|e| *e != edge_id);
@@ -180,22 +188,46 @@ impl Line {
             }
         }
 
-        if let (Some(start_station), Some(end_station)) = (start, end) {
+        for combinations in ends
+            .into_iter()
+            .combinations(2)
+        {
             self.add_edge(
-                map.get_edge_id_between(start_station, end_station),
+                map.get_edge_id_between(combinations[0], combinations[1]),
                 map,
             );
         }
     }
 
-    /// Add an edge that is being used by this line.
+    /// Add an edge that is being used by this line if it has not yet been
+    /// added.
     pub fn add_edge(&mut self, edge_id: EdgeID, map: &mut Map) {
-        let edge = map
-            .get_mut_edge(edge_id)
-            .expect("adding invalid edge id to line");
-        edge.add_line(self.get_id());
+        if self
+            .edges
+            .contains(&edge_id)
+        {
+            return;
+        }
+
+        let edge = {
+            let edge = map
+                .get_mut_edge(edge_id)
+                .expect("adding invalid edge id to line");
+            edge.add_line(self.get_id());
+            edge.clone()
+        };
+
         self.edges
             .push(edge_id);
+        self.add_station(map, edge.get_from(), None, None);
+        self.add_station(map, edge.get_to(), None, None);
+    }
+
+    /// Remove an edge from the line without further removal of it from the map
+    /// or adjecent stations.
+    pub fn remove_edge_raw(&mut self, edge_id: EdgeID) {
+        self.edges
+            .retain(|e| *e != edge_id);
     }
 
     /// A setter for the station's color.
@@ -396,14 +428,16 @@ impl Line {
 
     /// Draws the line around a station if this line has only a single station.
     pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
-        let stations = self.get_stations();
-
-        if stations.len() != 1 {
+        if self
+            .get_stations()
+            .len()
+            != 1
+        {
             return;
         }
 
         let station = map
-            .get_station(stations[0])
+            .get_station(self.get_stations()[0])
             .expect("invalid station id on line");
 
         let mut width = state.drawn_square_size() / 10.0;
@@ -586,11 +620,11 @@ mod tests {
         assert!(
             map.get_edge(line.get_edges()[0])
                 .unwrap()
-                .is_from(station2)
+                .is_from(station1)
                 && map
                     .get_edge(line.get_edges()[0])
                     .unwrap()
-                    .is_to(station1)
+                    .is_to(station2)
         );
     }
 

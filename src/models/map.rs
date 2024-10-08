@@ -137,7 +137,8 @@ impl Map {
             .collect()
     }
 
-    /// Add a station to the map.
+    /// Add a station to the map, if a station already exists with that ID, it
+    /// will be replaces.
     pub fn add_station(&mut self, station: Station) {
         self.stations
             .insert(station.get_id(), station);
@@ -204,7 +205,8 @@ impl Map {
         }
     }
 
-    /// Add an edge to map.
+    /// Add an edge to map, if an edge with that ID already exists, it will get
+    /// replaces.
     pub fn add_edge(&mut self, edge: Edge) {
         self.get_mut_station(edge.get_from())
             .expect("from station not found")
@@ -219,20 +221,20 @@ impl Map {
 
     /// Remove an edge from the map.
     pub fn remove_edge(&mut self, id: EdgeID) {
+        if let Some(edge) = self
+            .edges
+            .remove(&id)
         {
-            let edge = unwrap_or_return!(self
-                .edges
-                .remove(&id)
-                .ok_or(Error::other("edge to remove not found")));
             if let Some(from_station) = self.get_mut_station(edge.get_from()) {
                 from_station.remove_edge(id);
             }
             if let Some(to_station) = self.get_mut_station(edge.get_to()) {
                 to_station.remove_edge(id);
             }
+            for line in self.get_mut_lines() {
+                line.remove_edge_raw(id);
+            }
         }
-        self.edges
-            .remove(&id);
     }
 
     /// Update the nodes of all edges on the map, this errors if trying to

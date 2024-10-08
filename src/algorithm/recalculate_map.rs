@@ -1,12 +1,19 @@
 //! This module contains the Recalculate Map algorithm, which is the main
 //! function to run the map algorithm.
 
+use std::collections::HashMap;
+
 use leptos::logging;
 
 use super::{
+    local_search::local_search,
     order_edges::order_edges,
     randomize_edges,
     route_edges::route_edges,
+    station_contraction::{
+        contract_stations,
+        expand_stations,
+    },
     unsettle_map,
     AlgorithmSettings,
 };
@@ -38,12 +45,25 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         false,
     );
 
+    let contracted_stations = contract_stations(settings, map);
+
+    debug_print(
+        settings,
+        &format!(
+            "Contracted stations, {} edges left",
+            map.get_edges()
+                .len()
+        ),
+        false,
+    );
+
     map.quickcalc_edges();
     unsettle_map(map);
 
     let mut edges = order_edges(map)?;
     let mut attempt = 0;
     let mut found = false;
+    let mut occupied = HashMap::new();
 
     debug_print(
         settings,
@@ -52,33 +72,46 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
     );
 
     while !found {
-        if attempt >= settings.edge_routing_attempts {
-            return Err(Error::other(
-                "Reached max amount of retries when routing edges.",
-            ));
-        }
-
         let mut alg_map = map.clone();
 
         attempt += 1;
         let res = route_edges(settings, &mut alg_map, edges.clone());
 
         if let Err(e) = res {
-            logging::warn!("Failed to route edges: {e}");
+            logging::error!("Failed to route edges: {e}");
+
+            if attempt >= settings.edge_routing_attempts {
+                *map = alg_map;
+                return Err(Error::other(
+                    "Reached max amount of retries when routing edges. Showing map at point of failure.",
+                ));
+            }
+
             randomize_edges(&mut edges);
         } else {
             found = true;
             *map = alg_map;
+            occupied = res.unwrap();
         }
     }
 
-    // TODO: Implement the rest of the algorithm
+    debug_print(
+        settings,
+        "Routed edges, commencing local search",
+        false,
+    );
+
+    // local_search(settings, map, &mut occupied)?;
 
     debug_print(
         settings,
-        &format!("Recalculated map"),
+        "Finished local search, re-adding contracted stations",
         false,
     );
+
+    expand_stations(settings, map, &contracted_stations)?;
+
+    debug_print(settings, "Recalculated map", false);
 
     Ok(())
 }
@@ -110,7 +143,7 @@ mod tests {
 
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
-        canvas.set_size((700, 800));
+        canvas.set_size((800, 1700));
 
         for map_file in &map_files {
             let test_file_content = std::fs::read_to_string(map_file).expect(&format!(

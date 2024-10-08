@@ -200,6 +200,7 @@ pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Result<M
     }
 
     // Check there is no station overlap
+    // FIXME: instead of erroring, it should look for a free spot in its neighbors
     for station in map.get_stations() {
         if let Some(other) = map
             .get_stations()

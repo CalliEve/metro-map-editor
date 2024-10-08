@@ -10,6 +10,8 @@ use std::{
     },
 };
 
+use leptos::logging;
+
 use super::{
     GridNode,
     Line,
@@ -62,6 +64,8 @@ pub struct Edge {
     lines: Vec<LineID>,
     /// If the edge is settled in the Dijkstra algorithm
     is_settled: bool,
+    /// The stations contracted into this line in the algorithm
+    contracted_stations: Vec<StationID>,
 }
 
 impl Edge {
@@ -78,6 +82,7 @@ impl Edge {
             nodes: Vec::new(),
             lines: Vec::new(),
             is_settled: false,
+            contracted_stations: Vec::new(),
         }
     }
 
@@ -183,6 +188,29 @@ impl Edge {
         self.is_settled = false;
     }
 
+    /// Add a station to the contracted stations.
+    pub fn add_contracted_station(&mut self, station: StationID) {
+        self.contracted_stations
+            .push(station);
+    }
+
+    /// Extend the contracted stations with the given stations.
+    pub fn extend_contracted_stations(&mut self, stations: &[StationID]) {
+        self.contracted_stations
+            .extend(stations);
+    }
+
+    /// Get the contracted stations.
+    pub fn get_contracted_stations(&self) -> &[StationID] {
+        &self.contracted_stations
+    }
+
+    /// Clear the contracted stations.
+    pub fn clear_contracted_stations(&mut self) {
+        self.contracted_stations
+            .clear();
+    }
+
     /// Returns if the edge visits the node.
     pub fn visits_node(&self, map: &Map, node: GridNode) -> bool {
         if self
@@ -205,6 +233,21 @@ impl Edge {
         }
 
         false
+    }
+
+    #[allow(dead_code)]
+    pub fn print_info(&self) {
+        logging::log!(
+            "Edge: {} from {} to {} with lines [{:?}]",
+            self.id,
+            self.get_from(),
+            self.get_to(),
+            self.get_lines()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<String>>()
+                .join(", ")
+        );
     }
 
     /// Get the stations bordering the node on this edge if exists

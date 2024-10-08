@@ -22,8 +22,7 @@ fn line_degree(map: &Map, station_id: StationID) -> Result<usize> {
     let station = map
         .get_station(station_id)
         .ok_or(Error::other(format!(
-            "station {} not found when calculating line degree",
-            station_id
+            "station {station_id} not found when calculating line degree"
         )))?;
 
     for edge_id in station.get_edges() {
@@ -117,7 +116,7 @@ pub fn order_edges(map: &Map) -> Result<Vec<Edge>> {
     {
         edges.append(&mut order_edges_alg(
             map,
-            line_degree_map.clone(),
+            &line_degree_map,
             highest,
         )?);
 
@@ -134,7 +133,7 @@ pub fn order_edges(map: &Map) -> Result<Vec<Edge>> {
                 line_degree_map.remove(&edge.get_to());
             }
             highest = HeapStation::new(0.into(), usize::MIN);
-            for (_, station) in &line_degree_map {
+            for station in line_degree_map.values() {
                 if station.degree > highest.degree {
                     highest = *station;
                 }
@@ -148,7 +147,7 @@ pub fn order_edges(map: &Map) -> Result<Vec<Edge>> {
 /// The underlying algorithm for ordering the edges.
 fn order_edges_alg(
     map: &Map,
-    line_degree_map: HashMap<StationID, HeapStation>,
+    line_degree_map: &HashMap<StationID, HeapStation>,
     start: HeapStation,
 ) -> Result<Vec<Edge>> {
     let mut edges = Vec::new();

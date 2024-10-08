@@ -70,6 +70,7 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
     }
 
     // Check there is no station overlap
+    // FIXME: instead of erroring, it should look for a free spot in its neighbors
     for station in map.get_stations() {
         if map
             .get_stations()

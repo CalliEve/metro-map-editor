@@ -56,6 +56,14 @@ impl GridNode {
         f64::from(dx + dy) - (2f64.sqrt() - 2.0) * f64::from(dx.min(dy))
     }
 
+    /// Get the Manhattan distance to a target node.
+    pub fn manhattan_distance_to(self, target: GridNode) -> i32 {
+        let dx = (self.0 - target.0).abs();
+        let dy = (self.1 - target.1).abs();
+
+        dx + dy
+    }
+
     /// Get a list of all the neighbors of this grid node.
     pub fn get_neighbors(self) -> Vec<GridNode> {
         vec![

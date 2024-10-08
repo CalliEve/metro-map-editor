@@ -6,9 +6,12 @@ mod calc_direction;
 mod cost_calculation;
 pub mod drawing;
 mod edge_dijkstra;
+mod local_search;
+mod occupation;
 mod order_edges;
 mod recalculate_map;
 mod route_edges;
+mod station_contraction;
 mod utils;
 
 pub use a_star::run_a_star;

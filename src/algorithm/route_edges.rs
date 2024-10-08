@@ -1,10 +1,11 @@
 //! This module contains the Route Edges algorithm and all it needs.
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use super::{
     debug_print,
     edge_dijkstra::edge_dijkstra,
+    occupation::OccupiedNodes,
     AlgorithmSettings,
 };
 use crate::{
@@ -22,13 +23,14 @@ use crate::{
 fn get_node_set(
     settings: AlgorithmSettings,
     station: &Station,
-    occupied: &HashSet<GridNode>,
+    occupied: &OccupiedNodes,
 ) -> Vec<(GridNode, f64)> {
     if station.is_settled() {
         return vec![(station.get_pos(), 0.0)];
     }
 
     let radius = settings.node_set_radius;
+    let original_station_pos = station.get_original_pos();
     let station_pos = station.get_pos();
     let mut nodes = Vec::new();
 
@@ -36,11 +38,11 @@ fn get_node_set(
     for x in (station_pos.0 - radius)..=(station_pos.0 + radius) {
         for y in (station_pos.1 - radius)..=(station_pos.1 + radius) {
             let node = GridNode::from((x, y));
-            if occupied.contains(&node) {
+            if occupied.contains_key(&node) {
                 continue;
             }
 
-            let distance = node.diagonal_distance_to(station_pos); // FIXME: use better distance calculation
+            let distance = node.diagonal_distance_to(original_station_pos);
             if distance.ceil() as i32 <= radius {
                 nodes.push((node, distance * settings.move_cost));
             }
@@ -105,8 +107,8 @@ pub fn route_edges(
     settings: AlgorithmSettings,
     map: &mut Map,
     mut edges: Vec<Edge>,
-) -> Result<Vec<Edge>> {
-    let mut occupied = HashSet::new();
+) -> Result<OccupiedNodes> {
+    let mut occupied = HashMap::new();
 
     for edge in &mut edges {
         let from_station = map
@@ -171,7 +173,7 @@ pub fn route_edges(
             false,
         );
 
-        let (start, nodes, end) = edge_dijkstra(
+        let (start, nodes, end, _) = edge_dijkstra(
             settings,
             map,
             edge,
@@ -188,12 +190,32 @@ pub fn route_edges(
             false,
         );
 
-        occupied.extend(&nodes);
+        occupied.extend(
+            nodes
+                .iter()
+                .map(|n| {
+                    (
+                        *n,
+                        edge.get_id()
+                            .into(),
+                    )
+                }),
+        );
         edge.set_nodes(nodes);
         edge.settle();
 
-        occupied.insert(start);
-        occupied.insert(end);
+        occupied.insert(
+            start,
+            from_station
+                .get_id()
+                .into(),
+        );
+        occupied.insert(
+            end,
+            to_station
+                .get_id()
+                .into(),
+        );
         map.get_mut_station(edge.get_from())
             .ok_or(Error::other(
                 "edge from-station not found",
@@ -206,7 +228,7 @@ pub fn route_edges(
             .settle(end);
         map.add_edge(edge.clone());
     }
-    Ok(edges)
+    Ok(occupied)
 }
 
 #[cfg(test)]
@@ -223,7 +245,7 @@ mod tests {
         let result = get_node_set(
             AlgorithmSettings::default(),
             &station,
-            &mut HashSet::new(),
+            &mut HashMap::new(),
         );
 
         assert_eq!(
@@ -325,6 +347,6 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(result, vec![]);
+        assert_eq!(result, HashMap::new());
     }
 }

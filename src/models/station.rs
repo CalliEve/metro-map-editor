@@ -49,15 +49,17 @@ impl Display for StationID {
 /// name and if the station should be greyed out when drawn to the canvas.
 #[derive(Clone, Debug)]
 pub struct Station {
-    /// Position of the station
+    /// Position of the station.
     pos: GridNode,
-    /// ID of the station
+    /// The position of the station when it first was created.
+    original_pos: GridNode,
+    /// ID of the station.
     id: StationID,
-    /// If when drawn the station should be greyed out (like when moving)
+    /// If when drawn the station should be greyed out (like when moving).
     is_ghost: bool,
-    /// The station name
+    /// The station name.
     name: String,
-    /// The edges that are connected to this station
+    /// The edges that are connected to this station.
     edges: Vec<EdgeID>,
     /// Marks the location of the station as locked by the user in the
     /// algorithm.
@@ -78,6 +80,7 @@ impl Station {
 
         Self {
             pos,
+            original_pos: pos,
             id: id.unwrap_or_else(|| {
                 STATION_ID
                     .fetch_add(1, Ordering::SeqCst)
@@ -98,6 +101,7 @@ impl Station {
     }
 
     /// A getter for the grid position.
+    #[inline]
     pub fn get_pos(&self) -> GridNode {
         self.pos
     }
@@ -110,6 +114,18 @@ impl Station {
     /// A setter for the grid position of the station.
     pub fn set_pos(&mut self, pos: GridNode) {
         self.pos = pos;
+    }
+
+    /// A getter for the original grid position.
+    #[inline]
+    pub fn get_original_pos(&self) -> GridNode {
+        self.original_pos
+    }
+
+    /// A setter for the original grid position.
+    /// This is used when the station is moved manually.
+    pub fn set_original_pos(&mut self, pos: GridNode) {
+        self.original_pos = pos;
     }
 
     /// The location of the station on the canvas, given the size of a grid
@@ -187,6 +203,12 @@ impl Station {
         &self.edges
     }
 
+    /// Clear all edges from the station.
+    pub fn clear_edges(&mut self) {
+        self.edges
+            .clear();
+    }
+
     #[allow(dead_code)]
     pub fn print_info(&self) {
         logging::log!(
@@ -195,8 +217,8 @@ impl Station {
             self.id,
             self.pos,
             self.get_edges()
-                .into_iter()
-                .map(|e| e.to_string())
+                .iter()
+                .map(ToString::to_string)
                 .collect::<Vec<String>>()
                 .join(", ")
         );

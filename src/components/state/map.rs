@@ -1,7 +1,5 @@
 //! Contains the [`MapState`] and all its methods.
 
-use std::i32;
-
 use leptos::{
     html::Canvas,
     *,
