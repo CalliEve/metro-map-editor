@@ -182,9 +182,8 @@ impl Map {
             .entry(id)
             .or_insert_with(|| Line::new(Some(id)));
 
-        return self
-            .get_line(id)
-            .expect("did not find newly inserted line");
+        self.get_line(id)
+            .expect("did not find newly inserted line")
     }
 
     /// Remove a line from the map.

@@ -25,7 +25,7 @@ pub fn unsettle_map(map: &mut Map) {
 }
 
 /// Randomizes the order of the edges in the given vector.
-pub fn randomize_edges(edges: &mut Vec<Edge>) {
+pub fn randomize_edges(edges: &mut [Edge]) {
     let mut rng = thread_rng();
     edges.shuffle(&mut rng);
 }

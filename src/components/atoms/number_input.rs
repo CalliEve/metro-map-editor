@@ -18,6 +18,9 @@ pub fn NumberInput<F, V>(
     /// The maximum value (default: i32::MAX)
     #[prop(default = (i32::MAX) as f64)]
     max: f64,
+    /// The step value (default: 1.0)
+    #[prop(default = 1.0)]
+    step: f64,
 ) -> impl IntoView
 where
     F: Fn(f64) + 'static,
@@ -32,7 +35,7 @@ where
 
         on_input(
             val.parse()
-                .unwrap_or(1.0),
+                .unwrap_or(min),
         );
     };
 
@@ -45,6 +48,7 @@ where
         on:input=parse_input
         max=max
         min=min
+        step=step
         prop:value=move || value.map(|v| v().max(min)) />
       <label
         for={id}

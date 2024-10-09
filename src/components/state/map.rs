@@ -187,10 +187,17 @@ impl MapState {
         self.algorithm_settings
     }
 
-    /// Recalculate the algorithm settings based on the current map.
-    pub fn calculate_algorithm_settings(&mut self) {
-        self.algorithm_settings = AlgorithmSettings::default();
+    /// Update the algorithm settings.
+    pub fn update_algorithm_settings<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut AlgorithmSettings),
+    {
+        f(&mut self.algorithm_settings);
+    }
 
+    /// Recalculate the x and y limits for the algorithm settings based on the
+    /// current map.
+    pub fn calculate_algorithm_settings(&mut self) {
         let mut x_limits = (i32::MAX, i32::MIN);
         let mut y_limits = (i32::MAX, i32::MIN);
 
@@ -223,8 +230,6 @@ impl MapState {
     /// Run the full algorithm on the map.
     pub fn run_algorithm(&mut self) {
         self.calculate_algorithm_settings();
-        self.algorithm_settings
-            .debug = true;
         unwrap_or_return!(recalculate_map(
             self.algorithm_settings,
             &mut self.map

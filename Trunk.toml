@@ -6,3 +6,8 @@ dist = "dist"
 # The public URL from which assets are to be served.
 public_url = "/university/metro-map"
 
+[serve]
+# The port on which the development server should run.
+port = 8080
+# The host address on which the development server should run.
+addresses = ["127.0.0.1"]

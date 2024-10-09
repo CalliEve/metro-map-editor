@@ -367,14 +367,13 @@ impl Line {
             return true;
         }
 
-        return self
-            .get_line_ends(map)
+        self.get_line_ends(map)
             .into_iter()
             .any(|e| {
                 map.get_station(e)
                     .expect("edge contains invalid station id")
                     .is_neighbor(node)
-            });
+            })
     }
 
     /// Gets the start and end stations of the line.

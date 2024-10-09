@@ -118,7 +118,7 @@ impl Deref for CanvasContext<'_> {
 }
 
 #[cfg(all(not(test), not(feature = "benchmarking")))]
-impl<'a> CanvasContext<'a> {
+impl CanvasContext<'_> {
     pub fn set_stroke_style(&self, style: &str) {
         self.inner
             .set_stroke_style(&JsValue::from_str(style));

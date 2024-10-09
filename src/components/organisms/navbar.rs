@@ -9,6 +9,7 @@ use crate::{
             FileDownloader,
             FileModal,
             FileType,
+            SettingsModal,
         },
         MapState,
     },
@@ -24,6 +25,7 @@ use crate::{
 #[component]
 pub fn Navbar() -> impl IntoView {
     let (show_file_modal, set_show_file_modal) = create_signal(false);
+    let (show_settings_modal, set_show_settings_modal) = create_signal(false);
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
@@ -51,8 +53,9 @@ pub fn Navbar() -> impl IntoView {
           <a class="text-2xl font-extrabold text-black dark:text-white" href="#">Metro Map Editor</a>
         </div>
         <div class="flex flex-row items-end space-x-3" >
+            <Button text="Advanced Settings" outlined=true on_click=Box::new(move |_| set_show_settings_modal(true))/>
             <FileDownloader/>
-            <Button text="Upload file" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
+            <Button text="Upload File" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
         </div>
       </div>
     </nav>
@@ -60,5 +63,8 @@ pub fn Navbar() -> impl IntoView {
         show=show_file_modal
         on_close=move || set_show_file_modal(false)
         on_submit=on_submit />
+    <SettingsModal
+        show=show_settings_modal
+        on_close=move || set_show_settings_modal(false) />
     }
 }
