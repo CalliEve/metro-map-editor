@@ -1,3 +1,6 @@
+//! Contains the A* algorithm implementation for quick and temporary path
+//! calculations.
+
 use std::{
     cmp::Ordering,
     collections::BinaryHeap,
@@ -8,9 +11,13 @@ use crate::models::GridNode;
 /// Holds the state for an item in the A* algorithm queue.
 #[derive(Clone)]
 struct AStarState {
+    /// The cost the current path.
     cost: f64,
+    /// The current node.
     node: GridNode,
+    /// The length of the path so far.
     path_length: f64,
+    /// The parent state of the current state.
     parent: Option<Box<AStarState>>,
 }
 

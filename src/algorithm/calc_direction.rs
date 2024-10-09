@@ -1,16 +1,27 @@
+//! Contains tools to determine the direction of an edge.
+
 use crate::utils::equal_pixel;
 
 /// Represents the direction the edge is moving.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EdgeDirection {
+    /// The edge is moving up.
     Up,
+    /// The edge is moving diagonally up and to the right.
     DiagUpRight,
+    /// The edge is moving right.
     Right,
+    /// The edge is moving diagonally down and to the right.
     DiagDownRight,
+    /// The edge is moving down.
     Down,
+    /// The edge is moving diagonally down and to the left.
     DiagDownLeft,
+    /// The edge is moving left.
     Left,
+    /// The edge is moving diagonally up and to the left.
     DiagUpLeft,
+    /// The edge is not moving.
     Equal,
 }
 

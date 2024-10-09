@@ -5,17 +5,19 @@
 // Deny all default lints and warn on pedantic ones by default
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-// lots of casts have to be done back and forth between js and rust, even if f64 to i32 might in
+// Additionally warn when we forget to add documentation on things.
+#![warn(clippy::missing_docs_in_private_items)]
+// Lots of casts have to be done back and forth between js and rust, even if f64 to i32 might in
 // theory truncate, same with usize to f64.
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::cast_precision_loss)]
-// wildcard imports are idiomatic with leptos.
+// Wildcard imports are idiomatic with leptos.
 #![allow(clippy::wildcard_imports)]
-// having file and component function names be the same is idiomatic for leptos component files.
+// Having file and component function names be the same is idiomatic for leptos component files.
 #![allow(clippy::module_name_repetitions)]
-// having a lot of parameters in a function is idiomatic for leptos.
+// Having a lot of parameters in a function is idiomatic for leptos.
 #![allow(clippy::fn_params_excessive_bools)]
 // There is not need for must_use or panics docs on functions as this is lib is only for internal
 // use.

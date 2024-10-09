@@ -1,3 +1,6 @@
+//! Contains the data structure for specifying what is currently occupying a
+//! node on the map.
+
 use std::collections::HashMap;
 
 use crate::models::{
@@ -6,17 +9,22 @@ use crate::models::{
     StationID,
 };
 
+/// A map of grid nodes to the contents of the node, listing all nodes currently
+/// occupied on the map.
 pub type OccupiedNodes = HashMap<GridNode, OccupiedNode>;
 
 /// Describes the contents of an occupied node of the map grid.
 /// Either shows the node occupied by a station or by an edge.
 #[derive(Debug, Clone, Copy)]
 pub enum OccupiedNode {
+    /// The node is occupied by a station.
     Station(StationID),
+    /// The node is occupied by an edge.
     Edge(EdgeID),
 }
 
 impl OccupiedNode {
+    /// Get the ID of the edge if the node is occupied by an edge, else returns None.
     pub fn get_edge_id(&self) -> Option<EdgeID> {
         match self {
             Self::Edge(e) => Some(*e),
@@ -24,6 +32,7 @@ impl OccupiedNode {
         }
     }
 
+    /// Get the ID of the station if the node is occupied by a station, else returns None.
     pub fn get_station_id(&self) -> Option<StationID> {
         match self {
             Self::Station(s) => Some(*s),

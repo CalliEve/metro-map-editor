@@ -119,7 +119,7 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
     )
 }
 
-// Helper function for recalculating an edge nodes.
+/// Helper function for recalculating an edge nodes.
 fn recalculate_edge_nodes(map: &mut Map, edge_id: EdgeID) {
     let edge = map
         .get_edge(edge_id)

@@ -1,3 +1,6 @@
+//! Contains the local search algorithm for optimising the location of a
+//! station.
+
 use ordered_float::NotNan;
 
 use super::{
@@ -31,6 +34,7 @@ struct StationPos {
 }
 
 impl StationPos {
+    /// Create a new [`StationPos`] with the given data.
     fn new(station: Station, edges: Vec<Edge>, occupied: OccupiedNodes, cost: NotNan<f64>) -> Self {
         Self {
             station,

@@ -1,3 +1,6 @@
+//! This module contains the implementation of the Order Edges algorithm and the
+//! tools to calculate the degree of a line used for it.
+
 use std::collections::{
     BinaryHeap,
     HashMap,
@@ -43,11 +46,14 @@ fn line_degree(map: &Map, station_id: StationID) -> Result<usize> {
 /// The id of a station together with its degree, used in the binary heap.
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct HeapStation {
+    /// The id of the station.
     station: StationID,
+    /// The line degree of the station.
     degree: usize,
 }
 
 impl HeapStation {
+    /// Create a new [`HeapStation`] with the given station id and degree.
     fn new(station: StationID, degree: usize) -> Self {
         Self {
             station,

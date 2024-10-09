@@ -1,3 +1,5 @@
+//! Contains the [`Edge`] struct and all its methods.
+
 use std::{
     fmt::{
         self,

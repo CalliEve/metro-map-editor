@@ -1,3 +1,5 @@
+//! Contains the function for drawing an edge onto the map.
+
 use super::{
     calc_closest_corner,
     canvas_context::CanvasContext,

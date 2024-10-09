@@ -27,6 +27,8 @@ use web_sys::HtmlCanvasElement;
 /// A wrapper around the [`web_sys::CanvasRenderingContext2d`]. This struct
 /// provides the ability to mock and unit-test the drawing functions.
 pub struct CanvasContext<'a> {
+    /// The inner [`web_sys::CanvasRenderingContext2d`] object wrapped by this
+    /// struct.
     #[cfg(all(not(test), not(feature = "benchmarking")))]
     inner: Cow<'a, web_sys::CanvasRenderingContext2d>,
     #[cfg(any(test, feature = "benchmarking"))]

@@ -22,8 +22,11 @@ use crate::{
 /// Represents the metro map as a whole with all its lines and stations.
 #[derive(Clone, Debug, Default)]
 pub struct Map {
+    /// A [`HashMap`] of all stations on the map.
     stations: HashMap<StationID, Station>,
+    /// A [`HashMap`] of all lines on the map.
     lines: HashMap<LineID, Line>,
+    /// A [`HashMap`] of all edges on the map.
     edges: HashMap<EdgeID, Edge>,
 }
 

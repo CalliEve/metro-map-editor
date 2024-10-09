@@ -20,7 +20,9 @@ use crate::{
 /// The accepted file types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileType {
+    /// JSON file type.
     Json,
+    /// GraphML file type.
     GraphML,
 }
 

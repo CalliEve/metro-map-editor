@@ -1,3 +1,6 @@
+//! Contains the functions for contracting all degree two stations into edges
+//! and expanding those edges back out again.
+
 use std::collections::HashMap;
 
 use itertools::Itertools;

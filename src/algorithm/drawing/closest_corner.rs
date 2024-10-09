@@ -1,3 +1,6 @@
+//! Contains the function for calculating the closest corner of a station to
+//! another.
+
 use std::f64::consts::PI;
 
 use crate::{

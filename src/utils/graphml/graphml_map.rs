@@ -1,5 +1,8 @@
 //! Contains all objects that together represent the data in a GraphML file.
 
+// No need to document all fields on the model structs here.
+#![allow(clippy::missing_docs_in_private_items)]
+
 use serde::{
     Deserialize,
     Serialize,

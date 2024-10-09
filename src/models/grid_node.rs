@@ -1,3 +1,5 @@
+//! Contains the [`GridNode`] struct and its methods.
+
 use std::{
     fmt::Display,
     ops::{
@@ -10,7 +12,12 @@ use crate::components::CanvasState;
 
 /// Represents a node on the grid.
 #[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
-pub struct GridNode(pub i32, pub i32);
+pub struct GridNode(
+    /// The x coordinate.
+    pub i32,
+    /// The y coordinate.
+    pub i32,
+);
 
 impl GridNode {
     /// Create the [`GridNode`] from the given canvas coordinate and the state

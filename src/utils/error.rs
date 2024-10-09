@@ -1,3 +1,5 @@
+//! Contains the custom [`Error`] type and the [`Result`] type alias.
+
 use std::fmt::Display;
 
 use leptos::logging;

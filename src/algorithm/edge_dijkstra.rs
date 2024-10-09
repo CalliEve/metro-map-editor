@@ -1,3 +1,6 @@
+//! Contains the implementation of the Dijkstra algorithm for tracing an edge
+//! between two sets of possible station locations.
+
 use std::{
     cmp::Reverse,
     collections::{
@@ -32,9 +35,13 @@ use crate::{
 /// Holds the state for an item in the Dijkstra algorithm queue.
 #[derive(Clone, Debug)]
 struct QueueItem {
+    /// The current node.
     node: GridNode,
+    /// The path to the current node.
     path: Vec<GridNode>,
+    /// The start node of the path (the location of the starting station of the edge).
     start: GridNode,
+    /// The cost of the path so far.
     cost: NotNan<f64>,
 }
 
@@ -126,6 +133,9 @@ pub fn edge_dijkstra(
             break;
         }
 
+        // Check if the current node is in the to_nodes set and if so, add it to the
+        // list of to_nodes we have visited so far. We are done once we have visited all
+        // to_nodes.
         if let Some(to_cost) = to_nodes.get(&current.node) {
             to_visited.push((current.clone(), current.cost + to_cost));
             if to_visited.len() == to_nodes.len() {
@@ -133,6 +143,7 @@ pub fn edge_dijkstra(
             }
         }
 
+        // The up-to two last nodes in the path so far.
         let previous = &current
             .path
             .last()
@@ -148,7 +159,8 @@ pub fn edge_dijkstra(
                 continue;
             }
 
-            let mut cost = NotNan::new(calc_node_cost(
+            // Calculate the cost of the node and enforce it's not NaN.
+            let cost = NotNan::new(calc_node_cost(
                 settings,
                 map,
                 edge,
@@ -159,12 +171,16 @@ pub fn edge_dijkstra(
                 occupied,
             )?)?;
 
+            // Don't even look at nodes that have infinite cost.
+            // CHECKME: this is a bit of a hack, we should probably add them to the queue
+            // and handle the break when we encounter the first, but this causes
+            // a bug?
             if cost.is_infinite() {
                 continue;
             }
 
+            // Add the heuristic cost to the cost for the queue.
             let cost_with_heuristic = cost + neighbor.diagonal_distance_to(from_station.get_pos());
-            cost += current.cost;
 
             let neighbor_item = QueueItem::from_parent(&current, neighbor, cost);
             if let Some((_, old_cost)) = queue.get(&neighbor_item) {
@@ -191,12 +207,14 @@ pub fn edge_dijkstra(
         )));
     }
 
+    // Get the cheapest path found.
     let mut best = to_visited
         .into_iter()
         .min_by_key(|(_, c)| *c)
         .unwrap()
         .0;
 
+    // Removes the first node from the path, as this is the same as best.start.
     if best
         .path
         .len()

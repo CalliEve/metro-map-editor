@@ -1,4 +1,5 @@
-//! This module contains the Route Edges algorithm and all it needs.
+//! This module contains the Route Edges algorithm and the functions for
+//! determining the to and from node-sets that it needs.
 
 use std::collections::HashMap;
 
@@ -42,7 +43,7 @@ fn get_node_set(
                 continue;
             }
 
-            let distance = node.diagonal_distance_to(original_station_pos);
+            let distance = node.diagonal_distance_to(original_station_pos); // CHECKME: manhattan distance?
             if distance.ceil() as i32 <= radius {
                 nodes.push((node, distance * settings.move_cost));
             }
@@ -78,6 +79,7 @@ fn split_overlap(
     Vec<(GridNode, f64)>,
 ) {
     for (node, _) in &from_set.clone() {
+        // Ensure the station is always in their own set
         if *node == to {
             from_set.retain(|(n, _)| n != node);
             continue;
@@ -90,6 +92,8 @@ fn split_overlap(
             .iter()
             .any(|(n, _)| n == node)
         {
+            // If the node is in both sets, remove it from the set that it's furthest from
+            // the station from.
             if node.diagonal_distance_to(from) > node.diagonal_distance_to(to) {
                 from_set.retain(|(n, _)| n != node);
             } else {
@@ -133,24 +137,6 @@ pub fn route_edges(
                 to_station.get_pos(),
             );
         }
-        // if from_nodes.is_empty() || to_nodes.is_empty() {
-        //     debug_print(
-        //         settings,
-        //         &format!(
-        //             "no nodes to route edge between stations {}{} and {}{}: from:
-        // {:?}, to: {:?}",             from_station.get_id(),
-        //             from_station.get_pos(),
-        //             to_station.get_id(),
-        //             to_station.get_pos(),
-        //             from_nodes,
-        //             to_nodes
-        //         ),
-        //         true,
-        //     );
-        //     return Err(Error::other(
-        //         "no nodes to route edge between stations",
-        //     ));
-        // }
 
         if from_nodes.is_empty() {
             from_nodes.push((from_station.get_pos(), 0.0));

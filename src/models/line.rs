@@ -25,6 +25,7 @@ use crate::{
 /// Next generated sequential identifier for a new line.
 static LINE_ID: AtomicU64 = AtomicU64::new(1);
 
+/// An identifier for a line.
 #[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LineID(u64);
 

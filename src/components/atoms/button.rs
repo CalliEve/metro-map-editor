@@ -6,6 +6,7 @@ use leptos::{
 };
 use leptos_dom::Text;
 
+/// The type of the on click event handler.
 type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 
 /// A clickable button html element.

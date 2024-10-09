@@ -24,7 +24,13 @@ use crate::{
 /// The type of remove operation that is currently selected.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RemoveType {
+    /// User wants to remove a [`Station`].
+    ///
+    /// [`Station`]: crate::models::Station
     Station,
+    /// User wants to remove a [`Line`].
+    ///
+    /// [`Line`]: crate::models::Line
     Line,
 }
 

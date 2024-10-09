@@ -1,3 +1,6 @@
+//! Contains everything to calculate the cost of a node in the algorithm based
+//! on the previous nodes in its path.
+
 use core::f64;
 
 use super::{
@@ -267,7 +270,7 @@ fn calc_station_exit_cost(
         // when the list of nodes in the edge is empty.
         if let Some(opp_station_id) = opposite_edge.opposite(station.get_id()) {
             if let Some(opp_station) = map.get_station(opp_station_id) {
-                // FIXME: we should instead round angles for such cases. Also: investigate why
+                // CHECKME: we should instead round angles for such cases. Also: investigate why
                 // an edge nodes might be empty / not be neighbors of the station.
                 return Ok(calc_angle_cost(
                     opp_station.get_pos(),
@@ -706,11 +709,11 @@ mod tests {
 
     #[test]
     fn test_calc_station_exit_cost() {
-        // FIXME: implement test
+        // TODO: implement test
     }
 
     #[test]
     fn test_calc_node_cost() {
-        // FIXME: implement test
+        // TODO: implement test
     }
 }

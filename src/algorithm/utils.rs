@@ -69,6 +69,7 @@ pub fn calculate_angle(first: GridNode, second: GridNode, third: GridNode) -> f6
         .round()
 }
 
+/// Prints a debug message if the settings allow it.
 pub fn debug_print(settings: AlgorithmSettings, msg: &str, warn: bool) {
     if settings.debug && warn {
         logging::debug_warn!("{}", msg);
@@ -80,6 +81,38 @@ pub fn debug_print(settings: AlgorithmSettings, msg: &str, warn: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_node_outside_grid() {
+        let mut settings = AlgorithmSettings::default();
+        settings.grid_x_limits = (0, 10);
+        settings.grid_y_limits = (0, 10);
+
+        assert!(node_outside_grid(
+            settings,
+            GridNode::from((-1, 0))
+        ));
+        assert!(node_outside_grid(
+            settings,
+            GridNode::from((0, -1))
+        ));
+        assert!(node_outside_grid(
+            settings,
+            GridNode::from((11, 0))
+        ));
+        assert!(node_outside_grid(
+            settings,
+            GridNode::from((0, 11))
+        ));
+        assert!(!node_outside_grid(
+            settings,
+            GridNode::from((0, 0))
+        ));
+        assert!(!node_outside_grid(
+            settings,
+            GridNode::from((10, 10))
+        ));
+    }
 
     #[test]
     fn test_overlap_amount() {
