@@ -66,6 +66,9 @@ pub struct Station {
     is_locked: bool,
     /// Marks the location of the station as settled in the algorithm.
     is_settled: bool,
+    /// The total cost of all the edges attached to the station, used in the
+    /// local search algorithm.
+    cost: f64,
 }
 
 impl Station {
@@ -91,6 +94,7 @@ impl Station {
             edges: Vec::new(),
             is_locked: false,
             is_settled: false,
+            cost: 0.0,
         }
     }
 
@@ -178,6 +182,22 @@ impl Station {
         self.is_locked
     }
 
+    /// Get the cost of the station.
+    #[inline]
+    pub fn get_cost(&self) -> f64 {
+        self.cost
+    }
+
+    /// Set the cost of the station.
+    pub fn set_cost(&mut self, cost: f64) {
+        self.cost = cost;
+    }
+
+    /// Add to the cost of the station.
+    pub fn add_cost(&mut self, cost: f64) {
+        self.cost += cost;
+    }
+
     /// If the given node is a neighboring grid node to the station.
     pub fn is_neighbor(&self, node: GridNode) -> bool {
         self.get_pos()
@@ -219,9 +239,9 @@ impl Station {
     pub fn print_info(&self) {
         logging::log!(
             "Station: {}({}) at {:?} with edges [{:?}]",
-            self.name,
-            self.id,
-            self.pos,
+            self.get_name(),
+            self.get_id(),
+            self.get_pos(),
             self.get_edges()
                 .iter()
                 .map(ToString::to_string)

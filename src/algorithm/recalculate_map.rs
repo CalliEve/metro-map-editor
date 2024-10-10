@@ -41,7 +41,8 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
             "Recalculating map with {} edges and {} stations",
             map.get_edges()
                 .len(),
-            map.get_stations().len()
+            map.get_stations()
+                .len()
         ),
         false,
     );
@@ -54,7 +55,8 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
             "Contracted stations, {} edges and {} stations left",
             map.get_edges()
                 .len(),
-            map.get_stations().len()
+            map.get_stations()
+                .len()
         ),
         false,
     );
@@ -103,7 +105,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         false,
     );
 
-    // local_search(settings, map, &mut occupied)?;
+    // local_search(settings, map, &mut occupied);
 
     debug_print(
         settings,

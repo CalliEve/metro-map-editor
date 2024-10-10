@@ -39,8 +39,6 @@ struct QueueItem {
     node: GridNode,
     /// The path to the current node.
     path: Vec<GridNode>,
-    /// The start node of the path (the location of the starting station of the edge).
-    start: GridNode,
     /// The cost of the path so far.
     cost: NotNan<f64>,
 }
@@ -51,7 +49,6 @@ impl QueueItem {
         Self {
             node,
             path: Vec::new(),
-            start: node,
             cost,
         }
     }
@@ -63,7 +60,6 @@ impl QueueItem {
             path: parent
                 .path
                 .clone(),
-            start: parent.start,
             cost: parent.cost + cost,
         };
         new.path
@@ -185,7 +181,7 @@ pub fn edge_dijkstra(
             let neighbor_item = QueueItem::from_parent(&current, neighbor, cost);
             if let Some((_, old_cost)) = queue.get(&neighbor_item) {
                 if old_cost.0 > cost_with_heuristic {
-                    queue.push_increase(
+                    queue.push(
                         neighbor_item,
                         Reverse(cost_with_heuristic),
                     );
@@ -214,22 +210,25 @@ pub fn edge_dijkstra(
         .unwrap()
         .0;
 
-    // Removes the first node from the path, as this is the same as best.start.
-    if best
+    // Removes the first node from the path as this is the starting station location
+    let start = if best
         .path
-        .len()
-        > 1
+        .is_empty()
     {
-        best.path
-            .drain(..1);
+        return Err(Error::other(format!(
+            "Path is empty, start and end are equal on edge {} from {} to {}",
+            edge.get_id(),
+            from_station.get_id(),
+            to_station.get_id()
+        )));
     } else {
         best.path
-            .clear();
-    }
+            .drain(..1)
+            .next()
+            .expect("path is empty")
+    };
 
-    Ok((
-        best.start, best.path, best.node, best.cost,
-    ))
+    Ok((start, best.path, best.node, best.cost))
 }
 
 #[cfg(test)]

@@ -24,7 +24,8 @@ pub enum OccupiedNode {
 }
 
 impl OccupiedNode {
-    /// Get the ID of the edge if the node is occupied by an edge, else returns None.
+    /// Get the ID of the edge if the node is occupied by an edge, else returns
+    /// None.
     pub fn get_edge_id(&self) -> Option<EdgeID> {
         match self {
             Self::Edge(e) => Some(*e),
@@ -32,7 +33,8 @@ impl OccupiedNode {
         }
     }
 
-    /// Get the ID of the station if the node is occupied by a station, else returns None.
+    /// Get the ID of the station if the node is occupied by a station, else
+    /// returns None.
     pub fn get_station_id(&self) -> Option<StationID> {
         match self {
             Self::Station(s) => Some(*s),

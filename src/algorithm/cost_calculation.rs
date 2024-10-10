@@ -153,26 +153,37 @@ fn station_approach_available(
     Ok(true)
 }
 
+/// Match the given angle to the cost of a bend of that angle
+#[inline]
+fn match_angle_cost(angle: f64) -> Result<f64> {
+    Ok(match angle {
+        360.0 => f64::INFINITY,
+        315.0 => 5.0,
+        270.0 => 2.5,
+        225.0 => 0.5,
+        180.0 => 0.0,
+        135.0 => 0.5,
+        90.0 => 2.5,
+        45.0 => 5.0,
+        0.0 => f64::INFINITY,
+        _ => {
+            Err(Error::other(format!(
+                "found impossible angle of {angle}"
+            )))?
+        },
+    })
+}
+
 /// Calculate the cost of the angle between three nodes.
 /// The second point is assumed to be the middle node where the angle is
 /// located.
 fn calc_angle_cost(first: GridNode, second: GridNode, third: GridNode) -> Result<f64> {
     let angle = calculate_angle(first, second, third);
 
-    Ok(match angle {
-        315.0 => 2.0,
-        270.0 => 1.5,
-        225.0 => 1.0,
-        180.0 => 0.0,
-        135.0 => 1.0,
-        90.0 => 1.5,
-        45.0 => 2.0,
-        0.0 => f64::INFINITY,
-        _ => {
-            Err(Error::other(format!(
-                "found invalid angle of {angle} between {first}, {second}, {third}",
-            )))?
-        },
+    match_angle_cost(angle).map_err(|_| {
+        Error::other(format!(
+            "found invalid angle of {angle} between {first}, {second}, {third}",
+        ))
     })
 }
 
@@ -224,9 +235,13 @@ fn calc_station_exit_cost(
     current_edge: &Edge,
     station: &Station,
     node: GridNode,
+    previous_node: GridNode,
+    target_node: GridNode,
 ) -> Result<f64> {
     if !station.is_settled() {
-        return Ok(0.0);
+        return match_angle_cost(
+            (calculate_angle(previous_node, node, target_node) / 45.0).round() * 45.0,
+        );
     }
 
     let mut biggest_overlap = None;
@@ -235,6 +250,10 @@ fn calc_station_exit_cost(
     // find the edge with the most overlap in lines with the current edge, this is
     // the opposite edge from our edge that's leaving the station.
     for edge_id in station.get_edges() {
+        if *edge_id == current_edge.get_id() {
+            continue;
+        }
+
         let edge = map
             .get_edge(*edge_id)
             .ok_or(Error::other(
@@ -253,10 +272,21 @@ fn calc_station_exit_cost(
 
     // if we found an opposite edge, we can calculate the cost of the angle between
     // the station and the node of the station.
-    if let Some(opposite_edge) = biggest_overlap {
+    if let Some(mut opposite_edge) = biggest_overlap.cloned() {
         let neighbor_nodes = station
             .get_pos()
             .get_neighbors();
+
+        // If the station has been settled and moved, but the opposite edge might not
+        // have been settled, then there is likely a gap in the edge to the station and
+        // thus we need to recalculate the nodes in the edge to get a correct bordering
+        // edge.
+        if station.is_settled()
+            && !opposite_edge.is_settled()
+            && station.get_pos() != station.get_original_pos()
+        {
+            opposite_edge.calculate_nodes(map);
+        }
 
         // If the ends of the opposite edge are in the neighbors of the station, we
         // calculate the angle with that node.
@@ -270,14 +300,12 @@ fn calc_station_exit_cost(
         // when the list of nodes in the edge is empty.
         if let Some(opp_station_id) = opposite_edge.opposite(station.get_id()) {
             if let Some(opp_station) = map.get_station(opp_station_id) {
-                // CHECKME: we should instead round angles for such cases. Also: investigate why
-                // an edge nodes might be empty / not be neighbors of the station.
-                return Ok(calc_angle_cost(
+                // If the opposite edge is not
+                return calc_angle_cost(
                     opp_station.get_pos(),
                     station.get_pos(),
                     node,
-                )
-                .unwrap_or(0.0));
+                );
             }
         }
     }
@@ -330,8 +358,15 @@ pub fn calc_node_cost(
             return Ok(f64::INFINITY);
         }
 
-        return calc_station_exit_cost(map, edge, from_station, node) // cost of exiting station
-            .map(|c| c + settings.move_cost); // standard cost of a move
+        return calc_station_exit_cost(
+            map,
+            edge,
+            from_station,
+            node,
+            previous[0],
+            to_station.get_pos(),
+        ) // cost of exiting station
+        .map(|c| c + settings.move_cost); // standard cost of a move
     }
 
     if previous[1].0 - node.0 != 0

@@ -292,6 +292,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
         if *station == selected_station {
             station.set_pos(selected_station.get_pos());
             station.set_original_pos(selected_station.get_pos());
+            station.lock();
             edge_ids = station
                 .get_edges()
                 .to_vec();

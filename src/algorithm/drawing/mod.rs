@@ -2,14 +2,14 @@
 //! the canvas.
 
 mod canvas_context;
+mod closest_corner;
 mod draw_edge;
 mod grid;
-mod closest_corner;
 
 pub use canvas_context::CanvasContext;
+use closest_corner::calc_closest_corner;
 pub use draw_edge::draw_edge;
 use grid::draw_grid;
-use closest_corner::calc_closest_corner;
 
 use crate::components::MapState;
 

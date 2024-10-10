@@ -45,6 +45,27 @@ impl StationPos {
     }
 }
 
+/// Calculate the total manhattan distance of a point to all neighboring
+/// stations of the given station.
+fn total_distance(map: &Map, node: GridNode, station: &Station) -> i32 {
+    station
+        .get_edges()
+        .iter()
+        .map(|id| {
+            map.get_edge(*id)
+                .expect("edge attached to station does not exist")
+                .opposite(station.get_id())
+                .expect("station does not have opposite")
+        })
+        .map(|id| {
+            let neighbor = map
+                .get_station(id)
+                .expect("opposite station does not exist");
+            node.manhattan_distance_to(neighbor.get_pos())
+        })
+        .sum()
+}
+
 /// Try a new position for the given station and return data on the result.
 fn try_station_pos(
     settings: AlgorithmSettings,
@@ -55,7 +76,14 @@ fn try_station_pos(
 ) -> Result<StationPos> {
     let mut map = map.clone();
 
+    occupied.remove(&target_station.get_pos());
     target_station.set_pos(station_pos);
+    occupied.insert(
+        station_pos,
+        target_station
+            .get_id()
+            .into(),
+    );
 
     let mut total_cost = NotNan::new(0.0).unwrap();
     let mut edges_before = Vec::new();
@@ -75,21 +103,15 @@ fn try_station_pos(
     }
 
     for mut edge in edges_before {
-        let to_station = map
-            .get_station(
-                edge.opposite(edge.get_to())
-                    .unwrap(),
-            )
-            .ok_or(Error::other(
-                "to-station of edge not found",
-            ))?;
         let from_station = map
-            .get_station(
-                edge.opposite(edge.get_from())
-                    .unwrap(),
-            )
+            .get_station(edge.get_from())
             .ok_or(Error::other(
                 "from-station of edge not found",
+            ))?;
+        let to_station = map
+            .get_station(edge.get_to())
+            .ok_or(Error::other(
+                "to-station of edge not found",
             ))?;
 
         let from = vec![(from_station.get_pos(), 0.0)];
@@ -136,11 +158,7 @@ fn try_station_pos(
 /// This will try to find a better position for each station.
 /// This is the Local Search algorithm in the paper.
 /// FIXME: This implementation is very slow
-pub fn local_search(
-    settings: AlgorithmSettings,
-    map: &mut Map,
-    occupied: &mut OccupiedNodes,
-) -> Result<()> {
+pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut OccupiedNodes) {
     let all_stations = map
         .get_stations()
         .into_iter()
@@ -158,11 +176,17 @@ pub fn local_search(
         let mut neighborhood = station
             .get_pos()
             .get_neighbors();
-        neighborhood.push(station.get_pos());
 
-        let mut best: Option<StationPos> = None;
+        neighborhood.sort_by(|a, b| {
+            total_distance(map, *a, &station).cmp(&total_distance(map, *b, &station))
+        });
 
-        for node in neighborhood {
+        let mut best = None;
+
+        'neighborhood: for node in neighborhood
+            .into_iter()
+            .take(4)
+        {
             if let Ok(station_pos) = try_station_pos(
                 settings,
                 map,
@@ -170,56 +194,31 @@ pub fn local_search(
                 node,
                 occupied.clone(),
             ) {
-                if best.is_none()
-                    || station_pos.cost
-                        < best
-                            .as_ref()
-                            .unwrap()
-                            .cost
-                {
+                if *station_pos.cost < station.get_cost() {
                     best = Some(station_pos);
+                    break 'neighborhood;
                 }
             }
         }
 
         if best.is_none() {
-            return Err(Error::other(format!(
-                "no valid station positions found for station {}",
-                station.get_id()
-            )));
+            continue; // CHECKME: we should implement an iterative checking
+                      // maybe
         }
 
-        if station.get_pos()
-            == best
-                .as_ref()
-                .unwrap()
-                .station
-                .get_pos()
-        {
-            debug_print(
-                settings,
-                &format!(
-                    "Station {} stays at {}",
-                    station.get_id(),
-                    station.get_pos()
-                ),
-                false,
-            );
-        } else {
-            debug_print(
-                settings,
-                &format!(
-                    "Moving station {} from {} to {}",
-                    station.get_id(),
-                    station.get_pos(),
-                    best.as_ref()
-                        .unwrap()
-                        .station
-                        .get_pos()
-                ),
-                false,
-            );
-        }
+        debug_print(
+            settings,
+            &format!(
+                "Moving station {} from {} to {}",
+                station.get_id(),
+                station.get_pos(),
+                best.as_ref()
+                    .unwrap()
+                    .station
+                    .get_pos()
+            ),
+            false,
+        );
 
         let best = best.unwrap();
         map.add_station(best.station);
@@ -228,6 +227,4 @@ pub fn local_search(
         }
         *occupied = best.occupied;
     }
-
-    Ok(())
 }
