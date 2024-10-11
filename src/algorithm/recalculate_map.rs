@@ -87,7 +87,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
             if attempt >= settings.edge_routing_attempts {
                 *map = alg_map;
                 return Err(Error::other(
-                    "Reached max amount of retries when routing edges. Showing map at point of failure.",
+                    "Reached max amount of retries when routing edges.",
                 ));
             }
 

@@ -2,7 +2,10 @@
 
 use ev::KeyboardEvent;
 use html::Div;
-use leptos::*;
+use leptos::{
+    logging,
+    *,
+};
 use leptos_workers::worker;
 use serde::{
     Deserialize,
@@ -22,35 +25,52 @@ use crate::{
     },
     models::Map,
     unwrap_or_return,
-    utils::Result as AlgrithmResult,
+    utils::{
+        IDData,
+        IDManager,
+        Result as AlgrithmResult,
+    },
 };
 
 /// The request to run the algorithm.
 #[derive(Clone, Serialize, Deserialize)]
 struct AlgorithmRequest {
+    /// The settings for the algorithm.
     settings: AlgorithmSettings,
+    /// The data for the IDManager to ensure the ids potentially generated in
+    /// the algorithm are unique.
+    id_manager_data: IDData,
+    /// The map to run the algorithm on.
     map: Map,
 }
 
 /// The response from the algorithm.
 #[derive(Clone, Serialize, Deserialize)]
 struct AlgorithmResponse {
+    success: bool,
+    /// The Map outputted by the algorithm.
     map: Map,
+    /// The data for the IDManager after the algorithm has run, ensuring the
+    /// main thread will not create IDs in conflict with those in the map.
+    id_manager_data: IDData,
 }
 
 /// The worker that runs the algorithm.
 #[worker(AlgorithmWorker)]
 fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
-    logging::log!("{:?}", &req.map);
+    IDManager::from_data(req.id_manager_data);
+
     let mut temp_state = MapState::new(req.map);
     temp_state.set_algorithm_settings(req.settings);
 
-    temp_state.run_algorithm();
+    let success = temp_state.run_algorithm();
 
     AlgorithmResponse {
+        success,
         map: temp_state
             .get_map()
             .clone(),
+        id_manager_data: IDManager::to_data(),
     }
 }
 
@@ -84,23 +104,18 @@ pub fn CanvasControls() -> impl IntoView {
         );
     });
 
-    let algorithm_req = create_action(move |_: &()| {
+    let algorithm_req = create_action(move |req: &AlgorithmRequest| {
+        let req = req.clone();
         async move {
-            let req = AlgorithmRequest {
-                settings: map_state
-                    .get_untracked()
-                    .get_algorithm_settings(),
-                map: map_state
-                    .get_untracked()
-                    .get_map()
-                    .clone(),
-            };
             let resp = run_algorithm(req)
                 .await
                 .expect("Errored on thread startup");
-            map_state.update(|state| {
-                state.set_map(resp.map);
-            });
+            if resp.success {
+                map_state.update(|state| {
+                    state.set_map(resp.map);
+                });
+                IDManager::from_data(resp.id_manager_data);
+            }
         }
     });
 
@@ -109,7 +124,18 @@ pub fn CanvasControls() -> impl IntoView {
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
     let run_algorithm = move |_| {
-        algorithm_req.dispatch(());
+        let req = AlgorithmRequest {
+            settings: map_state
+                .get_untracked()
+                .get_algorithm_settings(),
+            map: map_state
+                .get_untracked()
+                .get_map()
+                .clone(),
+            id_manager_data: IDManager::to_data(),
+        };
+
+        algorithm_req.dispatch(req);
     };
 
     let algorithm_button_class = move || {

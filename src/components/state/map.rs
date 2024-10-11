@@ -245,12 +245,15 @@ impl MapState {
             .grid_y_limits = (y_limits.0 - 2, y_limits.1 + 2);
     }
 
-    /// Run the full algorithm on the map.
-    pub fn run_algorithm(&mut self) {
+    /// Run the full algorithm on the map. Returns true if successful.
+    pub fn run_algorithm(&mut self) -> bool {
         self.calculate_algorithm_settings();
-        unwrap_or_return!(recalculate_map(
-            self.algorithm_settings,
-            &mut self.map
-        ));
+        let res = recalculate_map(self.algorithm_settings, &mut self.map);
+        if let Err(e) = res {
+            e.print_error();
+            false
+        } else {
+            true
+        }
     }
 }

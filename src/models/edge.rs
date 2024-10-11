@@ -33,10 +33,8 @@ use crate::{
         run_a_star,
     },
     components::CanvasState,
+    utils::IDManager,
 };
-
-/// Next generated sequential identifier for a new edge.
-static EDGE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// An identifier for an edge.
 #[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -46,6 +44,12 @@ pub struct EdgeID(u64);
 impl From<u64> for EdgeID {
     fn from(value: u64) -> Self {
         Self(value)
+    }
+}
+
+impl From<EdgeID> for u64 {
+    fn from(value: EdgeID) -> Self {
+        value.0
     }
 }
 
@@ -80,11 +84,7 @@ impl Edge {
         Self {
             from,
             to,
-            id: id.unwrap_or_else(|| {
-                EDGE_ID
-                    .fetch_add(1, AtomicOrdering::SeqCst)
-                    .into()
-            }),
+            id: id.unwrap_or_else(IDManager::next_edge_id),
             nodes: Vec::new(),
             lines: Vec::new(),
             is_settled: false,

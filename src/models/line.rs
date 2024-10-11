@@ -23,10 +23,8 @@ use super::{
 use crate::{
     algorithm::drawing::CanvasContext,
     components::CanvasState,
+    utils::IDManager,
 };
-
-/// Next generated sequential identifier for a new line.
-static LINE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// An identifier for a line.
 #[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -70,14 +68,14 @@ impl Line {
     /// Create a new [`Line`] with the stations it visits and an identifier.
     /// Color and name are set to default values.
     pub fn new(id: Option<LineID>) -> Self {
+        if let Some(line_id) = id {
+            IDManager::update_line_id(line_id);
+        }
+
         Self {
             edges: Vec::new(),
             stations: Vec::new(),
-            id: id.unwrap_or_else(|| {
-                LINE_ID
-                    .fetch_add(1, AtomicOrdering::SeqCst)
-                    .into()
-            }),
+            id: id.unwrap_or_else(IDManager::next_line_id),
             color: (0, 0, 0),
             name: String::new(),
         }
