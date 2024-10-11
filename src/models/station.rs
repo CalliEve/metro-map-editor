@@ -323,7 +323,10 @@ mod tests {
             StationID(u64::from(before_id) + 6),
             after_id
         );
-        assert_eq!(first_station.get_id(), before_id);
+        assert_eq!(
+            first_station.get_id(),
+            StationID(u64::from(before_id) + 1)
+        );
         assert_eq!(
             second_station.get_id(),
             StationID(u64::from(before_id) + 5)

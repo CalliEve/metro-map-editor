@@ -44,6 +44,7 @@ impl Error {
         logging::error!("{}", self);
     }
 
+    /// Returns the type of the error as a string.
     fn get_type(&self) -> &'static str {
         match self {
             Self::Json(_) => "json",
@@ -134,8 +135,7 @@ impl Serialize for Error {
                 Self::Json(e) => e.to_string(),
                 Self::GraphML(e) => e.to_string(),
                 Self::InvalidFloat(e) => e.to_string(),
-                Self::DecodeError(e) => e.to_string(),
-                Self::Other(e) => e.to_string(),
+                Self::DecodeError(e) | Self::Other(e) => e.to_string(),
             }
             .into(),
         );

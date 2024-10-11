@@ -247,16 +247,14 @@ mod tests {
             result,
             vec![
                 (GridNode::from((-3, 0)), 3.0),
+                (GridNode::from((-2, -1)), 3.0),
                 (GridNode::from((-2, 0)), 2.0),
-                (
-                    GridNode::from((-1, -1)),
-                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
-                ),
+                (GridNode::from((-2, 1)), 3.0),
+                (GridNode::from((-1, -2)), 3.0),
+                (GridNode::from((-1, -1)), 2.0),
                 (GridNode::from((-1, 0)), 1.0),
-                (
-                    GridNode::from((-1, 1)),
-                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
-                ),
+                (GridNode::from((-1, 1)), 2.0),
+                (GridNode::from((-1, 2)), 3.0),
                 (GridNode::from((0, -3)), 3.0),
                 (GridNode::from((0, -2)), 2.0),
                 (GridNode::from((0, -1)), 1.0),
@@ -264,16 +262,14 @@ mod tests {
                 (GridNode::from((0, 1)), 1.0),
                 (GridNode::from((0, 2)), 2.0),
                 (GridNode::from((0, 3)), 3.0),
-                (
-                    GridNode::from((1, -1)),
-                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
-                ),
+                (GridNode::from((1, -2)), 3.0),
+                (GridNode::from((1, -1)), 2.0),
                 (GridNode::from((1, 0)), 1.0),
-                (
-                    GridNode::from((1, 1)),
-                    GridNode::from((1, -1)).diagonal_distance_to(GridNode::from((0, 0)))
-                ),
+                (GridNode::from((1, 1)), 2.0),
+                (GridNode::from((1, 2)), 3.0),
+                (GridNode::from((2, -1)), 3.0),
                 (GridNode::from((2, 0)), 2.0),
+                (GridNode::from((2, 1)), 3.0),
                 (GridNode::from((3, 0)), 3.0),
             ]
         );

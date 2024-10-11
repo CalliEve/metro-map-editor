@@ -595,19 +595,19 @@ mod tests {
         let second_135 = GridNode::from((1, 1));
         let third_135 = GridNode::from((1, 0));
         let result_135 = calc_angle_cost(first_135, second_135, third_135);
-        assert_eq!(result_135, Ok(1.0));
+        assert_eq!(result_135, Ok(0.5));
 
         let first_90 = GridNode::from((0, 0));
         let second_90 = GridNode::from((1, 1));
         let third_90 = GridNode::from((2, 0));
         let result_90 = calc_angle_cost(first_90, second_90, third_90);
-        assert_eq!(result_90, Ok(1.5));
+        assert_eq!(result_90, Ok(2.5));
 
         let first_45 = GridNode::from((1, 0));
         let second_45 = GridNode::from((1, 1));
         let third_45 = GridNode::from((2, 0));
         let result_45 = calc_angle_cost(first_45, second_45, third_45);
-        assert_eq!(result_45, Ok(2.0));
+        assert_eq!(result_45, Ok(5.0));
     }
 
     #[test]

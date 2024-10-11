@@ -1,3 +1,7 @@
+//! A module that contains the [`IDManager`] struct and everything else needed
+//! to manage the IDs in a way that works for communication between the main
+//! thread and the web-worker.
+
 use std::sync::{
     Arc,
     Mutex,
@@ -14,7 +18,7 @@ use crate::models::{
     StationID,
 };
 
-/// A global instance of the IDManager, only accessible through the static
+/// A global instance of the [`IDManager`], only accessible through the static
 /// methods of the manager.
 static ID_MANAGER: IDManager = IDManager::new();
 
@@ -22,13 +26,16 @@ static ID_MANAGER: IDManager = IDManager::new();
 /// IDs are unique.
 #[derive(Debug)]
 pub struct IDManager {
+    /// Holds the ID of the next station.
     station_id: Mutex<u64>,
+    /// Holds the ID of the next line.
     line_id: Mutex<u64>,
+    /// Holds the ID of the next edge.
     edge_id: Mutex<u64>,
 }
 
 impl IDManager {
-    /// Create a new IDManager with all ids starting at 1.
+    /// Create a new [`IDManager`] with all ids starting at 1.
     const fn new() -> Self {
         Self {
             station_id: Mutex::new(1),
@@ -44,7 +51,7 @@ impl IDManager {
             .station_id
             .lock()
             .unwrap();
-        let id = id_lock.clone();
+        let id = *id_lock;
         *id_lock += 1;
         StationID::from(id)
     }
@@ -69,7 +76,7 @@ impl IDManager {
             .station_id
             .lock()
             .unwrap();
-        let id = id_lock.clone();
+        let id = *id_lock;
         *id_lock += 1;
         LineID::from(id)
     }
@@ -93,7 +100,7 @@ impl IDManager {
             .station_id
             .lock()
             .unwrap();
-        let id = id_lock.clone();
+        let id = *id_lock;
         *id_lock += 1;
         EdgeID::from(id)
     }
@@ -111,7 +118,7 @@ impl IDManager {
         }
     }
 
-    /// Convert the IDManager to a serializable struct.
+    /// Convert the [`IDManager`] to a serializable struct.
     pub fn to_data() -> IDData {
         let station_id = *ID_MANAGER
             .station_id
@@ -133,7 +140,7 @@ impl IDManager {
         }
     }
 
-    /// Update the IDManager with the data from the serializable struct.
+    /// Update the [`IDManager`] with the data from the serializable struct.
     pub fn from_data(data: IDData) {
         Self::update_station_id(
             data.station_id
@@ -150,12 +157,15 @@ impl IDManager {
     }
 }
 
-/// A serializable struct that contains the data of the IDManager.
-/// This can be used to save the state of the IDManager and transfer it between
-/// the main thread and any web-workers.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+/// A serializable struct that contains the data of the [`IDManager`].
+/// This can be used to save the state of the [`IDManager`] and transfer it
+/// between the main thread and any web-workers.
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct IDData {
+    /// The next station id.
     station_id: u64,
+    /// The next line id.
     line_id: u64,
+    /// The next edge id.
     edge_id: u64,
 }

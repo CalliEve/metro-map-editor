@@ -1,5 +1,9 @@
 //! Contains the [`CanvasControls`] component.
 
+// Async is used for futures, which are used in the worker, even though the algorithm itself is
+// sync.
+#![allow(clippy::unused_async)]
+
 use ev::KeyboardEvent;
 use html::Div;
 use leptos::{
@@ -37,8 +41,8 @@ use crate::{
 struct AlgorithmRequest {
     /// The settings for the algorithm.
     settings: AlgorithmSettings,
-    /// The data for the IDManager to ensure the ids potentially generated in
-    /// the algorithm are unique.
+    /// The data for the [`IDManager`] to ensure the ids potentially generated
+    /// in the algorithm are unique.
     id_manager_data: IDData,
     /// The map to run the algorithm on.
     map: Map,
@@ -47,10 +51,11 @@ struct AlgorithmRequest {
 /// The response from the algorithm.
 #[derive(Clone, Serialize, Deserialize)]
 struct AlgorithmResponse {
+    /// If the algorithm ran successfully.
     success: bool,
     /// The Map outputted by the algorithm.
     map: Map,
-    /// The data for the IDManager after the algorithm has run, ensuring the
+    /// The data for the [`IDManager`] after the algorithm has run, ensuring the
     /// main thread will not create IDs in conflict with those in the map.
     id_manager_data: IDData,
 }
