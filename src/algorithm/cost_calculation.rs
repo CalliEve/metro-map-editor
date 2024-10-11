@@ -230,6 +230,9 @@ fn diagonal_occupied(
 
 /// Calculate the cost of the node attached to the given station on the path
 /// going away from the station.
+///
+/// note: the angle cost is halved here to make it have a preference, but not
+/// have it force a double bend later on to compensate.
 fn calc_station_exit_cost(
     map: &Map,
     current_edge: &Edge,
@@ -238,10 +241,16 @@ fn calc_station_exit_cost(
     previous_node: GridNode,
     target_node: GridNode,
 ) -> Result<f64> {
-    if !station.is_settled() {
+    if !station.is_settled()
+        || station
+            .get_edges()
+            .len()
+            == 1
+    {
         return match_angle_cost(
             (calculate_angle(previous_node, node, target_node) / 45.0).round() * 45.0,
-        );
+        )
+        .map(|c| c / 2.0);
     }
 
     let mut biggest_overlap = None;
@@ -292,7 +301,7 @@ fn calc_station_exit_cost(
         // calculate the angle with that node.
         for edge_node in opposite_edge.get_edge_ends() {
             if neighbor_nodes.contains(&edge_node) {
-                return calc_angle_cost(edge_node, station.get_pos(), node);
+                return calc_angle_cost(edge_node, station.get_pos(), node).map(|c| c / 2.0);
             }
         }
 
@@ -305,7 +314,8 @@ fn calc_station_exit_cost(
                     opp_station.get_pos(),
                     station.get_pos(),
                     node,
-                );
+                )
+                .map(|c| c / 2.0);
             }
         }
     }

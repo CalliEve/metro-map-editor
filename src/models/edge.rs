@@ -1,5 +1,4 @@
 //! Contains the [`Edge`] struct and all its methods.
-
 use std::{
     fmt::{
         self,
@@ -13,6 +12,10 @@ use std::{
 };
 
 use leptos::logging;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::{
     GridNode,
@@ -36,7 +39,8 @@ use crate::{
 static EDGE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// An identifier for an edge.
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct EdgeID(u64);
 
 impl From<u64> for EdgeID {
@@ -52,7 +56,7 @@ impl Display for EdgeID {
 }
 
 /// Represents an edge, which is the connection between two stations.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Edge {
     /// ID of the edge
     id: EdgeID,

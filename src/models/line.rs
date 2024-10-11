@@ -1,5 +1,4 @@
 //! Contains the [`Line`] struct and all its methods.
-
 use std::{
     f64::consts::PI,
     fmt::Display,
@@ -10,6 +9,10 @@ use std::{
 };
 
 use itertools::Itertools;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::{
     station::StationID,
@@ -26,7 +29,8 @@ use crate::{
 static LINE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// An identifier for a line.
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct LineID(u64);
 
 impl From<u64> for LineID {
@@ -48,7 +52,7 @@ impl Display for LineID {
 }
 
 /// Represents a metro line, including its stations, name and color.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Line {
     /// ID of the line.
     id: LineID,

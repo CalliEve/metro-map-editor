@@ -115,7 +115,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
 
     expand_stations(settings, map, &contracted_stations)?;
 
-    debug_print(settings, "Recalculated map", false);
+    logging::log!("Recalculated map");
 
     Ok(())
 }

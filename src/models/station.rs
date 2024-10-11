@@ -10,6 +10,10 @@ use std::{
 };
 
 use leptos::logging;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::{
     EdgeID,
@@ -24,7 +28,8 @@ use crate::{
 static STATION_ID: AtomicU64 = AtomicU64::new(1);
 
 /// An identifier for a station.
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct StationID(u64);
 
 impl From<u64> for StationID {
@@ -47,7 +52,7 @@ impl Display for StationID {
 
 /// Represents a metro station, including its grid position on the map, its id,
 /// name and if the station should be greyed out when drawn to the canvas.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Station {
     /// Position of the station.
     pos: GridNode,

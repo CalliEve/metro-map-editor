@@ -2,6 +2,11 @@
 
 use std::collections::HashMap;
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 use super::{
     line::LineID,
     station::StationID,
@@ -20,7 +25,7 @@ use crate::{
 };
 
 /// Represents the metro map as a whole with all its lines and stations.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Map {
     /// A [`HashMap`] of all stations on the map.
     stations: HashMap<StationID, Station>,
