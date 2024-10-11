@@ -9,7 +9,7 @@ use crate::components::CanvasState;
 pub fn draw_grid(canvas: &CanvasContext, state: CanvasState) {
     canvas.begin_path();
     canvas.set_line_width(0.3);
-    canvas.set_stroke_style("grey");
+    canvas.set_stroke_style_str("grey");
 
     let (height, width) = state.get_size();
     let drawn_square_size = state.drawn_square_size();

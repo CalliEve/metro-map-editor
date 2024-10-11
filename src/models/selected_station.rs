@@ -97,7 +97,7 @@ impl SelectedStation {
             .draw(canvas, state);
 
         canvas.set_line_width(3.0);
-        canvas.set_stroke_style("black");
+        canvas.set_stroke_style_str("black");
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
 

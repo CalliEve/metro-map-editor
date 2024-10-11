@@ -17,7 +17,7 @@ use wasm_bindgen::{
 
 use crate::{
     components::{
-        state::RemoveType,
+        state::ActionType,
         CanvasState,
         MapState,
     },
@@ -134,6 +134,14 @@ fn recalculate_edge_nodes(map: &mut Map, edge_id: EdgeID) {
 ///
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
 fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
+    // Actions are only performed on mouseup
+    if map_state
+        .get_selected_action()
+        .is_some()
+    {
+        return;
+    }
+
     let mut map = map_state
         .get_map()
         .clone();
@@ -170,25 +178,6 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             map_state.set_map(map);
             map_state.clear_selected_line();
         }
-        return;
-    }
-
-    // Handle a click while having a remove operation selected
-    if let Some(remove_type) = map_state.get_selected_remove() {
-        match remove_type {
-            RemoveType::Station => {
-                if let Some(station) = map.station_at_node(mouse_pos) {
-                    map.remove_station(station);
-                }
-            },
-            RemoveType::Line => {
-                if let Some(selected_line) = map.line_at_node(mouse_pos) {
-                    map.remove_line(selected_line.get_id());
-                }
-            },
-        }
-        map_state.set_map(map);
-        map_state.clear_selected_remove();
         return;
     }
 
@@ -238,20 +227,55 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
 /// Listener for the [mouseup] event on the canvas.
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
-fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
+fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     let mut map = map_state
         .get_map()
         .clone();
+
+    let canvas_state = map_state.get_canvas_state();
+    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
+
+    // Handle a click while having an operation selected
+    if let Some(action_type) = map_state.get_selected_action() {
+        match action_type {
+            ActionType::RemoveStation => {
+                if let Some(station_id) = map.station_at_node(mouse_pos) {
+                    map.remove_station(station_id);
+                }
+            },
+            ActionType::RemoveLine => {
+                if let Some(selected_line) = map.line_at_node(mouse_pos) {
+                    map.remove_line(selected_line.get_id());
+                }
+            },
+            ActionType::LockStation => {
+                if let Some(station_id) = map.station_at_node(mouse_pos) {
+                    map.get_mut_station(station_id)
+                        .expect("Found station but id does not exit")
+                        .lock();
+                }
+            },
+            ActionType::UnlockStation => {
+                if let Some(station_id) = map.station_at_node(mouse_pos) {
+                    map.get_mut_station(station_id)
+                        .expect("Found station but id does not exit")
+                        .unlock();
+                }
+            },
+        }
+        map_state.set_map(map);
+        if !shift_key {
+            map_state.clear_selected_action();
+        }
+        return;
+    }
 
     // Handle a mouseup while having a line selected
     if let Some(selected_line) = map_state
         .get_selected_line()
         .copied()
     {
-        let canvas_state = map_state.get_canvas_state();
-        let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
-        let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
-
         if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
             let (before, after) = selected_line.get_before_after();
             let mut line = map
@@ -290,6 +314,10 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent) {
     let mut edge_ids = Vec::new();
     for station in map.get_mut_stations() {
         if *station == selected_station {
+            if station.get_pos() == selected_station.get_pos() {
+                break;
+            }
+
             station.set_pos(selected_station.get_pos());
             station.set_original_pos(selected_station.get_pos());
             station.lock();
@@ -407,12 +435,12 @@ pub fn Canvas() -> impl IntoView {
                 _ref=canvas_ref
 
                 on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
-                on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref()))
+                on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
 
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
-                on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref()))
+                on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:touchcancel=move |_| map_state.update(on_mouse_out)
 

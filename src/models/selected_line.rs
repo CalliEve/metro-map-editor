@@ -119,7 +119,7 @@ impl SelectedLine {
             .expect("drawing invalid line id");
 
         canvas.set_line_width(3.0);
-        canvas.set_stroke_style(&format!(
+        canvas.set_stroke_style_str(&format!(
             "rgb({} {} {})",
             line.get_color()
                 .0,

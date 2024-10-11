@@ -353,7 +353,7 @@ impl Edge {
             canvas.set_line_width(width);
             canvas.set_global_alpha(1.0);
 
-            canvas.set_stroke_style(&format!(
+            canvas.set_stroke_style_str(&format!(
                 "rgb({} {} {})",
                 color.0, color.1, color.2,
             ));

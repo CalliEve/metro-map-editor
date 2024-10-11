@@ -10,7 +10,7 @@ use crate::{
             ButtonProps,
             NumberInput,
         },
-        state::RemoveType,
+        state::ActionType,
         MapState,
     },
     models::{
@@ -28,6 +28,15 @@ pub fn Sidebar() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
+    let action_selected = move |action| {
+        Signal::derive(move || {
+            map_state
+                .get()
+                .get_selected_action()
+                == Some(action)
+        })
+    };
+
     let add_station = move |_| {
         map_state.update(|state| {
             state.set_selected_station(SelectedStation::new_station());
@@ -43,27 +52,31 @@ pub fn Sidebar() -> impl IntoView {
 
     let remove_station = move |_| {
         map_state.update(|state| {
-            state.set_selected_remove(RemoveType::Station);
+            state.set_selected_action(ActionType::RemoveStation);
         });
     };
-    let remove_station_selected = move || {
-        map_state
-            .get()
-            .get_selected_remove()
-            == Some(RemoveType::Station)
-    };
+    let remove_station_selected = action_selected(ActionType::RemoveStation);
 
     let remove_line = move |_| {
         map_state.update(|state| {
-            state.set_selected_remove(RemoveType::Line);
+            state.set_selected_action(ActionType::RemoveLine);
         });
     };
-    let remove_line_selected = move || {
-        map_state
-            .get()
-            .get_selected_remove()
-            == Some(RemoveType::Line)
+    let remove_line_selected = action_selected(ActionType::RemoveLine);
+
+    let lock_station = move |_| {
+        map_state.update(|state| {
+            state.set_selected_action(ActionType::LockStation);
+        });
     };
+    let lock_station_selected = action_selected(ActionType::LockStation);
+
+    let unlock_station = move |_| {
+        map_state.update(|state| {
+            state.set_selected_action(ActionType::UnlockStation);
+        });
+    };
+    let unlock_station_selected = action_selected(ActionType::UnlockStation);
 
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
@@ -79,7 +92,7 @@ pub fn Sidebar() -> impl IntoView {
                     ButtonProps::builder()
                         .text("Remove Station")
                         .on_click(Box::new(remove_station))
-                        .active(Signal::derive(remove_station_selected))
+                        .active(remove_station_selected)
                         .danger(true)
                         .build(),
                 ]}/>
@@ -92,7 +105,21 @@ pub fn Sidebar() -> impl IntoView {
                     ButtonProps::builder()
                         .text("Remove Line")
                         .on_click(Box::new(remove_line))
-                        .active(Signal::derive(remove_line_selected))
+                        .active(remove_line_selected)
+                        .danger(true)
+                        .build(),
+                ]}/>
+            <ButtonGroup
+                children={vec![
+                    ButtonProps::builder()
+                        .text("Lock Station")
+                        .on_click(Box::new(lock_station))
+                        .active(lock_station_selected)
+                        .build(),
+                    ButtonProps::builder()
+                        .text("Unlock Station")
+                        .on_click(Box::new(unlock_station))
+                        .active(unlock_station_selected)
                         .danger(true)
                         .build(),
                 ]}/>

@@ -269,7 +269,7 @@ impl Station {
         } else {
             canvas.set_global_alpha(1.0);
         }
-        canvas.set_stroke_style("black");
+        canvas.set_stroke_style_str("black");
         canvas.begin_path();
         canvas
             .arc(
@@ -281,6 +281,23 @@ impl Station {
             )
             .unwrap();
         canvas.stroke();
+
+        if self.is_locked() {
+            canvas.set_stroke_style_str("grey");
+            canvas.begin_path();
+            canvas
+                .arc(
+                    canvas_pos.0 + (state.drawn_square_size() / 4.0),
+                    canvas_pos.1 - (state.drawn_square_size() / 4.0),
+                    state.drawn_square_size() / 3.0 / 5.0,
+                    0.0,
+                    2.0 * f64::consts::PI,
+                )
+                .unwrap();
+            canvas.set_fill_style_str("grey");
+            canvas.fill();
+            canvas.stroke();
+        }
     }
 }
 

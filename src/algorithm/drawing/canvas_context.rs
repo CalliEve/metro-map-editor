@@ -119,11 +119,6 @@ impl Deref for CanvasContext<'_> {
 
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 impl CanvasContext<'_> {
-    pub fn set_stroke_style(&self, style: &str) {
-        self.inner
-            .set_stroke_style(&JsValue::from_str(style));
-    }
-
     pub fn set_line_dash(&self, segments: &[u8]) -> Result<(), JsValue> {
         self.inner
             .set_line_dash(&Uint8Array::from(segments))
@@ -168,7 +163,7 @@ impl<'a> CanvasContext<'a> {
         );
     }
 
-    pub fn set_stroke_style(&self, _: &str) {}
+    pub fn set_stroke_style_str(&self, _: &str) {}
 
     pub fn set_global_alpha(&self, _: f64) {}
 
@@ -189,6 +184,14 @@ impl<'a> CanvasContext<'a> {
 
     pub fn set_line_dash(&self, _: &[u8]) -> Result<(), JsValue> {
         Ok(())
+    }
+
+    pub fn fill(&self) {
+        self.record("fill", "");
+    }
+
+    pub fn set_fill_style_str(&self, style: &str) {
+        self.record("set_fill_style", style);
     }
 
     fn record(&self, name: &str, value: &str) {

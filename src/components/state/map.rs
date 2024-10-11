@@ -21,17 +21,25 @@ use crate::{
     unwrap_or_return,
 };
 
-/// The type of remove operation that is currently selected.
+/// The type of operation that is currently selected.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RemoveType {
+pub enum ActionType {
     /// User wants to remove a [`Station`].
     ///
     /// [`Station`]: crate::models::Station
-    Station,
+    RemoveStation,
     /// User wants to remove a [`Line`].
     ///
     /// [`Line`]: crate::models::Line
-    Line,
+    RemoveLine,
+    /// User wants to lock the location of a [`Station`].
+    ///
+    /// [`Station`]: crate::models::Station
+    LockStation,
+    /// User wants to unlock the location of a [`Station`].
+    ///
+    /// [`Station`]: crate::models::Station
+    UnlockStation,
 }
 
 /// Holds all the state of the current [`Map`], canvas and any potentially
@@ -44,8 +52,8 @@ pub struct MapState {
     selected_station: Option<SelectedStation>,
     /// The currently selected [`crate::models::Line`].
     selected_line: Option<SelectedLine>,
-    /// The type of remove operation that is currently selected.
-    selected_remove: Option<RemoveType>,
+    /// The type of action that is currently selected.
+    selected_action: Option<ActionType>,
     /// The state of the canvas.
     canvas: CanvasState,
     /// The settings for the algorithm.
@@ -60,7 +68,7 @@ impl MapState {
             map,
             selected_station: None,
             selected_line: None,
-            selected_remove: None,
+            selected_action: None,
             canvas: CanvasState::default(),
             algorithm_settings: AlgorithmSettings::default(),
         }
@@ -97,19 +105,19 @@ impl MapState {
         self.selected_station = None;
     }
 
-    /// A getter method for the selected remove operation.
-    pub fn get_selected_remove(&self) -> Option<RemoveType> {
-        self.selected_remove
+    /// A getter method for the selected action.
+    pub fn get_selected_action(&self) -> Option<ActionType> {
+        self.selected_action
     }
 
-    /// A setter method for the selected remove operation.
-    pub fn set_selected_remove(&mut self, operation: RemoveType) {
-        self.selected_remove = Some(operation);
+    /// A setter method for the selected action.
+    pub fn set_selected_action(&mut self, operation: ActionType) {
+        self.selected_action = Some(operation);
     }
 
-    /// Set the selected remove operation to None.
-    pub fn clear_selected_remove(&mut self) {
-        self.selected_remove = None;
+    /// Set the selected action to None.
+    pub fn clear_selected_action(&mut self) {
+        self.selected_action = None;
     }
 
     /// A mutable getter method for the selected line.

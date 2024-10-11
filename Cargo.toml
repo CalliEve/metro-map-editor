@@ -7,7 +7,7 @@ license = "MIT"
 
 [dependencies]
 leptos = { version = "0.6.15", features = ["csr", "nightly"] }
-web-sys = { version = "0.3", features = [
+web-sys = { version = "0.3.72", features = [
     "KeyboardEvent",
     "HtmlCanvasElement",
     "HtmlInputElement",
@@ -21,7 +21,7 @@ web-sys = { version = "0.3", features = [
     "Element",
     "Window",
 ] }
-wasm-bindgen = { version = "0.2" }
+wasm-bindgen = { version = "0.2.95" }
 console_log = "1"
 log = "0.4"
 console_error_panic_hook = "0.1"

@@ -57,24 +57,25 @@ pub fn Button(
     let dark_hover = dark + 100;
     let dark_active = if dark >= 800 { 950 } else { dark + 200 };
 
-    let mut class = "inline-block group px-4 \
+    let class_func = move || {
+        let mut class = "inline-block group px-4 \
         py-1.5 text-center uppercase \
         leading-snug shadow-neutral-800 \
         dark:shadow-neutral-950 hover:shadow-blue-900 \
         dark:hover:shadow-neutral-900"
-        .to_owned();
+            .to_owned();
 
-    if overlay && bigger {
-        class += " rounded-full text-xl font-bold h-16 w-16";
-    } else if overlay {
-        class += " rounded-full text-xl font-bold h-11 w-11";
-    } else {
-        class += " rounded text-sm font-semibold";
-    }
+        if overlay && bigger {
+            class += " rounded-full text-xl font-bold h-16 w-16";
+        } else if overlay {
+            class += " rounded-full text-xl font-bold h-11 w-11";
+        } else {
+            class += " rounded text-sm font-semibold";
+        }
 
-    if outlined {
-        class += &format!(
-            " border-solid border-4 text-{color}-{base} \
+        if outlined {
+            class += &format!(
+                " border-solid border-4 text-{color}-{base} \
             border-{color}-{base} hover:text-{color}-{base_hover} \
             hover:border-{color}-{base_hover} \
             active:text-{color}-{base_active} \
@@ -85,31 +86,42 @@ pub fn Button(
             dark:hover:border-{color}-{dark_hover} \
             dark:active:text-{color}-{dark_active} \
             dark:active:border-{color}-{dark_active}"
-        );
+            );
 
-        if can_focus {
-            class += &format!(
-                " focus:text-{color}-{base_active} \
+            if active.get() {
+                class += &format!(
+                    " text-{color}-{base_active} \
+            border-{color}-{base_active} \
+            dark:text-{color}-{dark_active} \
+            dark:border-{color}-{dark_active}"
+                );
+            } else if can_focus {
+                class += &format!(
+                    " focus:text-{color}-{base_active} \
             focus:border-{color}-{base_active} \
             dark:focus:text-{color}-{dark_active} \
             dark:focus:border-{color}-{dark_active}"
-            );
-        }
-    } else {
-        class += &format!(
-            " text-white bg-{color}-{base} \
+                );
+            }
+        } else {
+            class += &format!(
+                " text-white bg-{color}-{base} \
             hover:bg-{color}-{base_hover} \
             active:bg-{color}-{base_active} \
             dark:bg-{color}-{dark} \
             dark:hover:bg-{color}-{dark_hover} \
             dark:active:bg-{color}-{dark_active}"
-        );
+            );
 
-        if can_focus {
-            class +=
-                &format!(" focus:bg-{color}-{base_active} dark:focus:bg-{color}-{dark_active}");
+            if active.get() {
+                class += &format!(" bg-{color}-{base_active} dark:bg-{color}-{dark_active}");
+            } else if can_focus {
+                class +=
+                    &format!(" focus:bg-{color}-{base_active} dark:focus:bg-{color}-{dark_active}");
+            }
         }
-    }
+        class
+    };
 
     let has_children = children.is_some();
 
@@ -123,7 +135,7 @@ pub fn Button(
     view! {
         <button
             type="button"
-            class=class
+            class=class_func
             focus=active
             on:click=on_click>
             <>

@@ -7,8 +7,8 @@ mod map;
 
 pub use canvas::CanvasState;
 pub use map::{
+    ActionType,
     MapState,
-    RemoveType,
 };
 
 use crate::models::Map;
