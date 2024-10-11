@@ -1,5 +1,4 @@
 //! Contains the [`Edge`] struct and all its methods.
-
 use std::{
     fmt::{
         self,
@@ -13,6 +12,10 @@ use std::{
 };
 
 use leptos::logging;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::{
     GridNode,
@@ -30,18 +33,23 @@ use crate::{
         run_a_star,
     },
     components::CanvasState,
+    utils::IDManager,
 };
 
-/// Next generated sequential identifier for a new edge.
-static EDGE_ID: AtomicU64 = AtomicU64::new(1);
-
 /// An identifier for an edge.
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct EdgeID(u64);
 
 impl From<u64> for EdgeID {
     fn from(value: u64) -> Self {
         Self(value)
+    }
+}
+
+impl From<EdgeID> for u64 {
+    fn from(value: EdgeID) -> Self {
+        value.0
     }
 }
 
@@ -52,7 +60,7 @@ impl Display for EdgeID {
 }
 
 /// Represents an edge, which is the connection between two stations.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Edge {
     /// ID of the edge
     id: EdgeID,
@@ -76,11 +84,7 @@ impl Edge {
         Self {
             from,
             to,
-            id: id.unwrap_or_else(|| {
-                EDGE_ID
-                    .fetch_add(1, AtomicOrdering::SeqCst)
-                    .into()
-            }),
+            id: id.unwrap_or_else(IDManager::next_edge_id),
             nodes: Vec::new(),
             lines: Vec::new(),
             is_settled: false,

@@ -1,15 +1,27 @@
 //! Contains the custom [`Error`] type and the [`Result`] type alias.
 
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    sync::Arc,
+};
 
 use leptos::logging;
 use ordered_float::FloatIsNan;
+use serde::{
+    de::{
+        value,
+        Error as DeError,
+    },
+    Deserialize,
+    Serialize,
+};
+use serde_json::Map;
 use wasm_bindgen::JsValue;
 
 /// A custom error type for the application.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
-    Json(serde_json::Error),
+    Json(Arc<serde_json::Error>),
     GraphML(quick_xml::DeError),
     InvalidFloat(FloatIsNan),
     DecodeError(String),
@@ -30,6 +42,17 @@ impl Error {
     /// Prints the error to the console.
     pub fn print_error(self) {
         logging::error!("{}", self);
+    }
+
+    /// Returns the type of the error as a string.
+    fn get_type(&self) -> &'static str {
+        match self {
+            Self::Json(_) => "json",
+            Self::GraphML(_) => "graphml",
+            Self::InvalidFloat(_) => "invalid_float",
+            Self::DecodeError(_) => "decode_error",
+            Self::Other(_) => "other",
+        }
     }
 }
 
@@ -53,7 +76,7 @@ impl From<quick_xml::DeError> for Error {
 
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
-        Self::Json(e)
+        Self::Json(Arc::new(e))
     }
 }
 
@@ -94,6 +117,122 @@ impl PartialEq<Error> for Error {
     }
 }
 
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut map = Map::new();
+        map.insert(
+            "type".to_owned(),
+            self.get_type()
+                .into(),
+        );
+
+        map.insert(
+            "data".to_owned(),
+            match self {
+                Self::Json(e) => e.to_string(),
+                Self::GraphML(e) => e.to_string(),
+                Self::InvalidFloat(e) => e.to_string(),
+                Self::DecodeError(e) | Self::Other(e) => e.to_string(),
+            }
+            .into(),
+        );
+
+        map.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Error {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        let map = value
+            .as_object()
+            .ok_or(D::Error::custom(
+                "expected object for error",
+            ))?;
+        match map
+            .get("type")
+            .ok_or(D::Error::custom(
+                "error object must have type",
+            ))?
+            .as_str()
+            .ok_or(D::Error::custom(
+                "error type must be a string",
+            ))? {
+            "json" => {
+                let e = value
+                    .get("data")
+                    .ok_or(D::Error::custom(
+                        "json error must have data",
+                    ))?
+                    .as_str()
+                    .ok_or(D::Error::custom(
+                        "json error data must be a string",
+                    ))?;
+                Ok(Self::Json(Arc::new(
+                    serde_json::Error::custom(e),
+                )))
+            },
+            "graphml" => {
+                let e = value
+                    .get("data")
+                    .ok_or(D::Error::custom(
+                        "graphml error must have data",
+                    ))?
+                    .as_str()
+                    .ok_or(D::Error::custom(
+                        "graphml error data must be a string",
+                    ))?;
+                Ok(Self::GraphML(
+                    quick_xml::DeError::custom(e),
+                ))
+            },
+            "invalid_float" => {
+                let e = value
+                    .get("data")
+                    .ok_or(D::Error::custom(
+                        "invalid float error must have data",
+                    ))?
+                    .as_str()
+                    .ok_or(D::Error::custom(
+                        "invalid float error data must be a string",
+                    ))?;
+                Ok(Self::InvalidFloat(FloatIsNan))
+            },
+            "decode_error" => {
+                let e = value
+                    .get("data")
+                    .ok_or(D::Error::custom(
+                        "decode error must have data",
+                    ))?
+                    .as_str()
+                    .ok_or(D::Error::custom(
+                        "decode error data must be a string",
+                    ))?;
+                Ok(Self::DecodeError(e.to_string()))
+            },
+            "other" => {
+                let e = value
+                    .get("data")
+                    .ok_or(D::Error::custom(
+                        "other error must have data",
+                    ))?
+                    .as_str()
+                    .ok_or(D::Error::custom(
+                        "other error data must be a string",
+                    ))?;
+                Ok(Self::Other(e.to_string()))
+            },
+            _ => Err(D::Error::custom("unknown error type")),
+        }
+    }
+}
+
 /// A custom [`Result`] type for the application using the [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -110,4 +249,42 @@ macro_rules! unwrap_or_return {
             },
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_error_serde() {
+        let error_json: Result<()> = Err(Error::Json(Arc::new(
+            serde_json::Error::custom("test"),
+        )));
+        let serialized_json = serde_json::to_string(&error_json).unwrap();
+        let deserialized_json = serde_json::from_str(&serialized_json).unwrap();
+        assert_eq!(error_json, deserialized_json);
+
+        let error_graphml = Error::GraphML(quick_xml::DeError::custom("test"));
+        let serialized_graphml = serde_json::to_string(&error_graphml).unwrap();
+        let deserialized_graphml: crate::Error = serde_json::from_str(&serialized_graphml).unwrap();
+        assert_eq!(error_graphml, deserialized_graphml);
+
+        let error_invalid_float = Error::InvalidFloat(FloatIsNan);
+        let serialized_invalid_float = serde_json::to_string(&error_invalid_float).unwrap();
+        let deserialized_invalid_float: crate::Error =
+            serde_json::from_str(&serialized_invalid_float).unwrap();
+        assert_eq!(
+            error_invalid_float,
+            deserialized_invalid_float
+        );
+
+        let error_decode = Error::DecodeError("test".to_string());
+        let serialized_decode = serde_json::to_string(&error_decode).unwrap();
+        let deserialized_decode: crate::Error = serde_json::from_str(&serialized_decode).unwrap();
+        assert_eq!(error_decode, deserialized_decode);
+
+        let error_other: Result<crate::models::Station> = Err(Error::Other("test".to_string()));
+        let serialized_other = serde_json::to_string(&error_other).unwrap();
+        let deserialized_other = serde_json::from_str(&serialized_other).unwrap();
+        assert_eq!(error_other, deserialized_other);
+    }
 }

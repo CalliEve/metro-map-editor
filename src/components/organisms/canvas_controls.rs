@@ -1,15 +1,83 @@
 //! Contains the [`CanvasControls`] component.
 
+// Async is used for futures, which are used in the worker, even though the algorithm itself is
+// sync.
+#![allow(clippy::unused_async)]
+
 use ev::KeyboardEvent;
 use html::Div;
-use leptos::*;
-
-use crate::components::{
-    atoms::Button,
-    molecules::Canvas,
-    CanvasState,
-    MapState,
+use leptos::{
+    logging,
+    *,
 };
+use leptos_workers::worker;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use crate::{
+    algorithm::{
+        self,
+        AlgorithmSettings,
+    },
+    components::{
+        atoms::Button,
+        molecules::Canvas,
+        CanvasState,
+        MapState,
+    },
+    models::Map,
+    unwrap_or_return,
+    utils::{
+        IDData,
+        IDManager,
+        Result as AlgrithmResult,
+    },
+};
+
+/// The request to run the algorithm.
+#[derive(Clone, Serialize, Deserialize)]
+struct AlgorithmRequest {
+    /// The settings for the algorithm.
+    settings: AlgorithmSettings,
+    /// The data for the [`IDManager`] to ensure the ids potentially generated
+    /// in the algorithm are unique.
+    id_manager_data: IDData,
+    /// The map to run the algorithm on.
+    map: Map,
+}
+
+/// The response from the algorithm.
+#[derive(Clone, Serialize, Deserialize)]
+struct AlgorithmResponse {
+    /// If the algorithm ran successfully.
+    success: bool,
+    /// The Map outputted by the algorithm.
+    map: Map,
+    /// The data for the [`IDManager`] after the algorithm has run, ensuring the
+    /// main thread will not create IDs in conflict with those in the map.
+    id_manager_data: IDData,
+}
+
+/// The worker that runs the algorithm.
+#[worker(AlgorithmWorker)]
+fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
+    IDManager::from_data(req.id_manager_data);
+
+    let mut temp_state = MapState::new(req.map);
+    temp_state.set_algorithm_settings(req.settings);
+
+    let success = temp_state.run_algorithm();
+
+    AlgorithmResponse {
+        success,
+        map: temp_state
+            .get_map()
+            .clone(),
+        id_manager_data: IDManager::to_data(),
+    }
+}
 
 /// The canvas and the controls overlayed on it.
 #[component]
@@ -17,6 +85,7 @@ pub fn CanvasControls() -> impl IntoView {
     let container_ref = create_node_ref::<Div>();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let (is_calculating, set_calculating) = create_signal(false);
 
     create_effect(move |_| {
         window_event_listener(
@@ -40,18 +109,59 @@ pub fn CanvasControls() -> impl IntoView {
         );
     });
 
+    let algorithm_req = create_action(move |req: &AlgorithmRequest| {
+        let req = req.clone();
+        async move {
+            let resp = run_algorithm(req)
+                .await
+                .expect("Errored on thread startup");
+            if resp.success {
+                map_state.update(|state| {
+                    state.set_map(resp.map);
+                });
+                IDManager::from_data(resp.id_manager_data);
+            }
+        }
+    });
+
     let zoom_in =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_in));
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
-    let run_algorithm = move |_| map_state.update(MapState::run_algorithm);
+    let run_algorithm = move |_| {
+        let req = AlgorithmRequest {
+            settings: map_state
+                .get_untracked()
+                .get_algorithm_settings(),
+            map: map_state
+                .get_untracked()
+                .get_map()
+                .clone(),
+            id_manager_data: IDManager::to_data(),
+        };
+
+        algorithm_req.dispatch(req);
+    };
+
+    let algorithm_button_class = move || {
+        let mut class = "absolute right-5 top-5 group".to_owned();
+
+        if algorithm_req
+            .pending()
+            .get()
+        {
+            class += " is-calculating";
+        }
+
+        class
+    };
 
     view! {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
-        <div class="absolute right-5 top-5 group">
+        <div class=algorithm_button_class>
             <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true can_focus=false bigger=true>
-                <svg class="h-8 w-8 text-blue-500 group-focus:animate-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z"/>
                     <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
                     <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />

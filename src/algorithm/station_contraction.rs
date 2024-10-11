@@ -37,7 +37,13 @@ fn station_has_degree_two(map: &Map, station: &Station) -> bool {
         .iter()
         .map(|id| {
             map.get_edge(*id)
-                .unwrap()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Station {} cannot find its edge {}.",
+                        station.get_id(),
+                        id
+                    )
+                })
         })
         .map(Edge::get_lines)
         .all_equal()
@@ -116,10 +122,23 @@ pub fn contract_stations(
         // The start and end of the new edge the station will be contracted into.
         let start = edges[0]
             .opposite(station_id)
-            .unwrap();
+            .unwrap_or_else(|| {
+                panic!(
+                    "Station {} cannot find its opposite node on edge {}.\n{:?}",
+                    station.get_id(),
+                    edges[0].get_id(),
+                    edges[0]
+                )
+            });
         let end = edges[1]
             .opposite(station_id)
-            .unwrap();
+            .unwrap_or_else(|| {
+                panic!(
+                    "Station {} cannot find its opposite node on edge {}.",
+                    station.get_id(),
+                    edges[1].get_id()
+                )
+            });
 
         if !can_contract_into(settings, map, start, end) {
             continue;

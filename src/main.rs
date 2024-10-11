@@ -6,16 +6,16 @@ use leptos::*;
 use metro_map_editor::*;
 
 fn main() {
-    // Initialize the logger with debug logging, so anything logged will be printed
-    // to the console
-    _ = console_log::init_with_level(log::Level::Debug);
+    if web_sys::window().is_some() {
+        // Initialize the panic hook, which will print any panic that occurs to the
+        // console
+        console_error_panic_hook::set_once();
 
-    // Initialize the panic hook, which will print any panic that occurs to the
-    // console
-    console_error_panic_hook::set_once();
-
-    // Start the application
-    mount_to_body(|| view! { <App/> });
+        // Start the application
+        mount_to_body(App);
+    } else {
+        // This is a worker; do nothing
+    }
 }
 
 /// The App component that is the root for the application as a whole

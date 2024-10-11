@@ -10,6 +10,10 @@ use std::{
 };
 
 use leptos::logging;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::{
     EdgeID,
@@ -18,13 +22,11 @@ use super::{
 use crate::{
     algorithm::drawing::CanvasContext,
     components::CanvasState,
+    utils::IDManager,
 };
-
-/// Next generated sequential identifier for a new station.
-static STATION_ID: AtomicU64 = AtomicU64::new(1);
-
 /// An identifier for a station.
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct StationID(u64);
 
 impl From<u64> for StationID {
@@ -47,7 +49,7 @@ impl Display for StationID {
 
 /// Represents a metro station, including its grid position on the map, its id,
 /// name and if the station should be greyed out when drawn to the canvas.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Station {
     /// Position of the station.
     pos: GridNode,
@@ -76,19 +78,13 @@ impl Station {
     /// If id is None, the next sequential id is used.
     pub fn new(pos: GridNode, id: Option<StationID>) -> Self {
         if let Some(new_id) = id {
-            if STATION_ID.load(Ordering::SeqCst) <= new_id.into() {
-                STATION_ID.store(u64::from(new_id) + 1, Ordering::SeqCst);
-            }
+            IDManager::update_station_id(new_id);
         }
 
         Self {
             pos,
             original_pos: pos,
-            id: id.unwrap_or_else(|| {
-                STATION_ID
-                    .fetch_add(1, Ordering::SeqCst)
-                    .into()
-            }),
+            id: id.unwrap_or_else(IDManager::next_station_id),
             is_ghost: false,
             name: String::new(),
             edges: Vec::new(),
@@ -313,24 +309,27 @@ mod tests {
 
     #[test]
     fn test_new_station() {
-        let before_id = STATION_ID.load(Ordering::Relaxed);
+        let before_id = IDManager::next_station_id();
 
         let first_station = Station::new((2, 3).into(), None);
         let second_station = Station::new(
             (2, 3).into(),
-            Some(StationID(before_id + 5)),
+            Some(StationID(u64::from(before_id) + 5)),
         );
 
-        let after_id = STATION_ID.load(Ordering::Acquire);
+        let after_id = IDManager::next_station_id();
 
-        assert_eq!(before_id + 6, after_id);
+        assert_eq!(
+            StationID(u64::from(before_id) + 6),
+            after_id
+        );
         assert_eq!(
             first_station.get_id(),
-            StationID(before_id)
+            StationID(u64::from(before_id) + 1)
         );
         assert_eq!(
             second_station.get_id(),
-            StationID(before_id + 5)
+            StationID(u64::from(before_id) + 5)
         );
     }
 }

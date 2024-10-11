@@ -1,5 +1,9 @@
 //! Contains all methods involving the map algorithm itself and drawing the map
 //! to the canvas.
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 mod a_star;
 mod calc_direction;
@@ -19,7 +23,7 @@ pub use recalculate_map::recalculate_map;
 use utils::*;
 
 /// Stores the settings for the algorithm.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct AlgorithmSettings {
     /// The size of the radius around a station to possibly route edges to for
     /// the possible new station location.

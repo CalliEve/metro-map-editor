@@ -3,12 +3,17 @@
 
 mod error;
 pub mod graphml;
+mod id_manager;
 pub mod json;
 mod parsing;
 
 pub use error::{
     Error,
     Result,
+};
+pub use id_manager::{
+    IDData,
+    IDManager,
 };
 
 /// Compares two floats to determine if they do not differ more than 1.0.

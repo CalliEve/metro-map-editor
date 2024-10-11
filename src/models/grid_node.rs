@@ -8,10 +8,15 @@ use std::{
     },
 };
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 use crate::components::CanvasState;
 
 /// Represents a node on the grid.
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct GridNode(
     /// The x coordinate.
     pub i32,

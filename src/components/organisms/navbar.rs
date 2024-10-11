@@ -42,7 +42,8 @@ pub fn Navbar() -> impl IntoView {
                 },
             });
 
-            state.set_map(map);
+            state.set_map(map.clone());
+            state.set_last_loaded(map);
         });
     };
 

@@ -58,6 +58,8 @@ pub struct MapState {
     canvas: CanvasState,
     /// The settings for the algorithm.
     algorithm_settings: AlgorithmSettings,
+    /// The last loaded map.
+    last_loaded: Option<Map>,
 }
 
 impl MapState {
@@ -71,6 +73,7 @@ impl MapState {
             selected_action: None,
             canvas: CanvasState::default(),
             algorithm_settings: AlgorithmSettings::default(),
+            last_loaded: None,
         }
     }
 
@@ -142,13 +145,15 @@ impl MapState {
         self.selected_line = None;
     }
 
-    /// Returns if anything has been selected.
-    pub fn has_any_selected(&self) -> bool {
-        self.selected_station
-            .is_some()
-            || self
-                .selected_line
-                .is_some()
+    /// A getter method for the last loaded map.
+    pub fn get_last_loaded(&self) -> Option<&Map> {
+        self.last_loaded
+            .as_ref()
+    }
+
+    /// A setter method for the last loaded map.
+    pub fn set_last_loaded(&mut self, map: Map) {
+        self.last_loaded = Some(map);
     }
 
     /// A getter method for the state of the canvas.
@@ -203,6 +208,11 @@ impl MapState {
         f(&mut self.algorithm_settings);
     }
 
+    /// Setter for the algorithm settings.
+    pub fn set_algorithm_settings(&mut self, settings: AlgorithmSettings) {
+        self.algorithm_settings = settings;
+    }
+
     /// Recalculate the x and y limits for the algorithm settings based on the
     /// current map.
     pub fn calculate_algorithm_settings(&mut self) {
@@ -235,12 +245,15 @@ impl MapState {
             .grid_y_limits = (y_limits.0 - 2, y_limits.1 + 2);
     }
 
-    /// Run the full algorithm on the map.
-    pub fn run_algorithm(&mut self) {
+    /// Run the full algorithm on the map. Returns true if successful.
+    pub fn run_algorithm(&mut self) -> bool {
         self.calculate_algorithm_settings();
-        unwrap_or_return!(recalculate_map(
-            self.algorithm_settings,
-            &mut self.map
-        ));
+        let res = recalculate_map(self.algorithm_settings, &mut self.map);
+        if let Err(e) = res {
+            e.print_error();
+            false
+        } else {
+            true
+        }
     }
 }
