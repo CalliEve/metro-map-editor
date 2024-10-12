@@ -5,6 +5,7 @@ mod canvas_context;
 mod closest_corner;
 mod draw_edge;
 mod grid;
+mod calc_direction;
 
 pub use canvas_context::CanvasContext;
 use closest_corner::calc_closest_corner;

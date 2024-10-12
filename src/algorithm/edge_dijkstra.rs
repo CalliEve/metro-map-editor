@@ -235,6 +235,7 @@ pub fn edge_dijkstra(
 mod tests {
     use super::*;
 
+    // More of a sanity check for the algorithm
     #[test]
     fn test_edge_dijkstra() {
         let mut map = Map::new();

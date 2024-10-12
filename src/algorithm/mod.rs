@@ -6,7 +6,6 @@ use serde::{
 };
 
 mod a_star;
-mod calc_direction;
 mod cost_calculation;
 pub mod drawing;
 mod edge_dijkstra;

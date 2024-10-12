@@ -237,7 +237,7 @@ fn reinsert_stations(
         } else if i == 0 {
             // If the end station is the first contracted station, can take all nodes up to
             // the location of this station.
-            loc - 1
+            *loc
         } else {
             // Otherwise, take all nodes between the previous contracted station and the
             // current one.
