@@ -2,13 +2,13 @@
 
 use super::{
     calc_closest_corner,
-    canvas_context::CanvasContext,
-};
-use crate::{
-    algorithm::calc_direction::{
+    calc_direction::{
         calc_direction,
         EdgeDirection,
     },
+    canvas_context::CanvasContext,
+};
+use crate::{
     components::CanvasState,
     models::GridNode,
 };
