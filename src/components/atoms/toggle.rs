@@ -72,6 +72,7 @@ where
         id={id.clone()}
         _ref=input_ref
         on:input=parse_input
+        checked=move || value.map_or(false, |v| v())
         prop:value=move || value.map(|v| v()) />
       <span
         class="pointer-events-none inline-block align-middle p-2 truncate pt-[0.37rem] text-neutral-500 peer-focus:text-primary dark:text-neutral-400 dark:peer-focus:text-primary"

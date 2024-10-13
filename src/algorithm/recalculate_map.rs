@@ -105,7 +105,9 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         false,
     );
 
-    // local_search(settings, map, &mut occupied);
+    if settings.local_search {
+        local_search(settings, map, &mut occupied);
+    }
 
     debug_print(
         settings,

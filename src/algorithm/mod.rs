@@ -39,6 +39,11 @@ pub struct AlgorithmSettings {
     pub grid_y_limits: (i32, i32),
     /// Whether to print debug information.
     pub debug: bool,
+    /// Whether to run the local search algorithm.
+    pub local_search: bool,
+    /// Whether to allow stations to move (off is the same as nose_set_radius
+    /// being 0).
+    pub allow_station_relocation: bool,
 }
 
 impl AlgorithmSettings {
@@ -70,6 +75,8 @@ impl Default for AlgorithmSettings {
             debug: false,
             grid_x_limits: (i32::MIN, i32::MAX),
             grid_y_limits: (i32::MIN, i32::MAX),
+            local_search: true,
+            allow_station_relocation: true,
         }
     }
 }

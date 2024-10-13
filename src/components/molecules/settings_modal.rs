@@ -59,6 +59,24 @@ where
                                 settings.debug = b;
                             }));
                     }/>
+                <Toggle
+                    text="Enable local search result optimization."
+                    value=move || map_state.get().get_algorithm_settings().local_search
+                    on_input=move |b| {
+                        map_state
+                            .update(|state| state.update_algorithm_settings(|settings| {
+                                settings.local_search = b;
+                            }));
+                    }/>
+                <Toggle
+                    text="Enable station relocation (off equals setting the node-set radius to 0)."
+                    value=move || map_state.get().get_algorithm_settings().allow_station_relocation
+                    on_input=move |b| {
+                        map_state
+                            .update(|state| state.update_algorithm_settings(|settings| {
+                                settings.allow_station_relocation = b;
+                            }));
+                    }/>
                 <NumberInput
                     text="Set canvas grid size."
                     min=2.0
@@ -77,7 +95,7 @@ where
                             }));
                     }/>
                 <NumberInput
-                    text="Set radius for possible station placement in algorithm pathfinding."
+                    text="Set the node-set radius for possible station placement in algorithm pathfinding."
                     min=0.0
                     max=20.0
                     value=move || f64::from(map_state.get().get_algorithm_settings().node_set_radius)

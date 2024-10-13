@@ -10,7 +10,13 @@ use leptos::{
     logging,
     *,
 };
-use leptos_workers::worker;
+use leptos_workers::{
+    executors::{
+        AbortHandle,
+        PoolExecutor,
+    },
+    worker,
+};
 use serde::{
     Deserialize,
     Serialize,
@@ -86,6 +92,11 @@ pub fn CanvasControls() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let (is_calculating, set_calculating) = create_signal(false);
+    let (executor, _) = create_signal(
+        PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
+    );
+    let (abort_handle, set_abort_handle) =
+        create_signal(Option::<AbortHandle<AlgorithmWorker>>::None);
 
     create_effect(move |_| {
         window_event_listener(
@@ -112,9 +123,12 @@ pub fn CanvasControls() -> impl IntoView {
     let algorithm_req = create_action(move |req: &AlgorithmRequest| {
         let req = req.clone();
         async move {
-            let resp = run_algorithm(req)
-                .await
-                .expect("Errored on thread startup");
+            let (abort_handle, resp_fut) = executor
+                .get_untracked()
+                .run(req)
+                .expect("failed to start algorithm worker");
+            set_abort_handle(Some(abort_handle));
+            let resp = resp_fut.await;
             if resp.success {
                 map_state.update(|state| {
                     state.set_map(resp.map);
@@ -142,6 +156,17 @@ pub fn CanvasControls() -> impl IntoView {
 
         algorithm_req.dispatch(req);
     };
+    let abort_algorithm = move |_| {
+        if algorithm_req
+            .pending()
+            .get()
+        {
+            if let Some(handle) = abort_handle.get() {
+                handle.abort();
+                algorithm_req.set_pending(false);
+            }
+        }
+    };
 
     let algorithm_button_class = move || {
         let mut class = "absolute right-5 top-5 group".to_owned();
@@ -168,6 +193,11 @@ pub fn CanvasControls() -> impl IntoView {
                 </svg>
             </Button>
         </div>
+        <Show when=move || algorithm_req.pending().get()>
+            <div class="absolute right-5 top-24">
+                <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true can_focus=false ><span class="text-red-300">x</span></Button>
+            </div>
+        </Show>
         <div class="absolute right-5 bottom-20">
             <Button text="zoom in" on_click=Box::new(zoom_in) overlay=true can_focus=false >+</Button>
         </div>

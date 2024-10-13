@@ -131,23 +131,33 @@ pub fn route_edges(
                 "to station on edge not found",
             ))?;
 
-        let mut from_nodes = get_node_set(settings, from_station, &occupied);
-        let mut to_nodes = get_node_set(settings, to_station, &occupied);
+        let mut from_nodes = if settings.allow_station_relocation {
+            get_node_set(settings, from_station, &occupied)
+        } else {
+            vec![(from_station.get_pos(), 0.0)]
+        };
+        let mut to_nodes = if settings.allow_station_relocation {
+            get_node_set(settings, to_station, &occupied)
+        } else {
+            vec![(to_station.get_pos(), 0.0)]
+        };
 
-        if have_overlap(&from_nodes, &to_nodes) {
-            (from_nodes, to_nodes) = split_overlap(
-                from_nodes,
-                from_station,
-                to_nodes,
-                to_station,
-            );
-        }
+        if settings.allow_station_relocation {
+            if have_overlap(&from_nodes, &to_nodes) {
+                (from_nodes, to_nodes) = split_overlap(
+                    from_nodes,
+                    from_station,
+                    to_nodes,
+                    to_station,
+                );
+            }
 
-        if from_nodes.is_empty() {
-            from_nodes.push((from_station.get_pos(), 0.0));
-        }
-        if to_nodes.is_empty() {
-            to_nodes.push((to_station.get_pos(), 0.0));
+            if from_nodes.is_empty() {
+                from_nodes.push((from_station.get_pos(), 0.0));
+            }
+            if to_nodes.is_empty() {
+                to_nodes.push((to_station.get_pos(), 0.0));
+            }
         }
 
         debug_print(
