@@ -84,6 +84,7 @@ fn try_station_pos(
             .get_id()
             .into(),
     );
+    map.add_station(target_station.clone());
 
     let mut total_cost = NotNan::new(0.0).unwrap();
     let mut edges_before = Vec::new();
@@ -144,6 +145,9 @@ fn try_station_pos(
         edges_after.push(edge);
 
         total_cost += cost;
+        if *total_cost >= target_station.get_cost() {
+            return Err(Error::EarlyAbort);
+        }
     }
 
     Ok(StationPos::new(
@@ -170,6 +174,9 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
             .get_edges()
             .is_empty()
         {
+            continue;
+        }
+        if station.is_locked() {
             continue;
         }
 

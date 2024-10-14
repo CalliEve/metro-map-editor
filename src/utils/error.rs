@@ -24,6 +24,7 @@ pub enum Error {
     Json(Arc<serde_json::Error>),
     GraphML(quick_xml::DeError),
     InvalidFloat(FloatIsNan),
+    EarlyAbort,
     DecodeError(String),
     Other(String),
 }
@@ -50,6 +51,7 @@ impl Error {
             Self::Json(_) => "json",
             Self::GraphML(_) => "graphml",
             Self::InvalidFloat(_) => "invalid_float",
+            Self::EarlyAbort => "early_abort",
             Self::DecodeError(_) => "decode_error",
             Self::Other(_) => "other",
         }
@@ -62,6 +64,12 @@ impl Display for Error {
             Self::Json(e) => write!(f, "JSON error: {e}"),
             Self::GraphML(e) => write!(f, "GraphML error: {e}"),
             Self::InvalidFloat(e) => write!(f, "Invalid float error: {e}"),
+            Self::EarlyAbort => {
+                write!(
+                    f,
+                    "Aborting algorithm early as no possible improvement can be reached."
+                )
+            },
             Self::DecodeError(e) => write!(f, "Decode error: {e}"),
             Self::Other(e) => write!(f, "Other error: {e}"),
         }
@@ -135,6 +143,10 @@ impl Serialize for Error {
                 Self::Json(e) => e.to_string(),
                 Self::GraphML(e) => e.to_string(),
                 Self::InvalidFloat(e) => e.to_string(),
+                Self::EarlyAbort => {
+                    self.get_type()
+                        .to_string()
+                },
                 Self::DecodeError(e) | Self::Other(e) => e.to_string(),
             }
             .into(),
@@ -228,6 +240,7 @@ impl<'de> Deserialize<'de> for Error {
                     ))?;
                 Ok(Self::Other(e.to_string()))
             },
+            "early_abort" => Ok(Self::EarlyAbort),
             _ => Err(D::Error::custom("unknown error type")),
         }
     }
