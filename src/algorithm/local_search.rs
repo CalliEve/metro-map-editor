@@ -74,6 +74,10 @@ fn try_station_pos(
     station_pos: GridNode,
     mut occupied: OccupiedNodes,
 ) -> Result<StationPos> {
+    if occupied.contains_key(&station_pos) {
+        return Err(Error::EarlyAbort);
+    }
+
     let mut map = map.clone();
 
     occupied.remove(&target_station.get_pos());
@@ -176,7 +180,9 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
         {
             continue;
         }
-        if station.is_locked() {
+
+        // Skip if the station or any of its edges are locked
+        if station.is_locked() || station.has_locked_edge(map) {
             continue;
         }
 

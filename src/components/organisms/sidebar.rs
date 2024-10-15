@@ -78,6 +78,20 @@ pub fn Sidebar() -> impl IntoView {
     };
     let unlock_station_selected = action_selected(ActionType::UnlockStation);
 
+    let lock_edge = move |_| {
+        map_state.update(|state| {
+            state.set_selected_action(ActionType::LockEdge);
+        });
+    };
+    let lock_edge_selected = action_selected(ActionType::LockEdge);
+
+    let unlock_edge = move |_| {
+        map_state.update(|state| {
+            state.set_selected_action(ActionType::UnlockEdge);
+        });
+    };
+    let unlock_edge_selected = action_selected(ActionType::UnlockEdge);
+
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
@@ -120,6 +134,20 @@ pub fn Sidebar() -> impl IntoView {
                         .text("Unlock Station")
                         .on_click(Box::new(unlock_station))
                         .active(unlock_station_selected)
+                        .danger(true)
+                        .build(),
+                ]}/>
+            <ButtonGroup
+                children={vec![
+                    ButtonProps::builder()
+                        .text("Lock Edge")
+                        .on_click(Box::new(lock_edge))
+                        .active(lock_edge_selected)
+                        .build(),
+                    ButtonProps::builder()
+                        .text("Unlock Edge")
+                        .on_click(Box::new(unlock_edge))
+                        .active(unlock_edge_selected)
                         .danger(true)
                         .build(),
                 ]}/>

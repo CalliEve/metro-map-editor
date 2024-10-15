@@ -1,16 +1,18 @@
 //! This module contains all functions for drawing the [`crate::models::Map`] to
 //! the canvas.
 
+mod calc_direction;
 mod canvas_context;
 mod closest_corner;
 mod draw_edge;
 mod grid;
-mod calc_direction;
+mod labeling;
 
 pub use canvas_context::CanvasContext;
 use closest_corner::calc_closest_corner;
 pub use draw_edge::draw_edge;
 use grid::draw_grid;
+pub use labeling::calc_label_pos;
 
 use crate::components::MapState;
 

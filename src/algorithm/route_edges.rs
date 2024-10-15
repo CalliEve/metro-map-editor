@@ -22,11 +22,12 @@ use crate::{
 
 /// Get a set of nodes in the radius around the given station.
 fn get_node_set(
+    map: &Map,
     settings: AlgorithmSettings,
     station: &Station,
     occupied: &OccupiedNodes,
 ) -> Vec<(GridNode, f64)> {
-    if station.is_settled() {
+    if station.is_settled() || station.has_locked_edge(map) {
         return vec![(station.get_pos(), 0.0)];
     }
 
@@ -120,6 +121,10 @@ pub fn route_edges(
     let mut occupied = HashMap::new();
 
     for edge in &mut edges {
+        if edge.is_locked() {
+            continue;
+        }
+
         let from_station = map
             .get_station(edge.get_from())
             .ok_or(Error::other(
@@ -132,12 +137,12 @@ pub fn route_edges(
             ))?;
 
         let mut from_nodes = if settings.allow_station_relocation {
-            get_node_set(settings, from_station, &occupied)
+            get_node_set(map, settings, from_station, &occupied)
         } else {
             vec![(from_station.get_pos(), 0.0)]
         };
         let mut to_nodes = if settings.allow_station_relocation {
-            get_node_set(settings, to_station, &occupied)
+            get_node_set(map, settings, to_station, &occupied)
         } else {
             vec![(to_station.get_pos(), 0.0)]
         };
@@ -248,6 +253,7 @@ mod tests {
         map.add_station(station.clone());
 
         let result = get_node_set(
+            &map,
             AlgorithmSettings::default(),
             &station,
             &mut HashMap::new(),

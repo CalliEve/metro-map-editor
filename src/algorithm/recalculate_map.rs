@@ -126,6 +126,8 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
 mod tests {
     use super::*;
     use crate::{
+        algorithm::occupation::OccupiedNodes,
+        models::GridNode,
         utils::{
             graphml,
             json,
@@ -133,6 +135,77 @@ mod tests {
         CanvasState,
         MapState,
     };
+
+    #[test]
+    fn test_recalculate_map_no_overlap_check() {
+        let map_file = "existing_maps/wien.graphml";
+
+        let mut canvas = CanvasState::new();
+        canvas.set_square_size(7);
+        canvas.set_size((674, 1648));
+
+        let test_file_content = std::fs::read_to_string(map_file).expect(&format!(
+            "test data file {map_file} does not exist"
+        ));
+
+        let mut map = if map_file.ends_with(".json") {
+            json::decode_map(&test_file_content, canvas).expect(&format!(
+                "failed to decode json of {map_file}"
+            ))
+        } else {
+            graphml::decode_map(&test_file_content, canvas).expect(&format!(
+                "failed to decode graphml of {map_file}"
+            ))
+        };
+
+        let mut state = MapState::new(map.clone());
+        state.calculate_algorithm_settings();
+        let settings = state.get_algorithm_settings();
+
+        println!(
+            "testing on map {map_file} with {} stations and {} edges",
+            map.get_stations()
+                .len(),
+            map.get_edges()
+                .len()
+        );
+
+        recalculate_map(settings, &mut map).expect(&format!(
+            "failed to recalculate map {map_file}"
+        ));
+
+        let mut occupied: OccupiedNodes = HashMap::new();
+        for station in map.get_stations() {
+            if let Some(existing) = occupied.insert(
+                station.get_pos(),
+                station
+                    .get_id()
+                    .into(),
+            ) {
+                panic!(
+                    "station {:?} and {} have the same position",
+                    existing,
+                    station.get_id()
+                );
+            }
+        }
+        for edge in map.get_edges() {
+            for node in edge.get_nodes() {
+                if let Some(existing) = occupied.insert(
+                    *node,
+                    edge.get_id()
+                        .into(),
+                ) {
+                    panic!(
+                        "edge node {} of edge {} is already occupied by {:?}",
+                        node,
+                        edge.get_id(),
+                        existing
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_recalculate_map() {
@@ -148,7 +221,7 @@ mod tests {
         ];
 
         let mut canvas = CanvasState::new();
-        canvas.set_square_size(5);
+        canvas.set_square_size(7);
         canvas.set_size((800, 1700));
 
         for map_file in &map_files {

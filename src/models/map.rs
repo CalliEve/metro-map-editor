@@ -278,6 +278,14 @@ impl Map {
             .find(|l| l.visits_node(self, node))
     }
 
+    /// Get the edge located on the given grid node.
+    pub fn edge_at_node(&self, node: GridNode) -> Option<EdgeID> {
+        self.edges
+            .values()
+            .find(|s| s.visits_node(self, node))
+            .map(Edge::get_id)
+    }
+
     /// Notify that the given edge was removed from a line and thus all lines
     /// should be check and the edge fully removed if not in use any other than
     /// from.
@@ -323,7 +331,9 @@ impl Map {
     pub fn quickcalc_edges(&mut self) {
         let temp_map = self.clone();
         for edge in self.get_mut_edges() {
-            edge.calculate_nodes(&temp_map);
+            if !edge.is_locked() {
+                edge.calculate_nodes(&temp_map);
+            }
         }
     }
 }

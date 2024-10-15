@@ -27,6 +27,7 @@ use super::{
 use crate::{
     algorithm::{
         drawing::{
+            calc_label_pos,
             draw_edge,
             CanvasContext,
         },
@@ -62,19 +63,21 @@ impl Display for EdgeID {
 /// Represents an edge, which is the connection between two stations.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Edge {
-    /// ID of the edge
+    /// ID of the edge.
     id: EdgeID,
-    /// Start of the edge
+    /// Start of the edge.
     from: StationID,
-    /// End of the edge
+    /// End of the edge.
     to: StationID,
-    /// Nodes visited between the stations
+    /// Nodes visited between the stations.
     nodes: Vec<GridNode>,
-    /// Lines that use this edge
+    /// Lines that use this edge.
     lines: Vec<LineID>,
-    /// If the edge is settled in the Dijkstra algorithm
+    /// If the edge is settled in the Dijkstra algorithm.
     is_settled: bool,
-    /// The stations contracted into this line in the algorithm
+    /// If the edge is locked into its current shape by the user.
+    is_locked: bool,
+    /// The stations contracted into this line in the algorithm.
     contracted_stations: Vec<StationID>,
 }
 
@@ -88,6 +91,7 @@ impl Edge {
             nodes: Vec::new(),
             lines: Vec::new(),
             is_settled: false,
+            is_locked: false,
             contracted_stations: Vec::new(),
         }
     }
@@ -201,7 +205,7 @@ impl Edge {
     /// A getter for if the edge is settled.
     #[inline]
     pub fn is_settled(&self) -> bool {
-        self.is_settled
+        self.is_settled || self.is_locked()
     }
 
     /// Settle the edge.
@@ -212,6 +216,22 @@ impl Edge {
     /// Unsettle the edge.
     pub fn unsettle(&mut self) {
         self.is_settled = false;
+    }
+
+    /// A getter for if the edge is locked.
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.is_locked
+    }
+
+    /// Lock the edge.
+    pub fn lock(&mut self) {
+        self.is_locked = true;
+    }
+
+    /// Unlock the edge.
+    pub fn unlock(&mut self) {
+        self.is_locked = false;
     }
 
     /// Add a station to the contracted stations.
@@ -344,16 +364,16 @@ impl Edge {
             .map(Line::get_color)
             .collect::<Vec<_>>();
 
+        let mut width = state.drawn_square_size() / 10.0 + 0.5;
+        if width < 1.0 {
+            width = 1.0;
+        }
+
         let color_count = colors.len();
         for (i, color) in colors
             .into_iter()
             .enumerate()
         {
-            let mut width = state.drawn_square_size() / 10.0 + 0.5;
-            if width < 1.0 {
-                width = 1.0;
-            }
-
             canvas.set_line_width(width);
             canvas.set_global_alpha(1.0);
 
@@ -378,6 +398,54 @@ impl Edge {
                 color_offset,
             );
 
+            canvas.stroke();
+        }
+
+        if self.is_locked() {
+            let first_pos = if let Some(first_node) = self
+                .get_nodes()
+                .first()
+            {
+                first_node.to_canvas_pos(state)
+            } else {
+                return;
+            };
+
+            let second_pos = if let Some(second_node) = self
+                .get_nodes()
+                .get(1)
+            {
+                second_node.to_canvas_pos(state)
+            } else {
+                to.get_canvas_pos(state)
+            };
+
+            let offset = ((self
+                .lines
+                .len() as f64)
+                * width)
+                - ((color_count as f64 * width) / 2.0)
+                + (width / 2.0);
+            let locked_label_pos = calc_label_pos(
+                state,
+                first_pos,
+                Some(second_pos),
+                Some(offset),
+            )[0]; // FIXME: Check for occupancy
+
+            canvas.set_stroke_style_str("grey");
+            canvas.begin_path();
+            canvas
+                .arc(
+                    locked_label_pos.0,
+                    locked_label_pos.1,
+                    state.drawn_square_size() / 3.0 / 5.0,
+                    0.0,
+                    2.0 * std::f64::consts::PI,
+                )
+                .unwrap();
+            canvas.set_fill_style_str("grey");
+            canvas.fill();
             canvas.stroke();
         }
     }

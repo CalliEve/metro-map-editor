@@ -245,7 +245,7 @@ fn calc_station_exit_cost(
         || station
             .get_edges()
             .len()
-            == 1
+            <= 1
     {
         return match_angle_cost(
             (calculate_angle(previous_node, node, target_node) / 45.0).round() * 45.0,
@@ -290,10 +290,7 @@ fn calc_station_exit_cost(
         // have been settled, then there is likely a gap in the edge to the station and
         // thus we need to recalculate the nodes in the edge to get a correct bordering
         // edge.
-        if station.is_settled()
-            && !opposite_edge.is_settled()
-            && station.get_pos() != station.get_original_pos()
-        {
+        if !opposite_edge.is_settled() && station.get_pos() != station.get_original_pos() {
             opposite_edge.calculate_nodes(map);
         }
 
@@ -754,7 +751,96 @@ mod tests {
 
     #[test]
     fn test_calc_station_exit_cost() {
-        // TODO: implement test
+        let mut map = Map::new();
+
+        let unsettled_station = Station::new(GridNode::from((5, 5)), None);
+
+        let mut settled_station = Station::new(GridNode::from((1, 1)), None);
+        settled_station.settle((1, 1).into());
+        let settled_edge = Edge::new(
+            unsettled_station.get_id(),
+            settled_station.get_id(),
+            None,
+        );
+
+        let opposite_station = Station::new(GridNode::from((10, 5)), None);
+        let opposite_edge = Edge::new(
+            unsettled_station.get_id(),
+            opposite_station.get_id(),
+            None,
+        );
+
+        let opposite_settled_station = Station::new(GridNode::from((-2, -2)), None);
+        let opposite_settled_edge = Edge::new(
+            unsettled_station.get_id(),
+            opposite_station.get_id(),
+            None,
+        );
+
+        map.add_station(unsettled_station.clone());
+        map.add_station(settled_station.clone());
+        map.add_station(opposite_station.clone());
+        map.add_station(opposite_settled_station.clone());
+        map.add_edge(settled_edge.clone());
+        map.add_edge(opposite_edge.clone());
+        map.add_edge(opposite_settled_edge.clone());
+
+        // unsettled and directly opposite
+        assert_eq!(
+            0.0,
+            calc_station_exit_cost(
+                &map,
+                &opposite_edge,
+                &unsettled_station,
+                (6, 5).into(),
+                unsettled_station.get_pos(),
+                opposite_station.get_pos(),
+            )
+            .unwrap()
+        );
+        // unsettled and at 90 degree angle
+        assert_eq!(
+            1.25,
+            calc_station_exit_cost(
+                &map,
+                &opposite_edge,
+                &unsettled_station,
+                (5, 6).into(),
+                unsettled_station.get_pos(),
+                opposite_station.get_pos(),
+            )
+            .unwrap()
+        );
+
+        // settled with other edge at 180 degree angle
+        assert_eq!(
+            0.0,
+            calc_station_exit_cost(
+                &map,
+                &opposite_settled_edge,
+                map.get_station(settled_station.get_id())
+                    .unwrap(),
+                (-1, -1).into(),
+                settled_station.get_pos(),
+                opposite_station.get_pos(),
+            )
+            .unwrap()
+        );
+
+        // settled with other edge at 90 degree angle
+        assert_eq!(
+            1.25,
+            calc_station_exit_cost(
+                &map,
+                &opposite_settled_edge,
+                map.get_station(settled_station.get_id())
+                    .unwrap(),
+                (1, 0).into(),
+                settled_station.get_pos(),
+                opposite_station.get_pos(),
+            )
+            .unwrap()
+        );
     }
 
     #[test]

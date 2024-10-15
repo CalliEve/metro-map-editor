@@ -18,9 +18,13 @@ use serde::{
 use super::{
     EdgeID,
     GridNode,
+    Map,
 };
 use crate::{
-    algorithm::drawing::CanvasContext,
+    algorithm::drawing::{
+        calc_label_pos,
+        CanvasContext,
+    },
     components::CanvasState,
     utils::IDManager,
 };
@@ -231,6 +235,14 @@ impl Station {
             .clear();
     }
 
+    /// Check if the station has a locked edge.
+    pub fn has_locked_edge(&self, map: &Map) -> bool {
+        self.get_edges()
+            .iter()
+            .flat_map(|edge_id| map.get_edge(*edge_id))
+            .any(|e| e.is_locked())
+    }
+
     #[allow(dead_code)]
     pub fn print_info(&self) {
         logging::log!(
@@ -279,12 +291,14 @@ impl Station {
         canvas.stroke();
 
         if self.is_locked() {
+            let locked_label_pos = calc_label_pos(state, canvas_pos, None, None)[0]; // FIXME: Check for occupancy
+
             canvas.set_stroke_style_str("grey");
             canvas.begin_path();
             canvas
                 .arc(
-                    canvas_pos.0 + (state.drawn_square_size() / 4.0),
-                    canvas_pos.1 - (state.drawn_square_size() / 4.0),
+                    locked_label_pos.0,
+                    locked_label_pos.1,
                     state.drawn_square_size() / 3.0 / 5.0,
                     0.0,
                     2.0 * f64::consts::PI,

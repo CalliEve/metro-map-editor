@@ -119,6 +119,13 @@ pub fn contract_stations(
             .cloned()
             .collect::<Vec<_>>();
 
+        if edges
+            .iter()
+            .any(|e| e.is_locked())
+        {
+            continue;
+        }
+
         // The start and end of the new edge the station will be contracted into.
         let start = edges[0]
             .opposite(station_id)

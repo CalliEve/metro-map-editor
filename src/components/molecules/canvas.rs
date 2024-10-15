@@ -263,6 +263,20 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                         .unlock();
                 }
             },
+            ActionType::LockEdge => {
+                if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+                    map.get_mut_edge(edge_id)
+                        .expect("Found edge but id does not exit")
+                        .lock();
+                }
+            },
+            ActionType::UnlockEdge => {
+                if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+                    map.get_mut_edge(edge_id)
+                        .expect("Found edge but id does not exit")
+                        .unlock();
+                }
+            },
         }
         map_state.set_map(map);
         if !shift_key {

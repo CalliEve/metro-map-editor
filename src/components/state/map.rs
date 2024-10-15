@@ -40,6 +40,16 @@ pub enum ActionType {
     ///
     /// [`Station`]: crate::models::Station
     UnlockStation,
+    /// User wants to lock the [`Edge`] between two [`Station`]s.
+    /// 
+    /// [`Edge`]: crate::models::Edge
+    /// [`Station`]: crate::models::Station
+    LockEdge,
+    /// User wants to unlock the [`Edge`] between two [`Station`]s.
+    /// 
+    /// [`Edge`]: crate::models::Edge
+    /// [`Station`]: crate::models::Station
+    UnlockEdge,
 }
 
 /// Holds all the state of the current [`Map`], canvas and any potentially
