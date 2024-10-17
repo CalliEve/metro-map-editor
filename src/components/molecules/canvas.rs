@@ -28,6 +28,7 @@ use crate::{
         SelectedLine,
         SelectedStation,
     },
+    utils::line_sections::trace_line_section,
 };
 
 /// If the document has fully loaded.
@@ -310,44 +311,72 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
 
             map.add_line(line);
             map_state.set_map(map);
+            return;
         }
 
         map_state.clear_selected_line();
-        return;
-    }
 
-    // Handle a mouseup while having a station selected
-    let Some(selected_station) = map_state
-        .get_selected_station()
-        .cloned()
-        .map(SelectedStation::deselect)
-    else {
-        return;
-    };
-
-    let mut edge_ids = Vec::new();
-    for station in map.get_mut_stations() {
-        if *station == selected_station {
-            if station.get_pos() == selected_station.get_pos() {
-                break;
+        if let Some(grabbed_at) = selected_line.get_grabbed_at() {
+            if grabbed_at != mouse_pos {
+                return;
             }
-
-            station.set_pos(selected_station.get_pos());
-            station.set_original_pos(selected_station.get_pos());
-            station.lock();
-            edge_ids = station
-                .get_edges()
-                .to_vec();
-            break;
         }
     }
 
-    for edge_id in edge_ids {
-        recalculate_edge_nodes(&mut map, edge_id);
+    // Handle a mouseup while having a station selected
+    if let Some(selected_station) = map_state
+        .get_selected_station()
+        .cloned()
+        .map(SelectedStation::deselect)
+    {
+        let mut edge_ids = Vec::new();
+        for station in map.get_mut_stations() {
+            if *station == selected_station {
+                if station.get_pos() == selected_station.get_pos() {
+                    break;
+                }
+
+                station.set_pos(selected_station.get_pos());
+                station.set_original_pos(selected_station.get_pos());
+                station.lock();
+                edge_ids = station
+                    .get_edges()
+                    .to_vec();
+                break;
+            }
+        }
+
+        for edge_id in edge_ids {
+            recalculate_edge_nodes(&mut map, edge_id);
+        }
+
+        map_state.set_map(map);
+        map_state.clear_selected_station();
+        return;
     }
 
-    map_state.set_map(map);
-    map_state.clear_selected_station();
+    // Select the clicked edge, unless this was a double click.
+    if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+        if ev.detail() > 1 {
+            return;
+        }
+
+        map_state.set_selected_edges(vec![edge_id]);
+        map.get_mut_edge(edge_id)
+            .expect("edge should exist")
+            .select();
+
+        map_state.set_map(map);
+        return;
+    }
+
+    // Someone clicked on an empty node, deselect the currently selected edges
+    if !map_state
+        .get_selected_edges()
+        .is_empty()
+    {
+        map_state.clear_selected_edges();
+    }
 }
 
 /// Listener for the [mousemove] event on the canvas.
@@ -391,6 +420,23 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
 fn on_mouse_out(map_state: &mut MapState) {
     map_state.clear_selected_station();
     map_state.clear_selected_line();
+}
+
+/// Listener for the [dblclick] event on the canvas.
+///
+/// [dblclick]: https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
+fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
+    let map = map_state.get_map();
+
+    let canvas_state = map_state.get_canvas_state();
+    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
+
+    if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+        map_state.set_selected_edges(trace_line_section(map, edge_id));
+    } else {
+        map_state.clear_selected_edges();
+    }
 }
 
 /// Listener for when the user scrolls on the canvas.
@@ -452,6 +498,7 @@ pub fn Canvas() -> impl IntoView {
                 on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
+                on:dblclick=move |ev| map_state.update(|state| on_dblclick(state, ev.as_ref()))
 
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
                 on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))

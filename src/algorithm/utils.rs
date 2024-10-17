@@ -130,5 +130,12 @@ mod tests {
             calculate_angle(first, second, third),
             90.0
         );
+        let first = GridNode::from((-1, -1));
+        let second = GridNode::from((1, 1));
+        let third = GridNode::from((2, 0));
+        assert_eq!(
+            calculate_angle(first, second, third),
+            90.0
+        );
     }
 }

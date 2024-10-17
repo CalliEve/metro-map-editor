@@ -29,7 +29,7 @@ pub struct AlgorithmSettings {
     /// Default: 3
     pub node_set_radius: i32,
     /// Max amount of attempts allowed of routing edges before erroring out.
-    /// Default: 5
+    /// Default: 3
     pub edge_routing_attempts: usize,
     /// The cost of moving from one node to another.
     pub move_cost: f64,
@@ -41,7 +41,7 @@ pub struct AlgorithmSettings {
     pub debug: bool,
     /// Whether to run the local search algorithm.
     pub local_search: bool,
-    /// Whether to allow stations to move (off is the same as nose_set_radius
+    /// Whether to allow stations to move (off is the same as `node_set_radius`
     /// being 0).
     pub allow_station_relocation: bool,
 }

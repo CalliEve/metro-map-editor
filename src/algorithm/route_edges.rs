@@ -113,6 +113,7 @@ fn split_overlap(
 
 /// Route all the edges on the map (as given by the input list of edges) and
 /// return them. This is the Route Edges algorithm in the paper.
+#[allow(clippy::too_many_lines)] // mostly due to large calls like debug prints
 pub fn route_edges(
     settings: AlgorithmSettings,
     map: &mut Map,

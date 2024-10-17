@@ -121,7 +121,7 @@ pub fn contract_stations(
 
         if edges
             .iter()
-            .any(|e| e.is_locked())
+            .any(Edge::is_locked)
         {
             continue;
         }

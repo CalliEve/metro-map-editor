@@ -5,6 +5,7 @@ mod error;
 pub mod graphml;
 mod id_manager;
 pub mod json;
+pub mod line_sections;
 mod parsing;
 
 pub use error::{

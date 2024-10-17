@@ -53,7 +53,7 @@ pub fn full_recalculation_simple_benchmark(c: &mut Criterion) {
 pub fn full_recalculation_karlsruhe_benchmark(c: &mut Criterion) {
     let mut canvas = CanvasState::new();
     canvas.set_square_size(7);
-    canvas.set_size((700, 1600)); // Without enlarging the canvas, some stations will overlap due to map size
+    canvas.set_size((800, 1648)); // Without enlarging the canvas, some stations will overlap due to map size
 
     let test_file_content = std::fs::read_to_string("existing_maps/karlsruhe.graphml")
         .expect("test data file does not exist");

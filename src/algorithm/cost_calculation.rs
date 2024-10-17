@@ -822,7 +822,7 @@ mod tests {
                     .unwrap(),
                 (-1, -1).into(),
                 settled_station.get_pos(),
-                opposite_station.get_pos(),
+                opposite_settled_station.get_pos(),
             )
             .unwrap()
         );
@@ -835,9 +835,9 @@ mod tests {
                 &opposite_settled_edge,
                 map.get_station(settled_station.get_id())
                     .unwrap(),
-                (1, 0).into(),
+                (2, 0).into(),
                 settled_station.get_pos(),
-                opposite_station.get_pos(),
+                opposite_settled_station.get_pos(),
             )
             .unwrap()
         );

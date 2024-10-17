@@ -117,6 +117,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
 
     expand_stations(settings, map, &contracted_stations)?;
 
+    #[cfg(all(not(test), not(feature = "benchmarking")))]
     logging::log!("Recalculated map");
 
     Ok(())
@@ -220,11 +221,11 @@ mod tests {
             // "existing_maps/berlin.graphml", // TODO: Get this map working
         ];
 
-        let mut canvas = CanvasState::new();
-        canvas.set_square_size(7);
-        canvas.set_size((800, 1700));
-
         for map_file in &map_files {
+            let mut canvas = CanvasState::new();
+            canvas.set_square_size(7);
+            canvas.set_size((800, 1648));
+
             let test_file_content = std::fs::read_to_string(map_file).expect(&format!(
                 "test data file {map_file} does not exist"
             ));
@@ -241,7 +242,8 @@ mod tests {
 
             let mut state = MapState::new(map.clone());
             state.calculate_algorithm_settings();
-            let settings = state.get_algorithm_settings();
+            let mut settings = state.get_algorithm_settings();
+            settings.edge_routing_attempts = 1;
 
             println!(
                 "testing on map {map_file} with {} stations and {} edges",

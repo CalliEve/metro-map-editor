@@ -22,6 +22,23 @@ use crate::{
     },
 };
 
+/// Updates the selected action in the map state.
+fn update_action(map_state: RwSignal<MapState>, action: ActionType) {
+    if map_state
+        .get()
+        .get_selected_action()
+        == Some(action)
+    {
+        map_state.update(|state| {
+            state.clear_selected_action();
+        });
+    } else {
+        map_state.update(|state| {
+            state.set_selected_action(action);
+        });
+    }
+}
+
 /// The sidebar component with all the tools on there for editing the canvas.
 #[component]
 pub fn Sidebar() -> impl IntoView {
@@ -37,6 +54,22 @@ pub fn Sidebar() -> impl IntoView {
         })
     };
 
+    let update_action = move |action| {
+        if map_state
+            .get_untracked()
+            .get_selected_action()
+            == Some(action)
+        {
+            map_state.update(|state| {
+                state.clear_selected_action();
+            });
+        } else {
+            map_state.update(|state| {
+                state.set_selected_action(action);
+            });
+        }
+    };
+
     let add_station = move |_| {
         map_state.update(|state| {
             state.set_selected_station(SelectedStation::new_station());
@@ -50,45 +83,65 @@ pub fn Sidebar() -> impl IntoView {
         });
     };
 
-    let remove_station = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::RemoveStation);
-        });
-    };
+    let remove_station = move |_| update_action(ActionType::RemoveStation);
     let remove_station_selected = action_selected(ActionType::RemoveStation);
 
-    let remove_line = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::RemoveLine);
-        });
-    };
+    let remove_line = move |_| update_action(ActionType::RemoveLine);
     let remove_line_selected = action_selected(ActionType::RemoveLine);
 
-    let lock_station = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::LockStation);
-        });
-    };
+    let lock_station = move |_| update_action(ActionType::LockStation);
     let lock_station_selected = action_selected(ActionType::LockStation);
 
-    let unlock_station = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::UnlockStation);
-        });
-    };
+    let unlock_station = move |_| update_action(ActionType::UnlockStation);
     let unlock_station_selected = action_selected(ActionType::UnlockStation);
 
     let lock_edge = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::LockEdge);
-        });
+        if !map_state
+            .get()
+            .get_selected_edges()
+            .is_empty()
+        {
+            map_state.update(|state| {
+                for id in &state
+                    .get_selected_edges()
+                    .to_vec()
+                {
+                    state
+                        .get_mut_map()
+                        .get_mut_edge(*id)
+                        .expect("Selected edge does not exist")
+                        .lock();
+                }
+                state.clear_selected_edges();
+            });
+            return;
+        }
+        update_action(ActionType::LockEdge);
     };
     let lock_edge_selected = action_selected(ActionType::LockEdge);
 
     let unlock_edge = move |_| {
-        map_state.update(|state| {
-            state.set_selected_action(ActionType::UnlockEdge);
-        });
+        if !map_state
+            .get()
+            .get_selected_edges()
+            .is_empty()
+        {
+            map_state.update(|state| {
+                for id in &state
+                    .get_selected_edges()
+                    .to_vec()
+                {
+                    state
+                        .get_mut_map()
+                        .get_mut_edge(*id)
+                        .expect("Selected edge does not exist")
+                        .unlock();
+                }
+                state.clear_selected_edges();
+            });
+            return;
+        }
+        update_action(ActionType::UnlockEdge);
     };
     let unlock_edge_selected = action_selected(ActionType::UnlockEdge);
 
@@ -102,6 +155,7 @@ pub fn Sidebar() -> impl IntoView {
                     ButtonProps::builder()
                         .text("Add Station")
                         .on_click(Box::new(add_station))
+                        .can_focus(true)
                         .build(),
                     ButtonProps::builder()
                         .text("Remove Station")
@@ -115,6 +169,7 @@ pub fn Sidebar() -> impl IntoView {
                     ButtonProps::builder()
                         .text("Add Line")
                         .on_click(Box::new(add_line))
+                        .can_focus(true)
                         .build(),
                     ButtonProps::builder()
                         .text("Remove Line")

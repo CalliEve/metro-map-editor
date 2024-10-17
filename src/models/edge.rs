@@ -77,6 +77,8 @@ pub struct Edge {
     is_settled: bool,
     /// If the edge is locked into its current shape by the user.
     is_locked: bool,
+    /// If the edge is selected by the user.
+    is_selected: bool,
     /// The stations contracted into this line in the algorithm.
     contracted_stations: Vec<StationID>,
 }
@@ -92,6 +94,7 @@ impl Edge {
             lines: Vec::new(),
             is_settled: false,
             is_locked: false,
+            is_selected: false,
             contracted_stations: Vec::new(),
         }
     }
@@ -234,6 +237,22 @@ impl Edge {
         self.is_locked = false;
     }
 
+    /// A getter for if the edge is selected.
+    #[inline]
+    pub fn is_selected(&self) -> bool {
+        self.is_selected
+    }
+
+    /// Select the edge.
+    pub fn select(&mut self) {
+        self.is_selected = true;
+    }
+
+    /// Unselect the edge.
+    pub fn deselect(&mut self) {
+        self.is_selected = false;
+    }
+
     /// Add a station to the contracted stations.
     pub fn add_contracted_station(&mut self, station: StationID) {
         self.contracted_stations
@@ -349,6 +368,7 @@ impl Edge {
     }
 
     /// Draw the edge to the given canvas.
+    #[allow(clippy::too_many_lines)]
     pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         let from = map
             .get_station(self.get_from())
@@ -401,6 +421,32 @@ impl Edge {
             canvas.stroke();
         }
 
+        // Highlight if selected
+        if self.is_selected() {
+            let mut selected_width = state.drawn_square_size() / 2.0;
+            if selected_width < 2.0 {
+                selected_width = 2.0;
+            }
+
+            canvas.set_line_width(selected_width);
+            canvas.set_global_alpha(0.2);
+
+            canvas.set_stroke_style_str("darkblue");
+            canvas.begin_path();
+
+            draw_edge(
+                from.get_pos(),
+                to.get_pos(),
+                &self.nodes,
+                canvas,
+                state,
+                0.0,
+            );
+
+            canvas.stroke();
+        }
+
+        // Add lock icon if locked
         if self.is_locked() {
             let first_pos = if let Some(first_node) = self
                 .get_nodes()

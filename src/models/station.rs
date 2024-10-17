@@ -16,9 +16,7 @@ use serde::{
 };
 
 use super::{
-    EdgeID,
-    GridNode,
-    Map,
+    Edge, EdgeID, GridNode, Map
 };
 use crate::{
     algorithm::drawing::{
@@ -239,8 +237,8 @@ impl Station {
     pub fn has_locked_edge(&self, map: &Map) -> bool {
         self.get_edges()
             .iter()
-            .flat_map(|edge_id| map.get_edge(*edge_id))
-            .any(|e| e.is_locked())
+            .filter_map(|edge_id| map.get_edge(*edge_id))
+            .any(Edge::is_locked)
     }
 
     #[allow(dead_code)]

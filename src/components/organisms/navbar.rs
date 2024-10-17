@@ -54,9 +54,9 @@ pub fn Navbar() -> impl IntoView {
           <a class="text-2xl font-extrabold text-black dark:text-white" href="#">Metro Map Editor</a>
         </div>
         <div class="flex flex-row items-end space-x-3" >
-            <Button text="Advanced Settings" outlined=true on_click=Box::new(move |_| set_show_settings_modal(true))/>
+            <Button text="Advanced Settings" outlined=true can_focus=true on_click=Box::new(move |_| set_show_settings_modal(true))/>
             <FileDownloader/>
-            <Button text="Upload File" outlined=true on_click=Box::new(move |_| set_show_file_modal(true))/>
+            <Button text="Upload File" outlined=true can_focus=true on_click=Box::new(move |_| set_show_file_modal(true))/>
         </div>
       </div>
     </nav>

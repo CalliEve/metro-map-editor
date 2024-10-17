@@ -14,6 +14,7 @@ use crate::{
         AlgorithmSettings,
     },
     models::{
+        EdgeID,
         Map,
         SelectedLine,
         SelectedStation,
@@ -41,12 +42,12 @@ pub enum ActionType {
     /// [`Station`]: crate::models::Station
     UnlockStation,
     /// User wants to lock the [`Edge`] between two [`Station`]s.
-    /// 
+    ///
     /// [`Edge`]: crate::models::Edge
     /// [`Station`]: crate::models::Station
     LockEdge,
     /// User wants to unlock the [`Edge`] between two [`Station`]s.
-    /// 
+    ///
     /// [`Edge`]: crate::models::Edge
     /// [`Station`]: crate::models::Station
     UnlockEdge,
@@ -64,6 +65,8 @@ pub struct MapState {
     selected_line: Option<SelectedLine>,
     /// The type of action that is currently selected.
     selected_action: Option<ActionType>,
+    /// The currently selected edges.
+    selected_edges: Vec<EdgeID>,
     /// The state of the canvas.
     canvas: CanvasState,
     /// The settings for the algorithm.
@@ -81,6 +84,7 @@ impl MapState {
             selected_station: None,
             selected_line: None,
             selected_action: None,
+            selected_edges: Vec::new(),
             canvas: CanvasState::default(),
             algorithm_settings: AlgorithmSettings::default(),
             last_loaded: None,
@@ -153,6 +157,36 @@ impl MapState {
     /// Set the selected line to None.
     pub fn clear_selected_line(&mut self) {
         self.selected_line = None;
+    }
+
+    /// A getter method for the selected edges.
+    pub fn get_selected_edges(&self) -> &[EdgeID] {
+        &self.selected_edges
+    }
+
+    /// A setter method for the selected edges.
+    pub fn set_selected_edges(&mut self, edges: Vec<EdgeID>) {
+        self.clear_selected_edges();
+
+        for id in &edges {
+            self.map
+                .get_mut_edge(*id)
+                .expect("Edge to select does not exist.")
+                .select();
+        }
+        self.selected_edges = edges;
+    }
+
+    /// Deselect all selected edges.
+    pub fn clear_selected_edges(&mut self) {
+        for id in &self.selected_edges {
+            self.map
+                .get_mut_edge(*id)
+                .expect("Edge to deselect does not exist.")
+                .deselect();
+        }
+
+        self.selected_edges = Vec::new();
     }
 
     /// A getter method for the last loaded map.
@@ -231,7 +265,7 @@ impl MapState {
 
         for station in self
             .map
-            .get_mut_stations()
+            .get_stations()
         {
             let pos = station.get_pos();
 

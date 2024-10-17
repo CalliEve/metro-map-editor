@@ -35,7 +35,7 @@ pub fn Button(
     #[prop(into)]
     active: Signal<bool>,
     /// If focus can be held on the button.
-    #[prop(default = true)]
+    #[prop(optional)]
     can_focus: bool,
     /// The children of the button, if any.
     /// If present, the button will show the text on hover.

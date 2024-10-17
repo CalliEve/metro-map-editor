@@ -9,11 +9,14 @@ use crate::{
 };
 
 /// Calculate the position of the label based on the given coordinates of the
-/// node that should be labeled. In addition the next node can be given to
-/// determine the direction of the label and make sure it doesn't cross it. Also
-/// can be provided an offset to move the label further away from the node in
-/// case of multiple lines. Returns a vector of possible coordinates where the
-/// label can be placed in order of preference.
+/// node that should be labeled.
+///
+/// In addition the next node can be given to determine the direction of the
+/// label and make sure it doesn't cross it. In case of multiple lines, provide
+/// an offset to move the label further away.
+///
+/// Returns a vector of possible coordinates where the label can be placed in
+/// order of preference.
 pub fn calc_label_pos(
     state: CanvasState,
     coord: (f64, f64),

@@ -1,5 +1,8 @@
 //! Contains all leptos (html) components used for building the webpage.
 
+// Components can by necessity be quite large.
+#![allow(clippy::too_many_lines)]
+
 mod atoms;
 mod molecules;
 mod organisms;
