@@ -1,18 +1,20 @@
 use std::collections::VecDeque;
 
 use crate::models::{
+    Edge,
     EdgeID,
     Map,
 };
 
 /// Get all the edges between two intersections where the given edge is
-/// connected to.
-pub fn trace_line_section(map: &Map, edge_id: EdgeID) -> Vec<EdgeID> {
+/// connected to. If `stop_at_locked` is true, the function will treat a locked
+/// station as a line section end.
+pub fn trace_line_section(map: &Map, edge_id: EdgeID, stop_at_locked: bool) -> Vec<Edge> {
     let edge = map
         .get_edge(edge_id)
         .expect("edge start of line section not found");
     let lines = edge.get_lines();
-    let mut edges = vec![edge_id];
+    let mut edges = vec![edge.clone()];
 
     let mut queue = VecDeque::new();
     queue.push_back((edge.get_to(), edge.clone()));
@@ -29,6 +31,7 @@ pub fn trace_line_section(map: &Map, edge_id: EdgeID) -> Vec<EdgeID> {
             .get_edges()
             .len()
             != 2
+            || (stop_at_locked && station.is_locked())
         {
             continue;
         }
@@ -38,15 +41,17 @@ pub fn trace_line_section(map: &Map, edge_id: EdgeID) -> Vec<EdgeID> {
             .iter()
             .find(|e| **e != edge.get_id())
             .expect("Should have one edge of two not equal to current");
-        if edges.contains(&next_id) {
-            continue;
-        }
-        edges.push(next_id);
 
         let next_edge = map
             .get_edge(next_id)
             .expect("Invalid next edge.");
+
+        if edges.contains(next_edge) || next_edge.get_lines() != lines {
+            continue;
+        }
+
         queue.push_back((station.get_id(), next_edge.clone()));
+        edges.push(next_edge.clone());
     }
 
     edges
