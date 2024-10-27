@@ -129,7 +129,7 @@ pub fn CanvasControls() -> impl IntoView {
                 .expect("failed to start algorithm worker");
             set_abort_handle(Some(abort_handle));
             let resp = resp_fut.await;
-            if resp.success {
+            if resp.success || map_state.get_untracked().get_algorithm_settings().output_on_fail {
                 map_state.update(|state| {
                     state.set_map(resp.map);
                 });

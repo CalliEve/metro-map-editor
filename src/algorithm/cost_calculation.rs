@@ -53,19 +53,41 @@ fn station_approach_available(
                 "edge connected to station not found",
             ))?;
 
-        for edge_node in edge.get_nodes() {
-            if neighbor_nodes.contains(edge_node) {
-                left_wards.push((
-                    edge.clone(),
-                    calculate_angle(node, station.get_pos(), *edge_node),
-                ));
-
-                right_wards.push((
-                    edge.clone(),
-                    (calculate_angle(node, station.get_pos(), *edge_node) - 360.0).abs(),
-                ));
+        if edge.is_settled() {
+            for edge_node in edge.get_edge_ends() {
+                if neighbor_nodes.contains(&edge_node) {
+                    left_wards.push((
+                        edge.clone(),
+                        calculate_angle(node, station.get_pos(), edge_node),
+                    ));
+                    break;
+                }
             }
+        } else {
+            let opposite_station = map
+                .get_station(
+                    edge.opposite(station.get_id())
+                        .unwrap(),
+                )
+                .ok_or(Error::other(
+                    "station on connected edge not found",
+                ))?;
+
+            left_wards.push((
+                edge.clone(),
+                calculate_angle(
+                    node,
+                    station.get_pos(),
+                    opposite_station.get_pos(),
+                ),
+            ));
         }
+
+        right_wards = left_wards
+            .iter()
+            .cloned()
+            .map(|(e, a)| (e, (a - 360.0).abs()))
+            .collect();
     }
 
     // Sort the lists by angle, so we can check the edges in order of angle small to
@@ -83,14 +105,14 @@ fn station_approach_available(
 
     let possible_angle = move |angle, cost| {
         match angle {
-            315.0 => cost < 7,
-            270.0 => cost < 6,
-            225.0 => cost < 5,
-            180.0 => cost < 4,
-            135.0 => cost < 3,
-            90.0 => cost < 2,
-            45.0 => cost < 1,
-            0.0 => false,
+            315.0..360.0 => cost < 7,
+            270.0..315.0 => cost < 6,
+            225.0..270.0 => cost < 5,
+            180.0..225.0 => cost < 4,
+            135.0..180.0 => cost < 3,
+            90.0..135.0 => cost < 2,
+            45.0..90.0 => cost < 1,
+            0.0..45.0 => false,
             _ => panic!("found impossible angle of {angle}"),
         }
     };
@@ -234,11 +256,12 @@ fn diagonal_occupied(
 /// note: the angle cost is halved here to make it have a preference, but not
 /// have it force a double bend later on to compensate.
 fn calc_station_exit_cost(
+    settings: AlgorithmSettings,
     map: &Map,
     current_edge: &Edge,
     station: &Station,
     node: GridNode,
-    previous_node: GridNode,
+    station_node: GridNode,
     target_node: GridNode,
 ) -> Result<f64> {
     if !station.is_settled()
@@ -248,9 +271,19 @@ fn calc_station_exit_cost(
             <= 1
     {
         return match_angle_cost(
-            (calculate_angle(previous_node, node, target_node) / 45.0).round() * 45.0,
+            (calculate_angle(station_node, node, target_node) / 45.0).round() * 45.0,
         )
         .map(|c| c / 2.0);
+    }
+    
+    if !station_approach_available(
+        settings,
+        map,
+        station,
+        node,
+        current_edge.get_id(),
+    )? {
+        return Ok(f64::INFINITY);
     }
 
     let mut biggest_overlap = None;
@@ -366,6 +399,7 @@ pub fn calc_node_cost(
         }
 
         return calc_station_exit_cost(
+            settings,
             map,
             edge,
             from_station,
@@ -752,6 +786,7 @@ mod tests {
     #[test]
     fn test_calc_station_exit_cost() {
         let mut map = Map::new();
+        let settings = AlgorithmSettings::default();
 
         let unsettled_station = Station::new(GridNode::from((5, 5)), None);
 
@@ -789,6 +824,7 @@ mod tests {
         assert_eq!(
             0.0,
             calc_station_exit_cost(
+                settings,
                 &map,
                 &opposite_edge,
                 &unsettled_station,
@@ -802,6 +838,7 @@ mod tests {
         assert_eq!(
             1.25,
             calc_station_exit_cost(
+                settings,
                 &map,
                 &opposite_edge,
                 &unsettled_station,
@@ -816,6 +853,7 @@ mod tests {
         assert_eq!(
             0.0,
             calc_station_exit_cost(
+                settings,
                 &map,
                 &opposite_settled_edge,
                 map.get_station(settled_station.get_id())
@@ -831,6 +869,7 @@ mod tests {
         assert_eq!(
             1.25,
             calc_station_exit_cost(
+                settings,
                 &map,
                 &opposite_settled_edge,
                 map.get_station(settled_station.get_id())

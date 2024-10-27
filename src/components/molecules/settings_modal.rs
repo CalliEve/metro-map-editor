@@ -77,6 +77,15 @@ where
                                 settings.allow_station_relocation = b;
                             }));
                     }/>
+                <Toggle
+                    text="On failure of the algorithm, output the map at point of failure anyway."
+                    value=move || map_state.get().get_algorithm_settings().output_on_fail
+                    on_input=move |b| {
+                        map_state
+                            .update(|state| state.update_algorithm_settings(|settings| {
+                                settings.output_on_fail = b;
+                            }));
+                    }/>
                 <NumberInput
                     text="Set canvas grid size."
                     min=2.0

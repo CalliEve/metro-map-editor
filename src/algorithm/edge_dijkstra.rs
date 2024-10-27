@@ -111,8 +111,6 @@ pub fn edge_dijkstra(
         .collect::<HashMap<GridNode, f64>>();
 
     for (node, cost) in from {
-        // FIXME: the cost is dependent upon the distance from the original station
-        // location.
         queue.push(
             QueueItem::new(*node, NotNan::new(*cost)?),
             Reverse(NotNan::new(*cost)?),
