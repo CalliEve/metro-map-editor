@@ -147,20 +147,23 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         .get_map()
         .clone();
     let canvas_state = map_state.get_canvas_state();
+    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
+    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     // Handle a click while having a new station selected.
     if let Some(selected) = map_state
         .get_selected_station()
         .cloned()
     {
-        map.add_station(selected.deselect());
+        let mut new_station = selected.deselect();
+        new_station.set_pos(mouse_pos);
+        new_station.set_original_pos(mouse_pos);
+
+        map.add_station(new_station);
         map_state.clear_selected_station();
         map_state.set_map(map);
         return;
     }
-
-    let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
-    let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     // Handle a click while having a new line selected
     if let Some(selected_line) = map_state
@@ -311,6 +314,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
 
             map.add_line(line);
             map_state.set_map(map);
+            map_state.clear_selected_line();
             return;
         }
 
@@ -433,7 +437,12 @@ fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     if let Some(edge_id) = map.edge_at_node(mouse_pos) {
-        map_state.set_selected_edges(trace_line_section(map, edge_id));
+        map_state.set_selected_edges(
+            trace_line_section(map, edge_id, false)
+                .into_iter()
+                .map(|e| e.get_id())
+                .collect(),
+        );
     } else {
         map_state.clear_selected_edges();
     }

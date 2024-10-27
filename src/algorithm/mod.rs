@@ -44,6 +44,8 @@ pub struct AlgorithmSettings {
     /// Whether to allow stations to move (off is the same as `node_set_radius`
     /// being 0).
     pub allow_station_relocation: bool,
+    /// Whether to output the map when the algorithm fails, default: false.
+    pub output_on_fail: bool,
 }
 
 impl AlgorithmSettings {
@@ -77,6 +79,7 @@ impl Default for AlgorithmSettings {
             grid_y_limits: (i32::MIN, i32::MAX),
             local_search: true,
             allow_station_relocation: true,
+            output_on_fail: false,
         }
     }
 }

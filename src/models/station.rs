@@ -16,7 +16,10 @@ use serde::{
 };
 
 use super::{
-    Edge, EdgeID, GridNode, Map
+    Edge,
+    EdgeID,
+    GridNode,
+    Map,
 };
 use crate::{
     algorithm::drawing::{
