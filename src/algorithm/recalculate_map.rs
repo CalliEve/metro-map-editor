@@ -7,6 +7,7 @@ use leptos::logging;
 
 use super::{
     local_search::local_search,
+    occupation::OccupiedNodes,
     order_edges::order_edges,
     randomize_edges,
     route_edges::route_edges,
@@ -26,13 +27,13 @@ use crate::{
 
 /// Recalculate the map, all the positions of the stations and the edges between
 /// them, as a whole. This is the Recalculate Map algorithm in the paper.
-pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()> {
+pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<OccupiedNodes> {
     if map
         .get_edges()
         .is_empty()
     {
         logging::warn!("Recalculate map called on an empty map");
-        return Ok(());
+        return Ok(HashMap::new());
     }
 
     debug_print(
@@ -115,12 +116,15 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<()>
         false,
     );
 
+    // Skip this step if heatmap is enabled as we need to keep the contracted
+    // stations
+    #[cfg(not(feature = "heatmap"))]
     expand_stations(settings, map, &contracted_stations)?;
 
     #[cfg(all(not(test), not(feature = "benchmarking")))]
     logging::log!("Recalculated map");
 
-    Ok(())
+    Ok(occupied)
 }
 
 #[cfg(test)]

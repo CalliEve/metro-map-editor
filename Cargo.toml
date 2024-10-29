@@ -25,21 +25,24 @@ wasm-bindgen = { version = "0.2.95" }
 console_log = "1"
 log = "0.4"
 console_error_panic_hook = "0.1"
-quick-xml = { version = "0.36", features = ["serialize"] }
+quick-xml = { version = "0.37", features = ["serialize"] }
 serde_json = "1.0"
 serde = { version = "1", features = ["derive"] }
 csscolorparser = "0.7"
 rand = "0.8"
 priority-queue = "2.1"
-ordered-float = "4.3"
+ordered-float = "4.4"
 itertools = "0.13"
 leptos_workers = "0.2.2"
+rayon = { version = "1.10", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [features]
+default = []
 benchmarking = []
+heatmap = ["rayon"]
 
 [[bench]]
 name = "map_algo_benchmarks"

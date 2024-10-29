@@ -4,7 +4,6 @@
 use core::f64;
 
 use super::{
-    calculate_angle,
     debug_print,
     node_outside_grid,
     occupation::OccupiedNodes,
@@ -19,29 +18,34 @@ use crate::{
         Map,
         Station,
     },
-    utils::Result,
+    utils::{
+        calculate_angle,
+        Result,
+    },
     Error,
 };
 
-/// Check if the station can be approached from the given node.
-/// Considers if the approach leaves enough open nodes on all sides for future
-/// connections on those sides.
-fn station_approach_available(
-    settings: AlgorithmSettings,
+/// A list of edges connected to a station, sorted by the angle with which they
+/// are connected to a station
+type SortedStationEdgeList = Vec<(Edge, f64)>;
+
+/// Get the edges connected to the given station, sorted by the angle with which
+/// they are connected to the station, as seen from the given incoming edge.
+fn edges_by_angle(
     map: &Map,
     station: &Station,
     node: GridNode,
     incoming_edge: EdgeID,
-) -> Result<bool> {
+) -> Result<(
+    SortedStationEdgeList,
+    SortedStationEdgeList,
+)> {
     let neighbor_nodes = station
         .get_pos()
         .get_neighbors();
     let mut left_wards = Vec::new();
     let mut right_wards = Vec::new();
 
-    // Get 2 lists of all edges connected to the station together with the angle
-    // with which they are connected to it. 1 rightwards and the other
-    // leftwards.
     for edge_id in station.get_edges() {
         if *edge_id == incoming_edge {
             continue;
@@ -89,6 +93,24 @@ fn station_approach_available(
             .map(|(e, a)| (e, (a - 360.0).abs()))
             .collect();
     }
+
+    Ok((left_wards, right_wards))
+}
+
+/// Check if the station can be approached from the given node.
+/// Considers if the approach leaves enough open nodes on all sides for future
+/// connections on those sides.
+fn station_approach_available(
+    settings: AlgorithmSettings,
+    map: &Map,
+    station: &Station,
+    node: GridNode,
+    incoming_edge: EdgeID,
+) -> Result<bool> {
+    // Get 2 lists of all edges connected to the station together with the angle
+    // with which they are connected to it. 1 rightwards and the other
+    // leftwards.
+    let (mut left_wards, mut right_wards) = edges_by_angle(map, station, node, incoming_edge)?;
 
     // Sort the lists by angle, so we can check the edges in order of angle small to
     // large.
@@ -275,7 +297,7 @@ fn calc_station_exit_cost(
         )
         .map(|c| c / 2.0);
     }
-    
+
     if !station_approach_available(
         settings,
         map,
