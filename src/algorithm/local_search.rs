@@ -21,16 +21,16 @@ use crate::{
 };
 
 /// Represents a station position with its edges and cost.
-struct StationPos {
+pub struct StationPos {
     /// The station at this position.
-    station: Station,
+    pub station: Station,
     /// The edges connected to the station.
-    edges: Vec<Edge>,
+    pub edges: Vec<Edge>,
     /// The nodes occupied by map once this station and its edges have been
     /// taken into account.
-    occupied: OccupiedNodes,
+    pub occupied: OccupiedNodes,
     /// The total cost of the station and its edges.
-    cost: NotNan<f64>,
+    pub cost: NotNan<f64>,
 }
 
 impl StationPos {
@@ -67,30 +67,22 @@ fn total_distance(map: &Map, node: GridNode, station: &Station) -> i32 {
 }
 
 /// Try a new position for the given station and return data on the result.
-fn try_station_pos(
+pub fn try_station_pos(
     settings: AlgorithmSettings,
     map: &Map,
     mut target_station: Station,
     station_pos: GridNode,
     mut occupied: OccupiedNodes,
 ) -> Result<StationPos> {
-    if occupied.contains_key(&station_pos) {
-        return Err(Error::EarlyAbort);
-    }
-
     let mut map = map.clone();
 
     occupied.remove(&target_station.get_pos());
     target_station.set_pos(station_pos);
-    occupied.insert(
-        station_pos,
-        target_station
-            .get_id()
-            .into(),
-    );
     map.add_station(target_station.clone());
 
-    let mut total_cost = NotNan::new(0.0).unwrap();
+    let org_distance =
+        f64::from(station_pos.manhattan_distance_to(target_station.get_original_pos()));
+    let mut total_cost = NotNan::new(org_distance * settings.move_cost).unwrap();
     let mut edges_before = Vec::new();
     let mut edges_after = Vec::new();
 
@@ -105,6 +97,10 @@ fn try_station_pos(
         }
         edge.unsettle();
         edges_before.push(edge.clone());
+    }
+
+    if occupied.contains_key(&station_pos) {
+        return Err(Error::EarlyAbort);
     }
 
     for mut edge in edges_before {
@@ -149,7 +145,7 @@ fn try_station_pos(
         edges_after.push(edge);
 
         total_cost += cost;
-        if *total_cost >= target_station.get_cost() {
+        if settings.early_local_search_abort && *total_cost >= target_station.get_cost() {
             return Err(Error::EarlyAbort);
         }
     }

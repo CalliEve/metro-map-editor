@@ -57,18 +57,6 @@ pub fn overlap_amount<T: PartialEq>(left: &[T], right: &[T]) -> usize {
         .count()
 }
 
-/// Calculates the angle formed by three grid nodes and returns it in rounded
-/// degrees. The second point is assumed to be the middle node where the angle
-/// is located.
-pub fn calculate_angle(first: GridNode, second: GridNode, third: GridNode) -> f64 {
-    let l = (f64::from(first.1 - second.1)).atan2(f64::from(first.0 - second.0));
-    let r = (f64::from(third.1 - second.1)).atan2(f64::from(third.0 - second.0));
-    (l - r)
-        .abs()
-        .to_degrees()
-        .round()
-}
-
 /// Prints a debug message if the settings allow it.
 pub fn debug_print(settings: AlgorithmSettings, msg: &str, warn: bool) {
     if settings.debug && warn {
@@ -119,23 +107,5 @@ mod tests {
         let left = vec![1, 2, 3, 0, 4, 5, 2];
         let right = vec![8, 3, 4, 10, 5, 6, 7];
         assert_eq!(overlap_amount(&left, &right), 3);
-    }
-
-    #[test]
-    fn test_calculate_angle() {
-        let first = GridNode::from((0, 0));
-        let second = GridNode::from((1, 1));
-        let third = GridNode::from((2, 0));
-        assert_eq!(
-            calculate_angle(first, second, third),
-            90.0
-        );
-        let first = GridNode::from((-1, -1));
-        let second = GridNode::from((1, 1));
-        let third = GridNode::from((2, 0));
-        assert_eq!(
-            calculate_angle(first, second, third),
-            90.0
-        );
     }
 }

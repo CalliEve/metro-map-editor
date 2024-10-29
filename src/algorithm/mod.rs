@@ -18,10 +18,19 @@ mod station_contraction;
 mod utils;
 
 pub use a_star::run_a_star;
+#[cfg(feature = "heatmap")]
+pub use local_search::try_station_pos;
+#[cfg(feature = "heatmap")]
+pub use occupation::{
+    OccupiedNode,
+    OccupiedNodes,
+};
 pub use recalculate_map::recalculate_map;
 use utils::*;
 
 /// Stores the settings for the algorithm.
+// This is a settings struct, so many bools are needed
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct AlgorithmSettings {
     /// The size of the radius around a station to possibly route edges to for
@@ -46,6 +55,9 @@ pub struct AlgorithmSettings {
     pub allow_station_relocation: bool,
     /// Whether to output the map when the algorithm fails, default: false.
     pub output_on_fail: bool,
+    /// Whether to abort the local search early if the cost is not improving.
+    /// Only put to false for experiments like the heatmap.
+    pub early_local_search_abort: bool,
 }
 
 impl AlgorithmSettings {
@@ -80,6 +92,7 @@ impl Default for AlgorithmSettings {
             local_search: true,
             allow_station_relocation: true,
             output_on_fail: false,
+            early_local_search_abort: true,
         }
     }
 }

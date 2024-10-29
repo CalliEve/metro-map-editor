@@ -6,6 +6,13 @@ use leptos::*;
 use metro_map_editor::*;
 
 fn main() {
+    #[cfg(feature = "heatmap")]
+    if cfg!(feature = "heatmap") {
+        // Run the heatmap algorithm
+        utils::heatmap_data::run_heatmap();
+        return;
+    }
+
     if web_sys::window().is_some() {
         // Initialize the panic hook, which will print any panic that occurs to the
         // console
