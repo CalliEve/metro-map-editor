@@ -12,6 +12,7 @@ use wasm_bindgen::{
 use web_sys::HtmlInputElement;
 
 use crate::{
+    algorithm::LogType,
     components::atoms::{
         Button,
         Modal,
@@ -52,11 +53,15 @@ where
             <div class="p-4 md:p-5 space-y-4">
                 <Toggle
                     text="Enable debug output."
-                    value=move || map_state.get().get_algorithm_settings().debug
+                    value=move || map_state.get().get_algorithm_settings().log_level == LogType::Debug
                     on_input=move |b| {
                         map_state
                             .update(|state| state.update_algorithm_settings(|settings| {
-                                settings.debug = b;
+                                if b {
+                                    settings.set_log_level(LogType::Debug);
+                                } else {
+                                    settings.set_log_level(LogType::Warn);
+                                }
                             }));
                     }/>
                 <Toggle

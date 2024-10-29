@@ -7,7 +7,7 @@ use itertools::Itertools;
 use leptos::logging;
 
 use super::{
-    debug_print,
+    log_print,
     AlgorithmSettings,
 };
 use crate::{
@@ -432,7 +432,7 @@ pub fn expand_stations(
             .collect::<Vec<_>>()[1..]
             .to_vec();
 
-        debug_print(
+        log_print(
             settings,
             &format!(
                 "expand_len: {}, nodes_len: {}, station_locs: {:?}",
@@ -441,7 +441,7 @@ pub fn expand_stations(
                     .len(),
                 station_locs
             ),
-            false,
+            super::LogType::Debug,
         );
 
         reinsert_stations(

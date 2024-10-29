@@ -4,7 +4,7 @@
 use core::f64;
 
 use super::{
-    debug_print,
+    log_print,
     node_outside_grid,
     occupation::OccupiedNodes,
     overlap_amount,
@@ -145,7 +145,7 @@ fn station_approach_available(
     for (edge, angle) in left_wards {
         if edge.is_settled() {
             if !possible_angle(angle, cost) {
-                debug_print(
+                log_print(
                     settings,
                     &format!(
                         "station approach to {}{} not available from {node}\nsettled edge {} from {}
@@ -156,7 +156,7 @@ fn station_approach_available(
                         edge.opposite(station.get_id())
                             .unwrap(),
                     ),
-                    true,
+                    super::LogType::Warn,
                 );
                 return Ok(false);
             }
@@ -170,7 +170,7 @@ fn station_approach_available(
     for (edge, angle) in right_wards {
         if edge.is_settled() {
             if !possible_angle(angle, cost) {
-                debug_print(
+                log_print(
                     settings,
                     &format!(
                         "station approach to {}{} not available from {}\nsettled edge {} from {}
@@ -184,7 +184,7 @@ fn station_approach_available(
                         angle,
                         cost
                     ),
-                    true,
+                    super::LogType::Warn,
                 );
                 return Ok(false);
             }

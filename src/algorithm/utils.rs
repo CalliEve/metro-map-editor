@@ -5,6 +5,10 @@ use rand::{
     seq::SliceRandom,
     thread_rng,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::AlgorithmSettings;
 use crate::models::{
@@ -57,12 +61,29 @@ pub fn overlap_amount<T: PartialEq>(left: &[T], right: &[T]) -> usize {
         .count()
 }
 
+/// The different types of log messages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LogType {
+    Debug,
+    Warn,
+    Error,
+}
+
 /// Prints a debug message if the settings allow it.
-pub fn debug_print(settings: AlgorithmSettings, msg: &str, warn: bool) {
-    if settings.debug && warn {
-        logging::debug_warn!("{}", msg);
-    } else if settings.debug {
-        logging::log!("{}", msg);
+pub fn log_print(settings: AlgorithmSettings, msg: &str, log_type: LogType) {
+    match log_type {
+        LogType::Debug if settings.log_level == LogType::Debug => {
+            logging::log!("{}", msg);
+        },
+        LogType::Warn
+            if settings.log_level == LogType::Debug || settings.log_level == LogType::Warn =>
+        {
+            logging::warn!("{}", msg);
+        },
+        LogType::Error => {
+            logging::error!("{}", msg);
+        },
+        _ => {},
     }
 }
 

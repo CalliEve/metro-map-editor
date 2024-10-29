@@ -19,7 +19,7 @@ use super::{
     AlgorithmSettings,
 };
 use crate::{
-    algorithm::debug_print,
+    algorithm::log_print,
     models::Map,
     utils::Result,
     Error,
@@ -36,7 +36,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         return Ok(HashMap::new());
     }
 
-    debug_print(
+    log_print(
         settings,
         &format!(
             "Recalculating map with {} edges and {} stations",
@@ -45,12 +45,12 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
             map.get_stations()
                 .len()
         ),
-        false,
+        super::LogType::Debug,
     );
 
     let contracted_stations = contract_stations(settings, map);
 
-    debug_print(
+    log_print(
         settings,
         &format!(
             "Contracted stations, {} edges and {} stations left",
@@ -59,7 +59,7 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
             map.get_stations()
                 .len()
         ),
-        false,
+        super::LogType::Debug,
     );
 
     map.quickcalc_edges();
@@ -70,10 +70,10 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
     let mut found = false;
     let mut occupied = HashMap::new();
 
-    debug_print(
+    log_print(
         settings,
         &format!("Ordered {} edges", edges.len()),
-        false,
+        super::LogType::Debug,
     );
 
     while !found {
@@ -83,7 +83,11 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         let res = route_edges(settings, &mut alg_map, edges.clone());
 
         if let Err(e) = res {
-            logging::error!("Failed to route edges: {e}");
+            log_print(
+                settings,
+                &format!("Failed to route edges: {e}"),
+                super::LogType::Error,
+            );
 
             if attempt >= settings.edge_routing_attempts {
                 *map = alg_map;
@@ -100,20 +104,20 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         }
     }
 
-    debug_print(
+    log_print(
         settings,
         "Routed edges, commencing local search",
-        false,
+        super::LogType::Debug,
     );
 
     if settings.local_search {
         local_search(settings, map, &mut occupied);
     }
 
-    debug_print(
+    log_print(
         settings,
         "Finished local search, re-adding contracted stations",
-        false,
+        super::LogType::Debug,
     );
 
     // Skip this step if heatmap is enabled as we need to keep the contracted
@@ -131,7 +135,10 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
 mod tests {
     use super::*;
     use crate::{
-        algorithm::occupation::OccupiedNodes,
+        algorithm::{
+            occupation::OccupiedNodes,
+            LogType,
+        },
         models::GridNode,
         utils::{
             graphml,
@@ -221,9 +228,10 @@ mod tests {
             "existing_maps/wien.graphml",
             "existing_maps/washington.graphml",
             "existing_maps/karlsruhe.graphml",
-            // "existing_maps/sydney.graphml", // TODO: Get this map working
-            // "existing_maps/berlin.graphml", // TODO: Get this map working
+            "existing_maps/sydney.graphml",
+            // "existing_maps/berlin.graphml", // This map is too large to test on square size 7
         ];
+        let mut failed = Vec::new();
 
         for map_file in &map_files {
             let mut canvas = CanvasState::new();
@@ -248,6 +256,7 @@ mod tests {
             state.calculate_algorithm_settings();
             let mut settings = state.get_algorithm_settings();
             settings.edge_routing_attempts = 1;
+            settings.log_level = LogType::Error;
 
             println!(
                 "testing on map {map_file} with {} stations and {} edges",
@@ -257,9 +266,16 @@ mod tests {
                     .len()
             );
 
-            recalculate_map(settings, &mut map).expect(&format!(
-                "failed to recalculate map {map_file}"
-            ));
+            if let Err(e) = recalculate_map(settings, &mut map) {
+                failed.push((map_file, e));
+            }
+        }
+
+        if !failed.is_empty() {
+            for (map_file, e) in failed {
+                eprintln!("Failed on map {map_file}: {e}");
+            }
+            panic!("Some maps failed to recalculate");
         }
     }
 }

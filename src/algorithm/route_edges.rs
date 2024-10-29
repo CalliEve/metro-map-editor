@@ -4,8 +4,8 @@
 use std::collections::HashMap;
 
 use super::{
-    debug_print,
     edge_dijkstra::edge_dijkstra,
+    log_print,
     occupation::OccupiedNodes,
     AlgorithmSettings,
 };
@@ -166,7 +166,7 @@ pub fn route_edges(
             }
         }
 
-        debug_print(
+        log_print(
             settings,
             &format!(
                 "routing edge from {}{} to {}{}, sets:\nfrom: {:?}\nto: {:?}",
@@ -177,7 +177,7 @@ pub fn route_edges(
                 from_nodes,
                 to_nodes
             ),
-            false,
+            super::LogType::Debug,
         );
 
         let (start, nodes, end, cost) = edge_dijkstra(
@@ -191,7 +191,7 @@ pub fn route_edges(
             &occupied,
         )?;
 
-        debug_print(
+        log_print(
             settings,
             &format!(
                 "routed edge {} from {start} to {end}\nOriginally from {} to {}",
@@ -199,7 +199,7 @@ pub fn route_edges(
                 from_station.get_pos(),
                 to_station.get_pos(),
             ),
-            false,
+            super::LogType::Debug,
         );
 
         occupied.extend(

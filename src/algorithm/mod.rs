@@ -26,6 +26,7 @@ pub use occupation::{
     OccupiedNodes,
 };
 pub use recalculate_map::recalculate_map;
+pub use utils::LogType;
 use utils::*;
 
 /// Stores the settings for the algorithm.
@@ -46,8 +47,8 @@ pub struct AlgorithmSettings {
     pub grid_x_limits: (i32, i32),
     /// The highest and lowest possible y values of the grid.
     pub grid_y_limits: (i32, i32),
-    /// Whether to print debug information.
-    pub debug: bool,
+    /// The log level.
+    pub log_level: LogType,
     /// Whether to run the local search algorithm.
     pub local_search: bool,
     /// Whether to allow stations to move (off is the same as `node_set_radius`
@@ -73,9 +74,9 @@ impl AlgorithmSettings {
         self
     }
 
-    /// Toggle the debug mode.
-    pub fn toggle_debug(mut self) -> Self {
-        self.debug = !self.debug;
+    /// Set log level
+    pub fn set_log_level(mut self, log_level: LogType) -> Self {
+        self.log_level = log_level;
         self
     }
 }
@@ -86,7 +87,7 @@ impl Default for AlgorithmSettings {
             node_set_radius: 3,
             edge_routing_attempts: 3,
             move_cost: 1.0,
-            debug: false,
+            log_level: LogType::Warn,
             grid_x_limits: (i32::MIN, i32::MAX),
             grid_y_limits: (i32::MIN, i32::MAX),
             local_search: true,

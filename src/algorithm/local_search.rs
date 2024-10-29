@@ -4,8 +4,8 @@
 use ordered_float::NotNan;
 
 use super::{
-    debug_print,
     edge_dijkstra::edge_dijkstra,
+    log_print,
     occupation::OccupiedNodes,
     AlgorithmSettings,
 };
@@ -215,7 +215,7 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
                       // maybe
         }
 
-        debug_print(
+        log_print(
             settings,
             &format!(
                 "Moving station {} from {} to {}",
@@ -226,7 +226,7 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
                     .station
                     .get_pos()
             ),
-            false,
+            super::LogType::Debug,
         );
 
         let best = best.unwrap();
