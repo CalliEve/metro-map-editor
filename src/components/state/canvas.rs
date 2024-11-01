@@ -244,6 +244,7 @@ impl CanvasState {
     }
 
     /// Returns true if the given grid node is on the canvas.
+    #[inline]
     pub fn is_on_canvas(&self, node: GridNode) -> bool {
         self.x_limit
             .0

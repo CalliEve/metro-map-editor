@@ -150,6 +150,13 @@ pub fn try_station_pos(
         }
     }
 
+    occupied.insert(
+        station_pos,
+        target_station
+            .get_id()
+            .into(),
+    );
+
     Ok(StationPos::new(
         target_station,
         edges_after,

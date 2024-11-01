@@ -57,10 +57,10 @@ where
                     on_input=move |b| {
                         map_state
                             .update(|state| state.update_algorithm_settings(|settings| {
-                                if b {
-                                    settings.set_log_level(LogType::Debug);
+                                if settings.log_level == LogType::Warn {
+                                    *settings = settings.set_log_level(LogType::Debug);
                                 } else {
-                                    settings.set_log_level(LogType::Warn);
+                                    *settings = settings.set_log_level(LogType::Warn);
                                 }
                             }));
                     }/>
