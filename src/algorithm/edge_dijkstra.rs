@@ -15,9 +15,11 @@ use std::{
 
 use ordered_float::NotNan;
 use priority_queue::PriorityQueue;
+use serde_json::json;
 
 use super::{
     cost_calculation::calc_node_cost,
+    log_print,
     occupation::OccupiedNodes,
     AlgorithmSettings,
 };
@@ -117,8 +119,19 @@ pub fn edge_dijkstra(
         );
     }
 
+    let mut visited_cost = Vec::new();
+
     while let Some((current, current_cost)) = queue.pop() {
+        if visited.contains(&current.node) {
+            panic!("Node visited twice in Dijkstra algorithm.");
+        }
+
         visited.insert(current.node);
+        visited_cost.push((
+            current.node,
+            *current_cost.0,
+            *current.cost,
+        ));
 
         if current_cost
             .0
@@ -165,30 +178,25 @@ pub fn edge_dijkstra(
                 occupied,
             )?)?;
 
-            // Don't even look at nodes that have infinite cost.
-            // CHECKME: this is a bit of a hack, we should probably add them to the queue
-            // and handle the break when we encounter the first, but this causes
-            // a bug?
+            // Don't even look at nodes that have infinite cost. saves us from handling them
+            // later and thus is more efficient.
             if cost.is_infinite() {
                 continue;
             }
 
-            // Add the heuristic cost to the cost for the queue.
-            let cost_with_heuristic = cost + neighbor.diagonal_distance_to(from_station.get_pos());
-
             let neighbor_item = QueueItem::from_parent(&current, neighbor, cost);
-            if let Some((_, old_cost)) = queue.get(&neighbor_item) {
-                if old_cost.0 > cost_with_heuristic {
-                    queue.push(
-                        neighbor_item,
-                        Reverse(cost_with_heuristic),
-                    );
+
+            let neighbor_priority = Reverse(neighbor_item.cost);
+            if let Some(old_priority) = queue.get_priority(&neighbor_item) {
+                if old_priority < &neighbor_priority {
+                    *queue
+                        .get_mut(&neighbor_item)
+                        .unwrap()
+                        .0 = neighbor_item.clone();
+                    queue.change_priority(&neighbor_item, neighbor_priority);
                 }
             } else {
-                queue.push(
-                    neighbor_item,
-                    Reverse(cost_with_heuristic),
-                );
+                queue.push(neighbor_item, neighbor_priority);
             }
         }
     }
@@ -274,12 +282,12 @@ mod tests {
             (
                 GridNode::from((0, 0)),
                 vec![
-                    GridNode::from((1, 0)),
-                    GridNode::from((2, 0)),
-                    GridNode::from((3, 0)),
-                    GridNode::from((4, 1)),
-                    GridNode::from((5, 2)),
-                    GridNode::from((6, 3))
+                    GridNode::from((1, 1)),
+                    GridNode::from((2, 2)),
+                    GridNode::from((3, 3)),
+                    GridNode::from((4, 4)),
+                    GridNode::from((5, 4)),
+                    GridNode::from((6, 4))
                 ],
                 GridNode::from((7, 4))
             )

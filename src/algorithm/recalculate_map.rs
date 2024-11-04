@@ -172,7 +172,8 @@ mod tests {
 
         let mut state = MapState::new(map.clone());
         state.calculate_algorithm_settings();
-        let settings = state.get_algorithm_settings();
+        let mut settings = state.get_algorithm_settings();
+        settings.edge_routing_attempts = 1;
 
         println!(
             "testing on map {map_file} with {} stations and {} edges",

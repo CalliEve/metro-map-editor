@@ -43,7 +43,7 @@ impl GridNode {
     /// Translate the [`GridNode`] to a canvas coordinate, given the state of
     /// the canvas.
     pub fn to_canvas_pos(self, state: CanvasState) -> (f64, f64) {
-        if !state.is_on_canvas(self) {
+        if self.0 == i32::MIN || self.1 == i32::MIN {
             return (f64::MIN, f64::MIN);
         }
 

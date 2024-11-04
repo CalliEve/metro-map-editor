@@ -294,8 +294,7 @@ fn calc_station_exit_cost(
     {
         return match_angle_cost(
             (calculate_angle(station_node, node, target_node) / 45.0).round() * 45.0,
-        )
-        .map(|c| c / 2.0);
+        );
     }
 
     if !station_approach_available(
@@ -350,7 +349,8 @@ fn calc_station_exit_cost(
         }
 
         // If the ends of the opposite edge are in the neighbors of the station, we
-        // calculate the angle with that node.
+        // calculate the angle with that node. We want this to be a preference, but not
+        // mandatory, so halve the angle penalty.
         for edge_node in opposite_edge.get_edge_ends() {
             if neighbor_nodes.contains(&edge_node) {
                 return calc_angle_cost(edge_node, station.get_pos(), node).map(|c| c / 2.0);
@@ -366,8 +366,7 @@ fn calc_station_exit_cost(
                     opp_station.get_pos(),
                     station.get_pos(),
                     node,
-                )
-                .map(|c| c / 2.0);
+                );
             }
         }
     }
@@ -638,17 +637,11 @@ mod tests {
 
     #[test]
     fn test_calc_angle_cost() {
-        let first_180 = GridNode::from((0, 2));
-        let second_180 = GridNode::from((1, 1));
-        let third_180 = GridNode::from((2, 0));
-        let result_180 = calc_angle_cost(first_180, second_180, third_180);
-        assert_eq!(result_180, Ok(0.0));
-
-        let first_135 = GridNode::from((2, 2));
-        let second_135 = GridNode::from((1, 1));
-        let third_135 = GridNode::from((1, 0));
-        let result_135 = calc_angle_cost(first_135, second_135, third_135);
-        assert_eq!(result_135, Ok(0.5));
+        let first_45 = GridNode::from((1, 0));
+        let second_45 = GridNode::from((1, 1));
+        let third_45 = GridNode::from((2, 0));
+        let result_45 = calc_angle_cost(first_45, second_45, third_45);
+        assert_eq!(result_45, Ok(5.0));
 
         let first_90 = GridNode::from((0, 0));
         let second_90 = GridNode::from((1, 1));
@@ -656,9 +649,57 @@ mod tests {
         let result_90 = calc_angle_cost(first_90, second_90, third_90);
         assert_eq!(result_90, Ok(2.5));
 
-        let first_45 = GridNode::from((1, 0));
+        let first_135 = GridNode::from((0, 1));
+        let second_135 = GridNode::from((1, 1));
+        let third_135 = GridNode::from((2, 0));
+        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        assert_eq!(result_135, Ok(0.5));
+
+        let first_180 = GridNode::from((0, 2));
+        let second_180 = GridNode::from((1, 1));
+        let third_180 = GridNode::from((2, 0));
+        let result_180 = calc_angle_cost(first_180, second_180, third_180);
+        assert_eq!(result_180, Ok(0.0));
+
+        let first_135 = GridNode::from((1, 2));
+        let second_135 = GridNode::from((1, 1));
+        let third_135 = GridNode::from((2, 0));
+        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        assert_eq!(result_135, Ok(0.5));
+
+        let first_90 = GridNode::from((2, 2));
+        let second_90 = GridNode::from((1, 1));
+        let third_90 = GridNode::from((2, 0));
+        let result_90 = calc_angle_cost(first_90, second_90, third_90);
+        assert_eq!(result_90, Ok(2.5));
+
+        let first_45 = GridNode::from((2, 1));
         let second_45 = GridNode::from((1, 1));
         let third_45 = GridNode::from((2, 0));
+        let result_45 = calc_angle_cost(first_45, second_45, third_45);
+        assert_eq!(result_45, Ok(5.0));
+
+        let first_180 = GridNode::from((2, 0));
+        let second_180 = GridNode::from((1, 1));
+        let third_180 = GridNode::from((0, 2));
+        let result_180 = calc_angle_cost(first_180, second_180, third_180);
+        assert_eq!(result_180, Ok(0.0));
+
+        let first_135 = GridNode::from((2, 0));
+        let second_135 = GridNode::from((1, 1));
+        let third_135 = GridNode::from((1, 2));
+        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        assert_eq!(result_135, Ok(0.5));
+
+        let first_90 = GridNode::from((2, 0));
+        let second_90 = GridNode::from((1, 1));
+        let third_90 = GridNode::from((2, 2));
+        let result_90 = calc_angle_cost(first_90, second_90, third_90);
+        assert_eq!(result_90, Ok(2.5));
+
+        let first_45 = GridNode::from((2, 0));
+        let second_45 = GridNode::from((1, 1));
+        let third_45 = GridNode::from((2, 1));
         let result_45 = calc_angle_cost(first_45, second_45, third_45);
         assert_eq!(result_45, Ok(5.0));
     }
@@ -858,7 +899,7 @@ mod tests {
         );
         // unsettled and at 90 degree angle
         assert_eq!(
-            1.25,
+            2.5,
             calc_station_exit_cost(
                 settings,
                 &map,
@@ -889,7 +930,7 @@ mod tests {
 
         // settled with other edge at 90 degree angle
         assert_eq!(
-            1.25,
+            2.5,
             calc_station_exit_cost(
                 settings,
                 &map,

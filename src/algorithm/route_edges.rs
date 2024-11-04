@@ -194,7 +194,7 @@ pub fn route_edges(
         log_print(
             settings,
             &format!(
-                "routed edge {} from {start} to {end}\nOriginally from {} to {}",
+                "routed edge {} from {start} to {end} at cost {cost}\nOriginally from {} to {}",
                 edge.get_id(),
                 from_station.get_pos(),
                 to_station.get_pos(),

@@ -365,6 +365,12 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             return;
         }
 
+        for selected_id in map_state.get_selected_edges() {
+            map.get_mut_edge(*selected_id)
+                .expect("selected edge should exist")
+                .deselect();
+        }
+
         map_state.set_selected_edges(vec![edge_id]);
         map.get_mut_edge(edge_id)
             .expect("edge should exist")

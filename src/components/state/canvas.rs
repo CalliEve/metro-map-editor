@@ -39,6 +39,24 @@ impl CanvasState {
         self.size
     }
 
+    /// Get the size of the canvas that is currently visible.
+    pub fn get_visible_size(&self) -> (u32, u32) {
+        let width = (self
+            .x_limit
+            .1
+            - self
+                .x_limit
+                .0) as u32;
+        let height = (self
+            .y_limit
+            .1
+            - self
+                .y_limit
+                .0) as u32;
+
+        (width, height)
+    }
+
     /// A setter method for the canvas size.
     pub fn set_size(&mut self, size: (u32, u32)) {
         self.size = size;
@@ -218,12 +236,12 @@ impl CanvasState {
             self.size
                 .1,
         ) / self.drawn_square_size())
-        .ceil() as i32;
+        .round() as i32;
         let height_node_count = (f64::from(
             self.size
                 .0,
         ) / self.drawn_square_size())
-        .ceil() as i32;
+        .round() as i32;
 
         self.x_limit = (
             self.offset
@@ -248,19 +266,23 @@ impl CanvasState {
     pub fn is_on_canvas(&self, node: GridNode) -> bool {
         self.x_limit
             .0
+            - 1
             < node.0
             && node.0
                 < self
                     .x_limit
                     .1
+                    + 1
             && self
                 .y_limit
                 .0
+                - 1
                 < node.1
             && node.1
                 < self
                     .y_limit
                     .1
+                    + 1
     }
 }
 

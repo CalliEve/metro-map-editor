@@ -17,14 +17,16 @@ pub(super) fn normalize_coords(mut items: Vec<(f64, f64)>, state: CanvasState) -
 
     let size_x = f64::from(
         state
-            .get_size()
-            .1,
-    ) - 4.0 * square_size;
+            .get_visible_size()
+            .0,
+    ) * square_size
+        - 4.0 * square_size;
     let size_y = f64::from(
         state
-            .get_size()
-            .0,
-    ) - 4.0 * square_size;
+            .get_visible_size()
+            .1,
+    ) * square_size
+        - 4.0 * square_size;
 
     let mut min_x = f64::MAX;
     let mut max_x = f64::MIN;
@@ -50,8 +52,18 @@ pub(super) fn normalize_coords(mut items: Vec<(f64, f64)>, state: CanvasState) -
     }
 
     for (x, y) in &mut items {
-        *x = (*x - min_x) / (max_x - min_x) * size_x + 2.0 * square_size;
-        *y = (*y - min_y) / (max_y - min_y) * size_y + 2.0 * square_size;
+        *x = (*x - min_x) / (max_x - min_x) * size_x
+            + (state
+                .get_offset()
+                .0 as f64
+                / square_size)
+            + 2.0 * square_size;
+        *y = (*y - min_y) / (max_y - min_y) * size_y
+            + (state
+                .get_offset()
+                .1 as f64
+                / square_size)
+            + 2.0 * square_size;
     }
 
     items
