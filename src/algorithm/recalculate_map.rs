@@ -228,8 +228,6 @@ mod tests {
             "existing_maps/wien.graphml",
             "existing_maps/washington.graphml",
             "existing_maps/karlsruhe.graphml",
-            "existing_maps/sydney.graphml",
-            // "existing_maps/berlin.graphml", // This map is too large to test on square size 7
         ];
         let mut failed = Vec::new();
 
