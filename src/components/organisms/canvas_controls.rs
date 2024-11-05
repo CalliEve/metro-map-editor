@@ -6,10 +6,7 @@
 
 use ev::KeyboardEvent;
 use html::Div;
-use leptos::{
-    logging,
-    *,
-};
+use leptos::*;
 use leptos_workers::{
     executors::{
         AbortHandle,
@@ -23,10 +20,7 @@ use serde::{
 };
 
 use crate::{
-    algorithm::{
-        self,
-        AlgorithmSettings,
-    },
+    algorithm::AlgorithmSettings,
     components::{
         atoms::Button,
         molecules::Canvas,
@@ -34,11 +28,9 @@ use crate::{
         MapState,
     },
     models::Map,
-    unwrap_or_return,
     utils::{
         IDData,
         IDManager,
-        Result as AlgrithmResult,
     },
 };
 
@@ -67,6 +59,7 @@ struct AlgorithmResponse {
 }
 
 /// The worker that runs the algorithm.
+#[allow(dead_code)] // usage is hidden
 #[worker(AlgorithmWorker)]
 fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
     IDManager::from_data(req.id_manager_data);
@@ -91,7 +84,6 @@ pub fn CanvasControls() -> impl IntoView {
     let container_ref = create_node_ref::<Div>();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
-    let (is_calculating, set_calculating) = create_signal(false);
     let (executor, _) = create_signal(
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
@@ -129,7 +121,12 @@ pub fn CanvasControls() -> impl IntoView {
                 .expect("failed to start algorithm worker");
             set_abort_handle(Some(abort_handle));
             let resp = resp_fut.await;
-            if resp.success || map_state.get_untracked().get_algorithm_settings().output_on_fail {
+            if resp.success
+                || map_state
+                    .get_untracked()
+                    .get_algorithm_settings()
+                    .output_on_fail
+            {
                 map_state.update(|state| {
                     state.set_map(resp.map);
                 });

@@ -1,14 +1,8 @@
 //! Contains the [`Edge`] struct and all its methods.
-use std::{
-    fmt::{
-        self,
-        Display,
-        Formatter,
-    },
-    sync::atomic::{
-        AtomicU64,
-        Ordering as AtomicOrdering,
-    },
+use std::fmt::{
+    self,
+    Display,
+    Formatter,
 };
 
 use leptos::logging;

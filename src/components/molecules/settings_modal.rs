@@ -1,15 +1,6 @@
 //! Contains the [`SettingsModal`] component.
 
-use std::path::Path;
-
-use ev::MouseEvent;
 use leptos::*;
-use wasm_bindgen::{
-    closure::Closure,
-    JsCast,
-    JsValue,
-};
-use web_sys::HtmlInputElement;
 
 use crate::{
     algorithm::LogType,
@@ -19,8 +10,6 @@ use crate::{
         NumberInput,
         Toggle,
     },
-    unwrap_or_return,
-    Error,
     MapState,
 };
 
@@ -54,7 +43,7 @@ where
                 <Toggle
                     text="Enable debug output."
                     value=move || map_state.get().get_algorithm_settings().log_level == LogType::Debug
-                    on_input=move |b| {
+                    on_input=move |_| {
                         map_state
                             .update(|state| state.update_algorithm_settings(|settings| {
                                 if settings.log_level == LogType::Warn {

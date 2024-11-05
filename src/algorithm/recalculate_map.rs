@@ -139,7 +139,6 @@ mod tests {
             occupation::OccupiedNodes,
             LogType,
         },
-        models::GridNode,
         utils::{
             graphml,
             json,

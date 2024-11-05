@@ -26,6 +26,18 @@ To deploy and run the editor on your local machine, you only need to run `trunk 
 This will build the project, start listening on localhost:8080 and then open it in your browser.
 It will also watch for changes to the project files.
 
+## Research
+
+This project also contains code not necessary for the editor.
+This code is used for research as part of my master thesis.
+Any code that is part of this is locked behind feature flags and will not be compiled by default.
+
+### Heatmap
+
+The first of these research items is the heatmap generation, which is used for research into optimizing the local search algorithm and making that slow algorithm faster and smarter.
+Enabling this feature flag during compilation and runtime will make the application a command-line program that will generate a json file in `research_notebooks` containing the heatmap data for the given data file from `existing_maps`.
+These heatmap data can then be used in `research_notebooks/heatmaps.ipynb` to generate heatmaps with placement costs for the stations.
+
 [TU/e]: https://www.tue.nl/en/
 [ALGO]: https://algo.win.tue.nl/
 [site]: https://calli.dev/university/metro-map

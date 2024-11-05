@@ -2,11 +2,9 @@
 
 use std::path::Path;
 
-use ev::MouseEvent;
 use leptos::*;
 use wasm_bindgen::{
     closure::Closure,
-    JsCast,
     JsValue,
 };
 use web_sys::HtmlInputElement;

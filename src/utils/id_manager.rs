@@ -2,10 +2,7 @@
 //! to manage the IDs in a way that works for communication between the main
 //! thread and the web-worker.
 
-use std::sync::{
-    Arc,
-    Mutex,
-};
+use std::sync::Mutex;
 
 use serde::{
     Deserialize,

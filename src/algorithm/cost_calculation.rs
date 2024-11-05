@@ -6,7 +6,10 @@ use core::f64;
 use super::{
     log_print,
     node_outside_grid,
-    occupation::OccupiedNodes,
+    occupation::{
+        OccupiedNode,
+        OccupiedNodes,
+    },
     overlap_amount,
     AlgorithmSettings,
 };
@@ -34,7 +37,7 @@ type SortedStationEdgeList = Vec<(Edge, f64)>;
 fn edges_by_angle(
     map: &Map,
     station: &Station,
-    node: GridNode,
+    incoming_station_node: GridNode,
     incoming_edge: EdgeID,
 ) -> Result<(
     SortedStationEdgeList,
@@ -44,7 +47,6 @@ fn edges_by_angle(
         .get_pos()
         .get_neighbors();
     let mut left_wards = Vec::new();
-    let mut right_wards = Vec::new();
 
     for edge_id in station.get_edges() {
         if *edge_id == incoming_edge {
@@ -62,7 +64,11 @@ fn edges_by_angle(
                 if neighbor_nodes.contains(&edge_node) {
                     left_wards.push((
                         edge.clone(),
-                        calculate_angle(node, station.get_pos(), edge_node),
+                        calculate_angle(
+                            incoming_station_node,
+                            station.get_pos(),
+                            edge_node,
+                        ),
                     ));
                     break;
                 }
@@ -80,19 +86,28 @@ fn edges_by_angle(
             left_wards.push((
                 edge.clone(),
                 calculate_angle(
-                    node,
+                    incoming_station_node,
                     station.get_pos(),
                     opposite_station.get_pos(),
                 ),
             ));
         }
-
-        right_wards = left_wards
-            .iter()
-            .cloned()
-            .map(|(e, a)| (e, (a - 360.0).abs()))
-            .collect();
     }
+
+    // Sort the lists by angle, so we can check the edges in order of angle small to
+    // large.
+    left_wards.sort_by(|a, b| {
+        a.1.partial_cmp(&b.1)
+            .unwrap()
+    });
+
+    // Create a rightwards list by reversing the leftwards list flipping the angles.
+    let right_wards = left_wards
+        .iter()
+        .cloned()
+        .map(|(e, a)| (e, (a - 360.0).abs()))
+        .rev()
+        .collect();
 
     Ok((left_wards, right_wards))
 }
@@ -104,37 +119,32 @@ fn station_approach_available(
     settings: AlgorithmSettings,
     map: &Map,
     station: &Station,
+    incoming_station: &Station,
     node: GridNode,
     incoming_edge: EdgeID,
 ) -> Result<bool> {
     // Get 2 lists of all edges connected to the station together with the angle
     // with which they are connected to it. 1 rightwards and the other
     // leftwards.
-    let (mut left_wards, mut right_wards) = edges_by_angle(map, station, node, incoming_edge)?;
-
-    // Sort the lists by angle, so we can check the edges in order of angle small to
-    // large.
-    left_wards.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1)
-            .unwrap()
-    });
-    right_wards.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1)
-            .unwrap()
-    });
+    let (left_wards, right_wards) = edges_by_angle(
+        map,
+        station,
+        incoming_station.get_pos(),
+        incoming_edge,
+    )?;
 
     let mut cost = 0;
 
     let possible_angle = move |angle, cost| {
         match angle {
-            315.0..360.0 => cost < 7,
-            270.0..315.0 => cost < 6,
-            225.0..270.0 => cost < 5,
-            180.0..225.0 => cost < 4,
-            135.0..180.0 => cost < 3,
-            90.0..135.0 => cost < 2,
-            45.0..90.0 => cost < 1,
-            0.0..45.0 => false,
+            0.0..=45.0 => cost < 1,
+            45.0..=90.0 => cost < 2,
+            90.0..=135.0 => cost < 3,
+            135.0..=180.0 => cost < 4,
+            180.0..=225.0 => cost < 5,
+            225.0..=270.0 => cost < 6,
+            270.0..=315.0 => cost < 7,
+            315.0..=360.0 => cost < 8,
             _ => panic!("found impossible angle of {angle}"),
         }
     };
@@ -278,7 +288,6 @@ fn diagonal_occupied(
 /// note: the angle cost is halved here to make it have a preference, but not
 /// have it force a double bend later on to compensate.
 fn calc_station_exit_cost(
-    settings: AlgorithmSettings,
     map: &Map,
     current_edge: &Edge,
     station: &Station,
@@ -293,18 +302,8 @@ fn calc_station_exit_cost(
             <= 1
     {
         return match_angle_cost(
-            (calculate_angle(station_node, node, target_node) / 45.0).round() * 45.0,
+            (calculate_angle(station_node, node, target_node) / 45.0).floor() * 45.0,
         );
-    }
-
-    if !station_approach_available(
-        settings,
-        map,
-        station,
-        node,
-        current_edge.get_id(),
-    )? {
-        return Ok(f64::INFINITY);
     }
 
     let mut biggest_overlap = None;
@@ -395,14 +394,25 @@ pub fn calc_node_cost(
         return Ok(f64::INFINITY);
     }
 
+    // Give the algorithm a preference for nodes that are not adjacent to other
+    // stations. We don't get about the from station cause we do not apply an extra
+    // penalty there.
+    let mut adj_cost = 0.0;
+    for neighbor_node in node.get_neighbors() {
+        if let Some(&OccupiedNode::Station(neighbor_station)) = occupied.get(&neighbor_node) {
+            if neighbor_station != to_station.get_id() {
+                adj_cost += 1.0;
+            }
+        }
+    }
+
     if to_station.is_settled() && node == to_station.get_pos() {
         if !station_approach_available(
             settings,
             map,
             to_station,
-            *previous
-                .last()
-                .unwrap(),
+            from_station,
+            node,
             edge.get_id(),
         )? {
             return Ok(f64::INFINITY);
@@ -412,6 +422,17 @@ pub fn calc_node_cost(
     }
 
     if previous.len() < 2 {
+        if !station_approach_available(
+            settings,
+            map,
+            from_station,
+            to_station,
+            node,
+            edge.get_id(),
+        )? {
+            return Ok(f64::INFINITY);
+        }
+
         if previous[0].0 - node.0 != 0
             && previous[0].1 - node.1 != 0
             && diagonal_occupied(map, previous[0], node, occupied)
@@ -420,7 +441,6 @@ pub fn calc_node_cost(
         }
 
         return calc_station_exit_cost(
-            settings,
             map,
             edge,
             from_station,
@@ -439,6 +459,7 @@ pub fn calc_node_cost(
     }
 
     calc_angle_cost(previous[0], previous[1], node) // cost of angle between previous nodes
+        .map(|c| c + adj_cost) // add the cost of adjacent stations
         .map(|c| c + settings.move_cost) // standard cost of a move
 }
 
@@ -455,12 +476,14 @@ mod tests {
 
         let above = Station::new(GridNode::from((5, 0)), None);
         let top_right = Station::new(GridNode::from((10, 0)), None);
-        let top_right_2 = Station::new(GridNode::from((15, -5)), None);
+        let top_right_2 = Station::new(GridNode::from((16, -4)), None);
         let right = Station::new(GridNode::from((10, 5)), None);
         let bottom = Station::new(GridNode::from((5, 10)), None);
+        let bottom_right = Station::new(GridNode::from((10, 10)), None);
         let left = Station::new(GridNode::from((0, 5)), None);
+        let bottom_left = Station::new(GridNode::from((0, 10)), None);
         let top_left = Station::new(GridNode::from((0, 0)), None);
-        let top_left_2 = Station::new(GridNode::from((-5, -5)), None);
+        let top_left_2 = Station::new(GridNode::from((-6, -4)), None);
 
         map.add_station(above.clone());
         println!("above: {:?}", above.get_id());
@@ -557,6 +580,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &right,
             incoming_node,
             edge_right.get_id(),
         )
@@ -575,6 +599,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &right,
             incoming_node,
             edge_right.get_id(),
         )
@@ -586,6 +611,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &bottom_right,
             incoming_node,
             edge_right.get_id(),
         )
@@ -599,6 +625,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &left,
             incoming_node,
             edge_left.get_id(),
         )
@@ -617,6 +644,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &left,
             incoming_node,
             edge_left.get_id(),
         )
@@ -628,6 +656,7 @@ mod tests {
             AlgorithmSettings::default(),
             &map,
             &approach_target,
+            &bottom_left,
             incoming_node,
             edge_left.get_id(),
         )
@@ -849,7 +878,6 @@ mod tests {
     #[test]
     fn test_calc_station_exit_cost() {
         let mut map = Map::new();
-        let settings = AlgorithmSettings::default();
 
         let unsettled_station = Station::new(GridNode::from((5, 5)), None);
 
@@ -887,7 +915,6 @@ mod tests {
         assert_eq!(
             0.0,
             calc_station_exit_cost(
-                settings,
                 &map,
                 &opposite_edge,
                 &unsettled_station,
@@ -901,11 +928,10 @@ mod tests {
         assert_eq!(
             2.5,
             calc_station_exit_cost(
-                settings,
                 &map,
                 &opposite_edge,
                 &unsettled_station,
-                (5, 6).into(),
+                (6, 6).into(),
                 unsettled_station.get_pos(),
                 opposite_station.get_pos(),
             )
@@ -916,7 +942,6 @@ mod tests {
         assert_eq!(
             0.0,
             calc_station_exit_cost(
-                settings,
                 &map,
                 &opposite_settled_edge,
                 map.get_station(settled_station.get_id())
@@ -932,7 +957,6 @@ mod tests {
         assert_eq!(
             2.5,
             calc_station_exit_cost(
-                settings,
                 &map,
                 &opposite_settled_edge,
                 map.get_station(settled_station.get_id())
@@ -943,10 +967,5 @@ mod tests {
             )
             .unwrap()
         );
-    }
-
-    #[test]
-    fn test_calc_node_cost() {
-        // TODO: implement test
     }
 }

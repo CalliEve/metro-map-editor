@@ -25,7 +25,7 @@ where
         .to_lowercase()
         .replace(' ', "_");
 
-    let parse_input = move |ev| {
+    let parse_input = move |_| {
         let input = input_ref
             .get()
             .unwrap();

@@ -1,21 +1,8 @@
 //! Contains the [`Modal`] component.
 
-use std::path::Path;
-
 use ev::MouseEvent;
 use leptos::*;
-use wasm_bindgen::{
-    closure::Closure,
-    JsCast,
-    JsValue,
-};
-use web_sys::HtmlInputElement;
-
-use crate::{
-    components::atoms::Button,
-    unwrap_or_return,
-    Error,
-};
+use wasm_bindgen::JsCast;
 
 /// A generic modal that others can be based upon.
 #[component]
@@ -31,7 +18,6 @@ where
     C: Fn() + 'static,
 {
     let modal_ref: NodeRef<html::Div> = create_node_ref();
-    let input_ref: NodeRef<html::Input> = create_node_ref();
 
     let on_outside_click = move |e: MouseEvent| {
         // actual dom node that got clicked on

@@ -8,10 +8,7 @@ use std::{
 use leptos::logging;
 use ordered_float::FloatIsNan;
 use serde::{
-    de::{
-        value,
-        Error as DeError,
-    },
+    de::Error as DeError,
     Deserialize,
     Serialize,
 };
@@ -204,18 +201,7 @@ impl<'de> Deserialize<'de> for Error {
                     quick_xml::DeError::custom(e),
                 ))
             },
-            "invalid_float" => {
-                let e = value
-                    .get("data")
-                    .ok_or(D::Error::custom(
-                        "invalid float error must have data",
-                    ))?
-                    .as_str()
-                    .ok_or(D::Error::custom(
-                        "invalid float error data must be a string",
-                    ))?;
-                Ok(Self::InvalidFloat(FloatIsNan))
-            },
+            "invalid_float" => Ok(Self::InvalidFloat(FloatIsNan)),
             "decode_error" => {
                 let e = value
                     .get("data")

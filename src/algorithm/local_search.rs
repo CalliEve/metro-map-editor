@@ -168,7 +168,6 @@ pub fn try_station_pos(
 /// Perform a local search on the map.
 /// This will try to find a better position for each station.
 /// This is the Local Search algorithm in the paper.
-/// FIXME: This implementation is very slow
 pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut OccupiedNodes) {
     let all_stations = map
         .get_stations()

@@ -8,7 +8,6 @@ use crate::{
             Button,
             ButtonGroup,
             ButtonProps,
-            NumberInput,
         },
         state::ActionType,
         MapState,
@@ -21,23 +20,6 @@ use crate::{
         Station,
     },
 };
-
-/// Updates the selected action in the map state.
-fn update_action(map_state: RwSignal<MapState>, action: ActionType) {
-    if map_state
-        .get()
-        .get_selected_action()
-        == Some(action)
-    {
-        map_state.update(|state| {
-            state.clear_selected_action();
-        });
-    } else {
-        map_state.update(|state| {
-            state.set_selected_action(action);
-        });
-    }
-}
 
 /// The sidebar component with all the tools on there for editing the canvas.
 #[component]

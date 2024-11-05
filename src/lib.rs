@@ -25,11 +25,11 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
-// FIXME: Remove this once the issue with local search has been fixed and it's back in use
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_assignments)]
+// FIXME: Remove this once the issue with local search has been fixed and it's
+// back in use #![allow(dead_code)]
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
+// #![allow(unused_assignments)]
 
 // Import the necessary modules, these are more public than would be expected,
 // but this is needed to access them for testing.

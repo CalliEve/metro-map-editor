@@ -2,10 +2,6 @@
 use std::{
     f64::consts::PI,
     fmt::Display,
-    sync::atomic::{
-        AtomicU64,
-        Ordering as AtomicOrdering,
-    },
 };
 
 use itertools::Itertools;

@@ -50,7 +50,7 @@ pub fn run_heatmap() {
     let heatmap = create_heatmap::create_heatmap(settings, map, occupied);
 
     let heatmap_file = format!(
-        "{}_heatmap.json",
+        "research_notebooks/{}_heatmap.json",
         map_file
             .split('.')
             .next()

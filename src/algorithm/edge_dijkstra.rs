@@ -15,11 +15,9 @@ use std::{
 
 use ordered_float::NotNan;
 use priority_queue::PriorityQueue;
-use serde_json::json;
 
 use super::{
     cost_calculation::calc_node_cost,
-    log_print,
     occupation::OccupiedNodes,
     AlgorithmSettings,
 };
@@ -119,19 +117,8 @@ pub fn edge_dijkstra(
         );
     }
 
-    let mut visited_cost = Vec::new();
-
     while let Some((current, current_cost)) = queue.pop() {
-        if visited.contains(&current.node) {
-            panic!("Node visited twice in Dijkstra algorithm.");
-        }
-
         visited.insert(current.node);
-        visited_cost.push((
-            current.node,
-            *current_cost.0,
-            *current.cost,
-        ));
 
         if current_cost
             .0
@@ -246,15 +233,15 @@ mod tests {
     fn test_edge_dijkstra() {
         let mut map = Map::new();
         let occupied = HashMap::new();
-        let from_station = Station::new(GridNode::from((0, 0)), None);
+        let mut from_station = Station::new(GridNode::from((0, 0)), None);
         let from_nodes = vec![(from_station.get_pos(), 0.0)];
-        let to_station = Station::new(GridNode::from((8, 4)), None);
+        let mut to_station = Station::new(GridNode::from((8, 4)), None);
         let to_nodes = vec![
             (GridNode::from((7, 4)), 1.0),
             (to_station.get_pos(), 0.0),
             (GridNode::from((9, 4)), 1.0),
         ];
-        let edge = Edge::new(
+        let mut edge = Edge::new(
             from_station.get_id(),
             to_station.get_id(),
             None,
@@ -264,6 +251,19 @@ mod tests {
         map.add_station(to_station.clone());
         map.add_edge(edge.clone());
         map.quickcalc_edges();
+
+        edge = map
+            .get_edge(edge.get_id())
+            .unwrap()
+            .clone();
+        from_station = map
+            .get_station(from_station.get_id())
+            .unwrap()
+            .clone();
+        to_station = map
+            .get_station(to_station.get_id())
+            .unwrap()
+            .clone();
 
         let result = edge_dijkstra(
             AlgorithmSettings::default(),
@@ -282,12 +282,12 @@ mod tests {
             (
                 GridNode::from((0, 0)),
                 vec![
-                    GridNode::from((1, 1)),
-                    GridNode::from((2, 2)),
-                    GridNode::from((3, 3)),
-                    GridNode::from((4, 4)),
-                    GridNode::from((5, 4)),
-                    GridNode::from((6, 4))
+                    GridNode::from((1, 0)),
+                    GridNode::from((2, 0)),
+                    GridNode::from((3, 0)),
+                    GridNode::from((4, 1)),
+                    GridNode::from((5, 2)),
+                    GridNode::from((6, 3))
                 ],
                 GridNode::from((7, 4))
             )

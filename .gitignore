@@ -72,5 +72,3 @@ package.json
 .vscode/
 
 .venv/
-
-*_heatmap.json

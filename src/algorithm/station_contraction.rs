@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 
-use itertools::Itertools;
 use leptos::logging;
 
 use super::{
@@ -399,12 +398,6 @@ pub fn expand_stations(
             .get_station(edge.get_from())
             .ok_or(Error::other(
                 "Edge with contracted stations has no start station",
-            ))?
-            .clone();
-        let end_station = map
-            .get_station(edge.get_to())
-            .ok_or(Error::other(
-                "Edge with contracted stations has no end station",
             ))?
             .clone();
 

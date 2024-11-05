@@ -19,7 +19,6 @@ use crate::{
         SelectedLine,
         SelectedStation,
     },
-    unwrap_or_return,
 };
 
 /// The type of operation that is currently selected.

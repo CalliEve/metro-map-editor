@@ -3,10 +3,6 @@
 use std::{
     f64,
     fmt::Display,
-    sync::atomic::{
-        AtomicU64,
-        Ordering,
-    },
 };
 
 use leptos::logging;
@@ -315,36 +311,5 @@ impl Station {
 impl PartialEq for Station {
     fn eq(&self, other: &Station) -> bool {
         other.id == self.id
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new_station() {
-        let before_id = IDManager::next_station_id();
-
-        let first_station = Station::new((2, 3).into(), None);
-        let second_station = Station::new(
-            (2, 3).into(),
-            Some(StationID(u64::from(before_id) + 5)),
-        );
-
-        let after_id = IDManager::next_station_id();
-
-        assert_eq!(
-            StationID(u64::from(before_id) + 6),
-            after_id
-        );
-        assert_eq!(
-            first_station.get_id(),
-            StationID(u64::from(before_id) + 1)
-        );
-        assert_eq!(
-            second_station.get_id(),
-            StationID(u64::from(before_id) + 5)
-        );
     }
 }

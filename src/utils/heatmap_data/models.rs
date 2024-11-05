@@ -1,4 +1,5 @@
-//! Contains the models for containing the heatmap data and serializing it to JSON.
+//! Contains the models for containing the heatmap data and serializing it to
+//! JSON.
 
 use std::collections::HashMap;
 
