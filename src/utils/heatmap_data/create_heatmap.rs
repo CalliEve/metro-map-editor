@@ -1,3 +1,6 @@
+//! Module containing the functions to create the heatmap data for all stations
+//! in the given [`Map`].
+
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -13,7 +16,6 @@ use crate::{
         total_distance,
         try_station_pos,
         AlgorithmSettings,
-        OccupiedNode,
         OccupiedNodes,
     },
     models::{
@@ -28,8 +30,7 @@ use crate::{
 /// station location.
 fn get_possible_positions(station_pos: GridNode) -> Vec<GridNode> {
     (-3..=3)
-        .into_iter()
-        .cartesian_product((-3..=3).into_iter())
+        .cartesian_product(-3..=3)
         .map(|(x, y)| GridNode(station_pos.0 + x, station_pos.1 + y))
         .collect()
 }
@@ -38,7 +39,7 @@ fn get_possible_positions(station_pos: GridNode) -> Vec<GridNode> {
 fn get_neighbor_data(map: &Map, station: &Station) -> Vec<NeighborData> {
     station
         .get_edges()
-        .into_iter()
+        .iter()
         .filter_map(|e_id| map.get_edge(*e_id))
         .filter_map(|e| e.opposite(station.get_id()))
         .filter_map(|s_id| map.get_station(s_id))
@@ -73,7 +74,7 @@ fn create_station_heatmap(
     settings: AlgorithmSettings,
     map: &Map,
     station: &Station,
-    occupied: OccupiedNodes,
+    occupied: &OccupiedNodes,
 ) -> StationHeatMap {
     let possible_positions = get_possible_positions(station.get_pos());
 
@@ -96,8 +97,7 @@ fn create_station_heatmap(
         .get_pos()
         .get_neighbors();
 
-    neighbor_nodes
-        .sort_by(|a, b| total_distance(map, *a, &station).cmp(&total_distance(map, *b, &station)));
+    neighbor_nodes.sort_by_key(|a| total_distance(map, *a, station));
 
     StationHeatMap {
         station_id: station.get_id(),
@@ -107,7 +107,7 @@ fn create_station_heatmap(
         neighbors: get_neighbor_data(map, station),
         current_og_pos: occupied
             .get(&station.get_original_pos())
-            .cloned(),
+            .copied(),
         average_closest_coords: neighbor_nodes
             .into_iter()
             .take(4)
@@ -118,21 +118,14 @@ fn create_station_heatmap(
 /// Create the heatmap data for all stations in the map.
 pub fn create_heatmap(
     settings: AlgorithmSettings,
-    map: Map,
-    occupied: OccupiedNodes,
+    map: &Map,
+    occupied: &OccupiedNodes,
 ) -> HeatmapData {
     let res = map
         .clone()
         .get_stations()
         .par_iter()
-        .map(|station| {
-            create_station_heatmap(
-                settings,
-                &map,
-                station,
-                occupied.clone(),
-            )
-        })
+        .map(|station| create_station_heatmap(settings, map, station, occupied))
         .collect();
 
     HeatmapData {
