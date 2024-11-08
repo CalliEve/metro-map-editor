@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::Itertools;
 use rayon::prelude::*;
 
@@ -8,8 +10,10 @@ use super::models::{
 };
 use crate::{
     algorithm::{
+        total_distance,
         try_station_pos,
         AlgorithmSettings,
+        OccupiedNode,
         OccupiedNodes,
     },
     models::{
@@ -23,9 +27,9 @@ use crate::{
 /// Get the 5x5 grid of possible positions for the station around the given
 /// station location.
 fn get_possible_positions(station_pos: GridNode) -> Vec<GridNode> {
-    (-2..=2)
+    (-3..=3)
         .into_iter()
-        .cartesian_product((-2..=2).into_iter())
+        .cartesian_product((-3..=3).into_iter())
         .map(|(x, y)| GridNode(station_pos.0 + x, station_pos.1 + y))
         .collect()
 }
@@ -44,6 +48,7 @@ fn get_neighbor_data(map: &Map, station: &Station) -> Vec<NeighborData> {
                 distance: neighbor
                     .get_pos()
                     .diagonal_distance_to(station.get_pos()),
+                position: neighbor.get_pos(),
                 angle: calculate_angle(
                     GridNode(
                         station
@@ -72,7 +77,7 @@ fn create_station_heatmap(
 ) -> StationHeatMap {
     let possible_positions = get_possible_positions(station.get_pos());
 
-    let heatmap = possible_positions
+    let heatmap: HashMap<String, f64> = possible_positions
         .into_iter()
         .filter_map(|pos| {
             try_station_pos(
@@ -87,12 +92,26 @@ fn create_station_heatmap(
         })
         .collect();
 
+    let mut neighbor_nodes = station
+        .get_pos()
+        .get_neighbors();
+
+    neighbor_nodes
+        .sort_by(|a, b| total_distance(map, *a, &station).cmp(&total_distance(map, *b, &station)));
+
     StationHeatMap {
         station_id: station.get_id(),
         pos: station.get_pos(),
         original_pos: station.get_original_pos(),
         heatmap,
         neighbors: get_neighbor_data(map, station),
+        current_og_pos: occupied
+            .get(&station.get_original_pos())
+            .cloned(),
+        average_closest_coords: neighbor_nodes
+            .into_iter()
+            .take(4)
+            .collect(),
     }
 }
 

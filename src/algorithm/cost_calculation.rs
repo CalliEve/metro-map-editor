@@ -231,8 +231,12 @@ fn match_angle_cost(angle: f64) -> Result<f64> {
 /// Calculate the cost of the angle between three nodes.
 /// The second point is assumed to be the middle node where the angle is
 /// located.
-fn calc_angle_cost(first: GridNode, second: GridNode, third: GridNode) -> Result<f64> {
-    let angle = calculate_angle(first, second, third);
+fn calc_angle_cost(first: GridNode, second: GridNode, third: GridNode, round: bool) -> Result<f64> {
+    let angle = if round {
+        (calculate_angle(first, second, third) / 45.0).floor() * 45.0
+    } else {
+        calculate_angle(first, second, third)
+    };
 
     match_angle_cost(angle).map_err(|_| {
         Error::other(format!(
@@ -301,9 +305,7 @@ fn calc_station_exit_cost(
             .len()
             <= 1
     {
-        return match_angle_cost(
-            (calculate_angle(station_node, node, target_node) / 45.0).floor() * 45.0,
-        );
+        return calc_angle_cost(station_node, node, target_node, true);
     }
 
     let mut biggest_overlap = None;
@@ -352,7 +354,13 @@ fn calc_station_exit_cost(
         // mandatory, so halve the angle penalty.
         for edge_node in opposite_edge.get_edge_ends() {
             if neighbor_nodes.contains(&edge_node) {
-                return calc_angle_cost(edge_node, station.get_pos(), node).map(|c| c / 2.0);
+                return calc_angle_cost(
+                    edge_node,
+                    station.get_pos(),
+                    node,
+                    false,
+                )
+                .map(|c| c / 2.0);
             }
         }
 
@@ -365,6 +373,7 @@ fn calc_station_exit_cost(
                     opp_station.get_pos(),
                     station.get_pos(),
                     node,
+                    true,
                 );
             }
         }
@@ -458,7 +467,7 @@ pub fn calc_node_cost(
         return Ok(f64::INFINITY);
     }
 
-    calc_angle_cost(previous[0], previous[1], node) // cost of angle between previous nodes
+    calc_angle_cost(previous[0], previous[1], node, false) // cost of angle between previous nodes
         .map(|c| c + adj_cost) // add the cost of adjacent stations
         .map(|c| c + settings.move_cost) // standard cost of a move
 }
@@ -669,67 +678,67 @@ mod tests {
         let first_45 = GridNode::from((1, 0));
         let second_45 = GridNode::from((1, 1));
         let third_45 = GridNode::from((2, 0));
-        let result_45 = calc_angle_cost(first_45, second_45, third_45);
+        let result_45 = calc_angle_cost(first_45, second_45, third_45, false);
         assert_eq!(result_45, Ok(5.0));
 
         let first_90 = GridNode::from((0, 0));
         let second_90 = GridNode::from((1, 1));
         let third_90 = GridNode::from((2, 0));
-        let result_90 = calc_angle_cost(first_90, second_90, third_90);
+        let result_90 = calc_angle_cost(first_90, second_90, third_90, false);
         assert_eq!(result_90, Ok(2.5));
 
         let first_135 = GridNode::from((0, 1));
         let second_135 = GridNode::from((1, 1));
         let third_135 = GridNode::from((2, 0));
-        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        let result_135 = calc_angle_cost(first_135, second_135, third_135, false);
         assert_eq!(result_135, Ok(0.5));
 
         let first_180 = GridNode::from((0, 2));
         let second_180 = GridNode::from((1, 1));
         let third_180 = GridNode::from((2, 0));
-        let result_180 = calc_angle_cost(first_180, second_180, third_180);
+        let result_180 = calc_angle_cost(first_180, second_180, third_180, false);
         assert_eq!(result_180, Ok(0.0));
 
         let first_135 = GridNode::from((1, 2));
         let second_135 = GridNode::from((1, 1));
         let third_135 = GridNode::from((2, 0));
-        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        let result_135 = calc_angle_cost(first_135, second_135, third_135, false);
         assert_eq!(result_135, Ok(0.5));
 
         let first_90 = GridNode::from((2, 2));
         let second_90 = GridNode::from((1, 1));
         let third_90 = GridNode::from((2, 0));
-        let result_90 = calc_angle_cost(first_90, second_90, third_90);
+        let result_90 = calc_angle_cost(first_90, second_90, third_90, false);
         assert_eq!(result_90, Ok(2.5));
 
         let first_45 = GridNode::from((2, 1));
         let second_45 = GridNode::from((1, 1));
         let third_45 = GridNode::from((2, 0));
-        let result_45 = calc_angle_cost(first_45, second_45, third_45);
+        let result_45 = calc_angle_cost(first_45, second_45, third_45, false);
         assert_eq!(result_45, Ok(5.0));
 
         let first_180 = GridNode::from((2, 0));
         let second_180 = GridNode::from((1, 1));
         let third_180 = GridNode::from((0, 2));
-        let result_180 = calc_angle_cost(first_180, second_180, third_180);
+        let result_180 = calc_angle_cost(first_180, second_180, third_180, false);
         assert_eq!(result_180, Ok(0.0));
 
         let first_135 = GridNode::from((2, 0));
         let second_135 = GridNode::from((1, 1));
         let third_135 = GridNode::from((1, 2));
-        let result_135 = calc_angle_cost(first_135, second_135, third_135);
+        let result_135 = calc_angle_cost(first_135, second_135, third_135, false);
         assert_eq!(result_135, Ok(0.5));
 
         let first_90 = GridNode::from((2, 0));
         let second_90 = GridNode::from((1, 1));
         let third_90 = GridNode::from((2, 2));
-        let result_90 = calc_angle_cost(first_90, second_90, third_90);
+        let result_90 = calc_angle_cost(first_90, second_90, third_90, false);
         assert_eq!(result_90, Ok(2.5));
 
         let first_45 = GridNode::from((2, 0));
         let second_45 = GridNode::from((1, 1));
         let third_45 = GridNode::from((2, 1));
-        let result_45 = calc_angle_cost(first_45, second_45, third_45);
+        let result_45 = calc_angle_cost(first_45, second_45, third_45, false);
         assert_eq!(result_45, Ok(5.0));
     }
 

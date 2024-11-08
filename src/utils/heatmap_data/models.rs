@@ -8,9 +8,12 @@ use serde::{
     Serialize,
 };
 
-use crate::models::{
-    GridNode,
-    StationID,
+use crate::{
+    algorithm::OccupiedNode,
+    models::{
+        GridNode,
+        StationID,
+    },
 };
 
 /// Contains data on a neighbor of a station.
@@ -23,6 +26,8 @@ pub struct NeighborData {
     /// The angle to the neighbor station calculated from an imaginary line
     /// straight up from the station.
     pub angle: f64,
+    /// The location of the neighbor station.
+    pub position: GridNode,
 }
 
 /// Contains data on the station and its heatmap.
@@ -38,6 +43,11 @@ pub struct StationHeatMap {
     pub heatmap: HashMap<String, f64>,
     /// Data on the neighbors of the station.
     pub neighbors: Vec<NeighborData>,
+    /// What is currently occupying the original position of the station.
+    pub current_og_pos: Option<OccupiedNode>,
+    /// The 4 neighbor nodes of the station that are on average closest to the
+    /// neighboring stations, sorted closest to furthest.
+    pub average_closest_coords: Vec<GridNode>,
 }
 
 /// Contains the heatmap data for all stations.

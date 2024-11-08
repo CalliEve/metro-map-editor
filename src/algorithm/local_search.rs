@@ -47,7 +47,7 @@ impl StationPos {
 
 /// Calculate the total manhattan distance of a point to all neighboring
 /// stations of the given station.
-fn total_distance(map: &Map, node: GridNode, station: &Station) -> i32 {
+pub fn total_distance(map: &Map, node: GridNode, station: &Station) -> i32 {
     station
         .get_edges()
         .iter()

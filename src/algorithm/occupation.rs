@@ -3,6 +3,11 @@
 
 use std::collections::HashMap;
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 use crate::models::{
     EdgeID,
     GridNode,
@@ -15,7 +20,7 @@ pub type OccupiedNodes = HashMap<GridNode, OccupiedNode>;
 
 /// Describes the contents of an occupied node of the map grid.
 /// Either shows the node occupied by a station or by an edge.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum OccupiedNode {
     /// The node is occupied by a station.
     Station(StationID),

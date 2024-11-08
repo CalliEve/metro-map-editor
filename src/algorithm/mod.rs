@@ -19,7 +19,10 @@ mod utils;
 
 pub use a_star::run_a_star;
 #[cfg(feature = "heatmap")]
-pub use local_search::try_station_pos;
+pub use local_search::{
+    total_distance,
+    try_station_pos,
+};
 #[cfg(feature = "heatmap")]
 pub use occupation::{
     OccupiedNode,
