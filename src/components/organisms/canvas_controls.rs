@@ -153,6 +153,7 @@ pub fn CanvasControls() -> impl IntoView {
 
         algorithm_req.dispatch(req);
     };
+
     let abort_algorithm = move |_| {
         if algorithm_req
             .pending()
@@ -178,6 +179,18 @@ pub fn CanvasControls() -> impl IntoView {
         class
     };
 
+    let overlay_original_map = move |_| {
+        map_state.update(|state| {
+            state.set_original_overlay_enabled(!state.is_original_overlay_enabled());
+        });
+    };
+
+    let is_original_overlay_active = Signal::derive(move || {
+        map_state
+            .get()
+            .is_original_overlay_enabled()
+    });
+
     view! {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
@@ -195,6 +208,13 @@ pub fn CanvasControls() -> impl IntoView {
                 <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true><span class="text-red-300">x</span></Button>
             </div>
         </Show>
+        <div class="absolute right-24 top-5 group">
+            <Button text="show original\nmap overlay" on_click=Box::new(overlay_original_map) overlay=true active=is_original_overlay_active>
+                <svg class="text-blue-500 -m-1" width="20" height="20" viewBox="0 0 32 32" stroke-width="2.1" stroke="currentColor" fill="none">
+                    <path d="M28,8H24V4a2.0023,2.0023,0,0,0-2-2H4A2.0023,2.0023,0,0,0,2,4V22a2.0023,2.0023,0,0,0,2,2H8v4a2.0023,2.0023,0,0,0,2,2H28a2.0023,2.0023,0,0,0,2-2V10A2.0023,2.0023,0,0,0,28,8ZM4,22V4H22V8H10a2.0023,2.0023,0,0,0-2,2V22Zm18,0H19.4141L10,12.586V10h2.5859l9.4153,9.4156ZM10,15.4141,16.5859,22H10ZM22.001,16.587,15.4141,10H22ZM10,28V24H22a2.0023,2.0023,0,0,0,2-2V10h4V28Z" transform="translate(0 0)"/>
+                </svg>
+            </Button>
+        </div>
         <div class="absolute right-5 bottom-20">
             <Button text="zoom in" on_click=Box::new(zoom_in) overlay=true>+</Button>
         </div>

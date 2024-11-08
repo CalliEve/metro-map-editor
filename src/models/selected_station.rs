@@ -94,7 +94,7 @@ impl SelectedStation {
     /// Draw the selected station to the given canvas.
     pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
         self.station
-            .draw(canvas, state);
+            .draw(canvas, state, 0.5);
 
         canvas.set_line_width(3.0);
         canvas.set_stroke_style_str("black");

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
      http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
   <key id="x" for="node" attr.name="x coordinate" attr.type="int"/>
   <key id="y" for="node" attr.name="y coordinate" attr.type="int"/>
@@ -12,26 +11,26 @@
 
   <graph id="G" edgedefault="undirected">
     <node id="n0">
-      <data key="x">90</data>
-      <data key="y">155</data>
+      <data key="x">10</data>
+      <data key="y">10</data>
       <data key="label">test 1</data>
     </node>
     <node id="n1">
-      <data key="x">150</data>
-      <data key="y">126</data>
+      <data key="x">50.0</data>
+      <data key="y">90.0</data>
       <data key="label">test 2</data>
     </node>
     <node id="n2">
-      <data key="x">210</data>
-      <data key="y">100</data>
+      <data key="x">90.0</data>
+      <data key="y">50.0</data>
       <data key="label">test 3</data>
     </node>
 
     <edge id="e0" source="n0" target="n1">
-			<data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
     <edge id="e1" source="n1" target="n2">
-			<data key="l0">true</data>
+      <data key="l0">true</data>
     </edge>
   </graph>
 </graphml>

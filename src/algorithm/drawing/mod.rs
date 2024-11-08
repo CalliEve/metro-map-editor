@@ -26,9 +26,15 @@ where
 
     draw_grid(&context, state.get_canvas_state());
 
+    if state.is_original_overlay_enabled() {
+        if let Some(original) = state.get_last_loaded() {
+            original.draw(&context, state.get_canvas_state(), 0.3);
+        }
+    }
+
     let map = state.get_map();
 
-    map.draw(&context, state.get_canvas_state());
+    map.draw(&context, state.get_canvas_state(), 1.0);
 
     state
         .get_selected_station()

@@ -363,7 +363,7 @@ impl Edge {
 
     /// Draw the edge to the given canvas.
     #[allow(clippy::too_many_lines)]
-    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState, base_alpha: f64) {
         let from = map
             .get_station(self.get_from())
             .expect("invalid from station id when drawing");
@@ -389,7 +389,7 @@ impl Edge {
             .enumerate()
         {
             canvas.set_line_width(width);
-            canvas.set_global_alpha(1.0);
+            canvas.set_global_alpha(1.0 * base_alpha);
 
             canvas.set_stroke_style_str(&format!(
                 "rgb({} {} {})",
@@ -528,7 +528,7 @@ mod tests {
         map.add_line(line2);
 
         edge.calculate_nodes(&map);
-        edge.draw(&map, &canvas, state);
+        edge.draw(&map, &canvas, state, 1.0);
 
         assert_eq!(
             canvas.get_record("move_to"),

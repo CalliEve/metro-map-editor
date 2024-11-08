@@ -256,7 +256,7 @@ impl Station {
     }
 
     /// Draw the station to the given canvas.
-    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState) {
+    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState, base_alpha: f64) {
         if !state.is_on_canvas(self.get_pos()) {
             return;
         }
@@ -269,11 +269,8 @@ impl Station {
         }
 
         canvas.set_line_width(width);
-        if self.is_ghost {
-            canvas.set_global_alpha(0.5);
-        } else {
-            canvas.set_global_alpha(1.0);
-        }
+        canvas.set_global_alpha(1.0 * base_alpha);
+
         canvas.set_stroke_style_str("black");
         canvas.begin_path();
         canvas

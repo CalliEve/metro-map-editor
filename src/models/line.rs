@@ -425,7 +425,7 @@ impl Line {
     }
 
     /// Draws the line around a station if this line has only a single station.
-    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
+    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState, base_alpha: f64) {
         if self
             .get_stations()
             .len()
@@ -444,7 +444,7 @@ impl Line {
         }
 
         canvas.set_line_width(width);
-        canvas.set_global_alpha(1.0);
+        canvas.set_global_alpha(1.0 * base_alpha);
         canvas.set_stroke_style_str(&format!(
             "rgb({} {} {})",
             self.color
@@ -757,7 +757,7 @@ mod tests {
         let canvas = CanvasContext::new();
         let mut state = CanvasState::new();
         state.set_square_size(5);
-        line.draw(&map, &canvas, state);
+        line.draw(&map, &canvas, state, 1.0);
 
         let offset = 5.0 / PI;
         assert_eq!(
@@ -797,7 +797,7 @@ mod tests {
 
         let canvas = CanvasContext::new();
         let state = CanvasState::new();
-        line.draw(&map, &canvas, state);
+        line.draw(&map, &canvas, state, 1.0);
 
         assert_eq!(canvas.get_record("move_to"), None);
         assert_eq!(canvas.get_record("line_to"), None);

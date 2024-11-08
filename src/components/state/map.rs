@@ -72,6 +72,8 @@ pub struct MapState {
     algorithm_settings: AlgorithmSettings,
     /// The last loaded map.
     last_loaded: Option<Map>,
+    /// If the `last_loaded` map should be overlayed on the current map.
+    original_overlay_enabled: bool,
 }
 
 impl MapState {
@@ -87,6 +89,7 @@ impl MapState {
             canvas: CanvasState::default(),
             algorithm_settings: AlgorithmSettings::default(),
             last_loaded: None,
+            original_overlay_enabled: false,
         }
     }
 
@@ -197,6 +200,17 @@ impl MapState {
     /// A setter method for the last loaded map.
     pub fn set_last_loaded(&mut self, map: Map) {
         self.last_loaded = Some(map);
+    }
+
+    /// A getter method for the original overlay enabled state.
+    #[inline]
+    pub fn is_original_overlay_enabled(&self) -> bool {
+        self.original_overlay_enabled
+    }
+
+    /// A setter method for the original overlay enabled state.
+    pub fn set_original_overlay_enabled(&mut self, enabled: bool) {
+        self.original_overlay_enabled = enabled;
     }
 
     /// A getter method for the state of the canvas.

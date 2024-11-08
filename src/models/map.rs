@@ -312,17 +312,17 @@ impl Map {
     }
 
     /// Draw the map to the given canvas.
-    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState) {
+    pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState, base_alpha: f64) {
         for edge in self.get_edges() {
-            edge.draw(self, canvas, state);
+            edge.draw(self, canvas, state, base_alpha);
         }
 
         for line in self.get_lines() {
-            line.draw(self, canvas, state);
+            line.draw(self, canvas, state, base_alpha);
         }
 
         for station in self.get_stations() {
-            station.draw(canvas, state);
+            station.draw(canvas, state, base_alpha);
         }
     }
 

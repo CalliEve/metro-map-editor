@@ -168,8 +168,7 @@ fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Result<V
 }
 
 /// Translates the [`GraphMlMap`] to a [`Map`]
-pub fn graphml_to_map(mut graph: GraphMlMap, mut state: CanvasState) -> Result<Map> {
-    state.set_zoom_factor(1.0);
+pub fn graphml_to_map(mut graph: GraphMlMap, state: CanvasState) -> Result<Map> {
     let mut map = Map::new();
 
     // First add a Line for every edge defined

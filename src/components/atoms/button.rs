@@ -42,6 +42,8 @@ pub fn Button(
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
+    let has_children = children.is_some();
+
     let color = if danger {
         "red"
     } else if overlay {
@@ -76,41 +78,41 @@ pub fn Button(
         if outlined {
             class += &format!(
                 " border-solid border-4 text-{color}-{base} \
-            border-{color}-{base} hover:text-{color}-{base_hover} \
-            hover:border-{color}-{base_hover} \
-            active:text-{color}-{base_active} \
-            active:border-{color}-{base_active} \
-            dark:text-{color}-{dark} \
-            dark:border-{color}-{dark} \
-            dark:hover:text-{color}-{dark_hover} \
-            dark:hover:border-{color}-{dark_hover} \
-            dark:active:text-{color}-{dark_active} \
-            dark:active:border-{color}-{dark_active}"
+                border-{color}-{base} hover:text-{color}-{base_hover} \
+                hover:border-{color}-{base_hover} \
+                active:text-{color}-{base_active} \
+                active:border-{color}-{base_active} \
+                dark:text-{color}-{dark} \
+                dark:border-{color}-{dark} \
+                dark:hover:text-{color}-{dark_hover} \
+                dark:hover:border-{color}-{dark_hover} \
+                dark:active:text-{color}-{dark_active} \
+                dark:active:border-{color}-{dark_active}"
             );
 
             if active.get() {
                 class += &format!(
                     " text-{color}-{base_active} \
-            border-{color}-{base_active} \
-            dark:text-{color}-{dark_active} \
-            dark:border-{color}-{dark_active}"
+                border-{color}-{base_active} \
+                dark:text-{color}-{dark_active} \
+                dark:border-{color}-{dark_active}"
                 );
             } else if can_focus {
                 class += &format!(
                     " focus:text-{color}-{base_active} \
-            focus:border-{color}-{base_active} \
-            dark:focus:text-{color}-{dark_active} \
-            dark:focus:border-{color}-{dark_active}"
+                focus:border-{color}-{base_active} \
+                dark:focus:text-{color}-{dark_active} \
+                dark:focus:border-{color}-{dark_active}"
                 );
             }
         } else {
             class += &format!(
                 " text-white bg-{color}-{base} \
-            hover:bg-{color}-{base_hover} \
-            active:bg-{color}-{base_active} \
-            dark:bg-{color}-{dark} \
-            dark:hover:bg-{color}-{dark_hover} \
-            dark:active:bg-{color}-{dark_active}"
+                hover:bg-{color}-{base_hover} \
+                active:bg-{color}-{base_active} \
+                dark:bg-{color}-{dark} \
+                dark:hover:bg-{color}-{dark_hover} \
+                dark:active:bg-{color}-{dark_active}"
             );
 
             if active.get() {
@@ -123,14 +125,8 @@ pub fn Button(
         class
     };
 
-    let has_children = children.is_some();
-
-    let mut hover_class = "hidden group-hover:block text-xs absolute z-10 ".to_owned();
-    if bigger {
-        hover_class += "-top-8 -left-2.5";
-    } else {
-        hover_class += "-top-7 left-0.5";
-    }
+    let hover_class =
+        "hidden group-hover:block rounded text-xs absolute z-10 width-fit p-1.5 bg-neutral-800 text-center bottom-[110%] right-0 whitespace-pre";
 
     view! {
         <button
@@ -140,9 +136,11 @@ pub fn Button(
             on:click=on_click>
             <>
                 {children.map_or(Fragment::from(Text::new(text.into()).into_view()), |c| c())}
-                <div class=hover_class>
-                    {has_children.then_some(text)}
-                </div>
+                <Show when=move || has_children>
+                    <span class=hover_class>
+                        {text}
+                    </span>
+                </Show>
             </>
         </button>
     }
