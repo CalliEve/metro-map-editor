@@ -25,6 +25,8 @@ pub struct SelectedStation {
     /// The stations before and after the station that was grabbed if
     /// applicable.
     before_after: (Vec<StationID>, Vec<StationID>),
+    /// The position the user is moving the station from.
+    moved_from: Option<GridNode>,
 }
 
 impl SelectedStation {
@@ -32,6 +34,7 @@ impl SelectedStation {
     pub fn new(mut station: Station) -> Self {
         station.set_is_ghost(true);
         Self {
+            moved_from: Some(station.get_pos()),
             station,
             before_after: (Vec::new(), Vec::new()),
         }
@@ -44,6 +47,7 @@ impl SelectedStation {
         Self {
             station,
             before_after: (Vec::new(), Vec::new()),
+            moved_from: None,
         }
     }
 
@@ -91,12 +95,88 @@ impl SelectedStation {
         self.station
     }
 
-    /// Draw the selected station to the given canvas.
-    pub fn draw(&self, map: &Map, canvas: &CanvasContext<'_>, state: CanvasState) {
-        self.station
-            .draw(canvas, state, 0.5);
+    /// If the station has been moved to a new position.
+    pub fn has_moved(&self) -> bool {
+        self.moved_from
+            != Some(
+                self.station
+                    .get_pos(),
+            )
+    }
 
-        canvas.set_line_width(3.0);
+    /// If the station is newly created.
+    pub fn is_new(&self) -> bool {
+        self.moved_from
+            .is_none()
+    }
+
+    /// Get the position the station is being dragged from.
+    pub fn get_original_position(&self) -> Option<GridNode> {
+        self.moved_from
+    }
+
+    /// Draw the selected station to the given canvas.
+    pub fn draw(
+        &self,
+        map: &Map,
+        canvas: &CanvasContext<'_>,
+        state: CanvasState,
+        all_selected: &[Self],
+    ) {
+        let canvas_pos = self
+            .station
+            .get_canvas_pos(state);
+
+        let mut selected_width = state.drawn_square_size() / 3.5;
+        if selected_width < 2.5 {
+            selected_width = 2.5;
+        }
+
+        // draw selected highlight
+        canvas.set_line_width(selected_width);
+        canvas.set_global_alpha(0.2);
+        canvas.set_stroke_style_str("darkblue");
+        canvas.begin_path();
+        canvas
+            .arc(
+                canvas_pos.0,
+                canvas_pos.1,
+                state.drawn_square_size() / 3.0,
+                0.0,
+                2.0 * std::f64::consts::PI,
+            )
+            .unwrap();
+        canvas.stroke();
+
+        // draw self-ghost
+        if self.has_moved() {
+            let mut width = state.drawn_square_size() / 10.0 + 1.0;
+            if width < 2.0 {
+                width = 2.0;
+            }
+
+            canvas.set_line_width(width);
+            canvas.set_global_alpha(0.5);
+            canvas.set_stroke_style_str("black");
+            canvas.begin_path();
+            canvas
+                .arc(
+                    canvas_pos.0,
+                    canvas_pos.1,
+                    state.drawn_square_size() / 3.0,
+                    0.0,
+                    2.0 * std::f64::consts::PI,
+                )
+                .unwrap();
+            canvas.stroke();
+        }
+
+        let mut edge_width = state.drawn_square_size() / 10.0 + 0.5;
+        if edge_width < 1.0 {
+            edge_width = 1.0;
+        }
+
+        canvas.set_line_width(edge_width);
         canvas.set_stroke_style_str("black");
         canvas.set_global_alpha(0.5);
         canvas.begin_path();
@@ -105,6 +185,17 @@ impl SelectedStation {
             .get_before_after()
             .0
         {
+            if all_selected
+                .iter()
+                .any(|d| {
+                    d.get_station()
+                        .get_id()
+                        == *before_id
+                })
+            {
+                continue;
+            }
+
             let before = map
                 .get_station(*before_id)
                 .expect("invalid id");
@@ -127,9 +218,19 @@ impl SelectedStation {
             .get_before_after()
             .1
         {
-            let after = map
-                .get_station(*after_id)
-                .expect("invalid id");
+            let after = if let Some(after) = all_selected
+                .iter()
+                .find(|d| {
+                    d.get_station()
+                        .get_id()
+                        == *after_id
+                }) {
+                after.get_station()
+            } else {
+                map.get_station(*after_id)
+                    .expect("invalid id")
+            };
+
             draw_edge(
                 self.station
                     .get_pos(),
@@ -146,5 +247,11 @@ impl SelectedStation {
         }
 
         canvas.stroke();
+    }
+}
+
+impl PartialEq for SelectedStation {
+    fn eq(&self, other: &SelectedStation) -> bool {
+        self.station == other.station
     }
 }

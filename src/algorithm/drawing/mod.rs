@@ -34,11 +34,19 @@ where
 
     let map = state.get_map();
 
-    map.draw(&context, state.get_canvas_state(), 1.0);
-
     state
-        .get_selected_station()
-        .inspect(|d| d.draw(map, &context, state.get_canvas_state()));
+        .get_selected_stations()
+        .iter()
+        .for_each(|d| {
+            d.draw(
+                map,
+                &context,
+                state.get_canvas_state(),
+                state.get_selected_stations(),
+            )
+        });
+
+    map.draw(&context, state.get_canvas_state(), 1.0);
 
     state
         .get_selected_line()

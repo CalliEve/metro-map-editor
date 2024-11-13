@@ -5,7 +5,10 @@ use std::sync::atomic::{
     Ordering,
 };
 
-use ev::UiEvent;
+use ev::{
+    KeyboardEvent,
+    UiEvent,
+};
 use leptos::{
     html::Canvas as HtmlCanvas,
     *,
@@ -13,6 +16,7 @@ use leptos::{
 use wasm_bindgen::{
     closure::Closure,
     JsCast,
+    JsValue,
 };
 
 use crate::{
@@ -28,7 +32,10 @@ use crate::{
         SelectedLine,
         SelectedStation,
     },
-    utils::line_sections::trace_line_section,
+    utils::{
+        canvas_offset_to_grid_offset,
+        line_sections::trace_line_section,
+    },
 };
 
 /// If the document has fully loaded.
@@ -134,7 +141,7 @@ fn recalculate_edge_nodes(map: &mut Map, edge_id: EdgeID) {
 /// Listener for the [mousedown] event on the canvas.
 ///
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
-fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
+fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     // Actions are only performed on mouseup
     if map_state
         .get_selected_action()
@@ -149,20 +156,25 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
     let canvas_state = map_state.get_canvas_state();
     let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
+    let station_at_node = map.station_at_node(mouse_pos);
+    let edge_at_node = map.edge_at_node(mouse_pos);
 
     // Handle a click while having a new station selected.
     if let Some(selected) = map_state
-        .get_selected_station()
+        .get_selected_stations()
+        .first()
         .cloned()
     {
-        let mut new_station = selected.deselect();
-        new_station.set_pos(mouse_pos);
-        new_station.set_original_pos(mouse_pos);
+        if selected.is_new() {
+            let mut new_station = selected.deselect();
+            new_station.set_pos(mouse_pos);
+            new_station.set_original_pos(mouse_pos);
 
-        map.add_station(new_station);
-        map_state.clear_selected_station();
-        map_state.set_map(map);
-        return;
+            map.add_station(new_station);
+            map_state.clear_selected_stations();
+            map_state.set_map(map);
+            return;
+        }
     }
 
     // Handle a click while having a new line selected
@@ -170,7 +182,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         .get_selected_line()
         .copied()
     {
-        if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
+        if let Some(station_at_pos) = station_at_node {
             let (before, after) = selected_line.get_before_after();
             let mut line = map
                 .get_or_add_line(selected_line.get_line())
@@ -185,12 +197,47 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
         return;
     }
 
-    if let Some(mut selected_station) = map
-        .station_at_node(mouse_pos)
+    // Handle a click on an edge has been selected
+    if let Some(selected_edge) = edge_at_node {
+        if map_state
+            .get_selected_edges()
+            .contains(&selected_edge)
+        {
+            map_state.set_drag_offset(Some((canvas_pos, true)));
+        }
+    }
+    // Handle a click on a station has been selected
+    if let Some(selected_station) = station_at_node {
+        if map_state
+            .get_selected_stations()
+            .iter()
+            .any(|s| {
+                s.get_station()
+                    .get_id()
+                    == selected_station
+            })
+        {
+            map_state.set_drag_offset(Some((canvas_pos, true)));
+        }
+    }
+
+    // Handle a click on a station
+    if let Some(mut selected_station) = station_at_node
         .and_then(|s| map.get_station(s))
         .cloned()
         .map(SelectedStation::new)
     {
+        selected_station
+            .get_station()
+            .print_info();
+
+        if map_state
+            .get_selected_stations()
+            .contains(&selected_station)
+        {
+            return;
+        }
+
         for line in map.get_lines() {
             let (before, after) = line.get_station_neighbors(
                 &map,
@@ -202,14 +249,16 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             selected_station.add_after(after);
         }
 
-        selected_station
-            .get_station()
-            .print_info();
+        if !shift_key {
+            map_state.clear_selected_stations();
+        }
 
-        map_state.set_selected_station(selected_station);
+        map_state.select_station(selected_station);
+        map_state.set_drag_offset(Some((canvas_pos, true)));
         return;
     }
 
+    // Handle a click on a line
     if let Some(selected_line) = map
         .line_at_node(mouse_pos)
         .cloned()
@@ -226,6 +275,37 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent) {
             }
         }
     }
+
+    // Select the clicked edge, unless this was a double click.
+    if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+        if ev.detail() > 1 {
+            return;
+        }
+
+        if map_state
+            .get_selected_edges()
+            .contains(&edge_id)
+        {
+            return;
+        }
+
+        if shift_key {
+            map_state.select_edge(edge_id);
+        } else {
+            map_state.set_selected_edges(vec![edge_id]);
+        }
+
+        map_state.set_drag_offset(Some((canvas_pos, true)));
+        return;
+    }
+
+    // Then we are not dragging anything, but instead possibly the canvas as a whole
+    if map_state
+        .get_drag_offset()
+        .is_none()
+    {
+        map_state.set_drag_offset(Some((canvas_pos, false)));
+    }
 }
 
 /// Listener for the [mouseup] event on the canvas.
@@ -239,12 +319,22 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     let canvas_state = map_state.get_canvas_state();
     let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
+    let station_at_node = map.station_at_node(mouse_pos);
+    let edge_at_node = map.edge_at_node(mouse_pos);
+
+    // if we were dragging, we aren't anymore now.
+    if map_state
+        .get_drag_offset()
+        .is_some()
+    {
+        map_state.set_drag_offset(None);
+    }
 
     // Handle a click while having an operation selected
     if let Some(action_type) = map_state.get_selected_action() {
         match action_type {
             ActionType::RemoveStation => {
-                if let Some(station_id) = map.station_at_node(mouse_pos) {
+                if let Some(station_id) = station_at_node {
                     map.remove_station(station_id);
                 }
             },
@@ -253,29 +343,23 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                     map.remove_line(selected_line.get_id());
                 }
             },
-            ActionType::LockStation => {
-                if let Some(station_id) = map.station_at_node(mouse_pos) {
+            ActionType::Lock => {
+                if let Some(station_id) = station_at_node {
                     map.get_mut_station(station_id)
                         .expect("Found station but id does not exit")
                         .lock();
-                }
-            },
-            ActionType::UnlockStation => {
-                if let Some(station_id) = map.station_at_node(mouse_pos) {
-                    map.get_mut_station(station_id)
-                        .expect("Found station but id does not exit")
-                        .unlock();
-                }
-            },
-            ActionType::LockEdge => {
-                if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+                } else if let Some(edge_id) = edge_at_node {
                     map.get_mut_edge(edge_id)
                         .expect("Found edge but id does not exit")
                         .lock();
                 }
             },
-            ActionType::UnlockEdge => {
-                if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+            ActionType::Unlock => {
+                if let Some(station_id) = station_at_node {
+                    map.get_mut_station(station_id)
+                        .expect("Found station but id does not exit")
+                        .unlock();
+                } else if let Some(edge_id) = edge_at_node {
                     map.get_mut_edge(edge_id)
                         .expect("Found edge but id does not exit")
                         .unlock();
@@ -294,7 +378,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         .get_selected_line()
         .copied()
     {
-        if let Some(station_at_pos) = map.station_at_node(mouse_pos) {
+        if let Some(station_at_pos) = station_at_node {
             let (before, after) = selected_line.get_before_after();
             let mut line = map
                 .get_or_add_line(selected_line.get_line())
@@ -328,64 +412,59 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     }
 
     // Handle a mouseup while having a station selected
-    if let Some(selected_station) = map_state
-        .get_selected_station()
-        .cloned()
-        .map(SelectedStation::deselect)
+    if !map_state
+        .get_selected_stations()
+        .is_empty()
+        && !shift_key
     {
-        let mut edge_ids = Vec::new();
-        for station in map.get_mut_stations() {
-            if *station == selected_station {
-                if station.get_pos() == selected_station.get_pos() {
+        for selected_station in map_state
+            .get_selected_stations()
+            .iter()
+            .cloned()
+            .map(SelectedStation::deselect)
+        {
+            let mut edge_ids = Vec::new();
+            for station in map.get_mut_stations() {
+                if *station == selected_station {
+                    if station.get_pos() == selected_station.get_pos() {
+                        break;
+                    }
+
+                    station.set_pos(selected_station.get_pos());
+                    station.set_original_pos(selected_station.get_pos());
+                    station.lock();
+                    edge_ids = station
+                        .get_edges()
+                        .to_vec();
                     break;
                 }
+            }
 
-                station.set_pos(selected_station.get_pos());
-                station.set_original_pos(selected_station.get_pos());
-                station.lock();
-                edge_ids = station
-                    .get_edges()
-                    .to_vec();
-                break;
+            for edge_id in edge_ids {
+                recalculate_edge_nodes(&mut map, edge_id);
             }
         }
 
-        for edge_id in edge_ids {
-            recalculate_edge_nodes(&mut map, edge_id);
-        }
-
         map_state.set_map(map);
-        map_state.clear_selected_station();
+        map_state.clear_selected_stations();
         return;
     }
 
-    // Select the clicked edge, unless this was a double click.
-    if let Some(edge_id) = map.edge_at_node(mouse_pos) {
-        if ev.detail() > 1 {
-            return;
-        }
-
-        for selected_id in map_state.get_selected_edges() {
-            map.get_mut_edge(*selected_id)
-                .expect("selected edge should exist")
-                .deselect();
-        }
-
-        map_state.set_selected_edges(vec![edge_id]);
-        map.get_mut_edge(edge_id)
-            .expect("edge should exist")
-            .select();
-
-        map_state.set_map(map);
-        return;
-    }
-
-    // Someone clicked on an empty node, deselect the currently selected edges
-    if !map_state
+    // Someone clicked on an empty node, deselect the currently selected edges and
+    // if stations are also selected, them too.
+    if ((!map_state
         .get_selected_edges()
         .is_empty()
+        && edge_at_node.is_none())
+        || (!map_state
+            .get_selected_stations()
+            .is_empty()
+            && station_at_node.is_none()))
+        && !shift_key
     {
         map_state.clear_selected_edges();
+        map_state.clear_selected_stations();
+        return;
     }
 }
 
@@ -407,28 +486,66 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
         return;
     }
 
-    // Handle move of selected station
-    let Some(mut selected) = map_state
-        .get_selected_station()
-        .cloned()
-    else {
-        return;
-    };
+    // Handle move of selected stations
+    if let Some((drag_origin, true)) = map_state.get_drag_offset() {
+        let grid_offset = canvas_offset_to_grid_offset(
+            (
+                canvas_pos.0 - drag_origin.0,
+                canvas_pos.1 - drag_origin.1,
+            ),
+            map_state
+                .get_canvas_state()
+                .drawn_square_size(),
+        );
 
-    if mouse_pos == selected.get_pos() {
+        for selected in map_state.get_mut_selected_stations() {
+            if let Some(original_pos) = selected.get_original_position() {
+                selected.update_pos(original_pos + grid_offset.into());
+            } else {
+                selected.update_pos(mouse_pos);
+            }
+        }
+
+        map_state_signal.set(map_state);
         return;
     }
 
-    selected.update_pos(mouse_pos);
-    map_state.set_selected_station(selected);
-    map_state_signal.set(map_state);
+    if let Some((drag_origin, false)) = map_state.get_drag_offset() {
+        let grid_offset = canvas_offset_to_grid_offset(
+            (
+                canvas_pos.0 - drag_origin.0,
+                canvas_pos.1 - drag_origin.1,
+            ),
+            map_state
+                .get_canvas_state()
+                .drawn_square_size(),
+        );
+
+        if grid_offset == (0, 0) {
+            return;
+        }
+
+        let current_offset = map_state
+            .get_canvas_state()
+            .get_offset();
+
+        map_state.update_canvas_state(|canvas| {
+            canvas.set_offset((
+                current_offset.0 - grid_offset.0,
+                current_offset.1 - grid_offset.1,
+            ))
+        });
+
+        map_state.set_drag_offset(Some((canvas_pos, false)));
+        map_state_signal.set(map_state);
+        return;
+    }
 }
 
 /// Listener for the [mouseout] event on the canvas.
 ///
 /// [mouseout]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
 fn on_mouse_out(map_state: &mut MapState) {
-    map_state.clear_selected_station();
     map_state.clear_selected_line();
 }
 
@@ -451,6 +568,20 @@ fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
         );
     } else {
         map_state.clear_selected_edges();
+    }
+}
+
+/// Listener for the [keydown] event on the canvas.
+///
+/// [keydown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
+fn on_keydown(map_state_signal: &RwSignal<MapState>, ev: &KeyboardEvent) {
+    if ev.key() == "Escape" {
+        map_state_signal.update(|map_state| {
+            map_state.clear_selected_line();
+            map_state.clear_selected_stations();
+            map_state.clear_selected_edges();
+            map_state.clear_selected_action();
+        })
     }
 }
 
@@ -478,12 +609,22 @@ pub fn Canvas() -> impl IntoView {
 
         if !DOCUMENT_LOADED.load(Ordering::Relaxed) {
             DOCUMENT_LOADED.store(true, Ordering::Release);
-            let f = Closure::<dyn Fn()>::new(move || update_canvas_size(&map_state));
+            let on_resize = Closure::<dyn Fn()>::new(move || update_canvas_size(&map_state));
+            let on_keydown = Closure::<dyn Fn(JsValue)>::new(move |ev: JsValue| {
+                on_keydown(&map_state, ev.unchecked_ref());
+            });
             window().set_onresize(Some(
-                f.as_ref()
+                on_resize
+                    .as_ref()
                     .unchecked_ref(),
             ));
-            f.forget();
+            on_resize.forget();
+            window().set_onkeydown(Some(
+                on_keydown
+                    .as_ref()
+                    .unchecked_ref(),
+            ));
+            on_keydown.forget();
         }
     });
 
@@ -509,13 +650,13 @@ pub fn Canvas() -> impl IntoView {
             <canvas
                 _ref=canvas_ref
 
-                on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
+                on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
                 on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
                 on:dblclick=move |ev| map_state.update(|state| on_dblclick(state, ev.as_ref()))
 
-                on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref()))
+                on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
                 on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:touchcancel=move |_| map_state.update(on_mouse_out)

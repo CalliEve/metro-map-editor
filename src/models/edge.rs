@@ -371,6 +371,31 @@ impl Edge {
             .get_station(self.get_to())
             .expect("invalid to station id when drawing");
 
+        // Highlight if selected
+        if self.is_selected() {
+            let mut selected_width = state.drawn_square_size() / 3.0;
+            if selected_width < 2.0 {
+                selected_width = 2.0;
+            }
+
+            canvas.set_line_width(selected_width);
+            canvas.set_global_alpha(0.2);
+
+            canvas.set_stroke_style_str("darkblue");
+            canvas.begin_path();
+
+            draw_edge(
+                from.get_pos(),
+                to.get_pos(),
+                &self.nodes,
+                canvas,
+                state,
+                0.0,
+            );
+
+            canvas.stroke();
+        }
+
         let colors = self
             .lines
             .iter()
@@ -410,31 +435,6 @@ impl Edge {
                 canvas,
                 state,
                 color_offset,
-            );
-
-            canvas.stroke();
-        }
-
-        // Highlight if selected
-        if self.is_selected() {
-            let mut selected_width = state.drawn_square_size() / 2.0;
-            if selected_width < 2.0 {
-                selected_width = 2.0;
-            }
-
-            canvas.set_line_width(selected_width);
-            canvas.set_global_alpha(0.2);
-
-            canvas.set_stroke_style_str("darkblue");
-            canvas.begin_path();
-
-            draw_edge(
-                from.get_pos(),
-                to.get_pos(),
-                &self.nodes,
-                canvas,
-                state,
-                0.0,
             );
 
             canvas.stroke();

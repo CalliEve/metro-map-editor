@@ -229,6 +229,12 @@ impl CanvasState {
         self.offset
     }
 
+    /// A setter method for the offset
+    pub fn set_offset(&mut self, offset: (i32, i32)) {
+        self.offset = offset;
+        self.recalculate_limits();
+    }
+
     /// Recalculates the maximum and minimum values for the x and y coordinates
     /// to fit on the canvas.
     fn recalculate_limits(&mut self) {

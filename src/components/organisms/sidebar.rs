@@ -54,7 +54,7 @@ pub fn Sidebar() -> impl IntoView {
 
     let add_station = move |_| {
         map_state.update(|state| {
-            state.set_selected_station(SelectedStation::new_station());
+            state.select_station(SelectedStation::new_station());
         });
     };
 
@@ -71,61 +71,45 @@ pub fn Sidebar() -> impl IntoView {
     let remove_line = move |_| update_action(ActionType::RemoveLine);
     let remove_line_selected = action_selected(ActionType::RemoveLine);
 
-    let lock_station = move |_| update_action(ActionType::LockStation);
-    let lock_station_selected = action_selected(ActionType::LockStation);
-
-    let unlock_station = move |_| update_action(ActionType::UnlockStation);
-    let unlock_station_selected = action_selected(ActionType::UnlockStation);
-
-    let lock_edge = move |_| {
-        if !map_state
-            .get()
+    let lock = move |_| {
+        let state = map_state.get();
+        if !state
             .get_selected_edges()
             .is_empty()
+            || !state
+                .get_selected_stations()
+                .is_empty()
         {
             map_state.update(|state| {
-                for id in &state
-                    .get_selected_edges()
-                    .to_vec()
-                {
-                    state
-                        .get_mut_map()
-                        .get_mut_edge(*id)
-                        .expect("Selected edge does not exist")
-                        .lock();
-                }
+                state.lock_selected();
+                state.clear_selected_stations();
                 state.clear_selected_edges();
             });
             return;
         }
-        update_action(ActionType::LockEdge);
+        update_action(ActionType::Lock);
     };
-    let lock_edge_selected = action_selected(ActionType::LockEdge);
+    let lock_selected = action_selected(ActionType::Lock);
 
-    let unlock_edge = move |_| {
-        if !map_state
-            .get()
+    let unlock = move |_| {
+        let state = map_state.get();
+        if !state
             .get_selected_edges()
             .is_empty()
+            || !state
+                .get_selected_stations()
+                .is_empty()
         {
             map_state.update(|state| {
-                for id in &state
-                    .get_selected_edges()
-                    .to_vec()
-                {
-                    state
-                        .get_mut_map()
-                        .get_mut_edge(*id)
-                        .expect("Selected edge does not exist")
-                        .unlock();
-                }
+                state.unlock_selected();
+                state.clear_selected_stations();
                 state.clear_selected_edges();
             });
             return;
         }
-        update_action(ActionType::UnlockEdge);
+        update_action(ActionType::Unlock);
     };
-    let unlock_edge_selected = action_selected(ActionType::UnlockEdge);
+    let unlock_selected = action_selected(ActionType::Unlock);
 
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
@@ -163,28 +147,14 @@ pub fn Sidebar() -> impl IntoView {
             <ButtonGroup
                 children={vec![
                     ButtonProps::builder()
-                        .text("Lock Station")
-                        .on_click(Box::new(lock_station))
-                        .active(lock_station_selected)
+                        .text("Lock")
+                        .on_click(Box::new(lock))
+                        .active(lock_selected)
                         .build(),
                     ButtonProps::builder()
-                        .text("Unlock Station")
-                        .on_click(Box::new(unlock_station))
-                        .active(unlock_station_selected)
-                        .danger(true)
-                        .build(),
-                ]}/>
-            <ButtonGroup
-                children={vec![
-                    ButtonProps::builder()
-                        .text("Lock Edge")
-                        .on_click(Box::new(lock_edge))
-                        .active(lock_edge_selected)
-                        .build(),
-                    ButtonProps::builder()
-                        .text("Unlock Edge")
-                        .on_click(Box::new(unlock_edge))
-                        .active(unlock_edge_selected)
+                        .text("Unlock")
+                        .on_click(Box::new(unlock))
+                        .active(unlock_selected)
                         .danger(true)
                         .build(),
                 ]}/>

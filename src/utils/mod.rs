@@ -41,6 +41,14 @@ pub fn calculate_angle(first: GridNode, second: GridNode, third: GridNode) -> f6
         .round()
 }
 
+/// Calculates the offset of the grid node from the canvas offset.
+pub fn canvas_offset_to_grid_offset(offset: (f64, f64), square_size: f64) -> (i32, i32) {
+    (
+        (offset.0 / square_size).round() as i32,
+        (offset.1 / square_size).round() as i32,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

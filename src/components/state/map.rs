@@ -15,6 +15,7 @@ use crate::{
     },
     models::{
         EdgeID,
+        GridNode,
         Map,
         SelectedLine,
         SelectedStation,
@@ -32,24 +33,14 @@ pub enum ActionType {
     ///
     /// [`Line`]: crate::models::Line
     RemoveLine,
-    /// User wants to lock the location of a [`Station`].
+    /// User wants to lock a [`Station`] or [`Edge`].
     ///
     /// [`Station`]: crate::models::Station
-    LockStation,
-    /// User wants to unlock the location of a [`Station`].
+    Lock,
+    /// User wants to unlock a [`Station`] or [`Edge`].
     ///
     /// [`Station`]: crate::models::Station
-    UnlockStation,
-    /// User wants to lock the [`Edge`] between two [`Station`]s.
-    ///
-    /// [`Edge`]: crate::models::Edge
-    /// [`Station`]: crate::models::Station
-    LockEdge,
-    /// User wants to unlock the [`Edge`] between two [`Station`]s.
-    ///
-    /// [`Edge`]: crate::models::Edge
-    /// [`Station`]: crate::models::Station
-    UnlockEdge,
+    Unlock,
 }
 
 /// Holds all the state of the current [`Map`], canvas and any potentially
@@ -58,8 +49,8 @@ pub enum ActionType {
 pub struct MapState {
     /// The current state of the map.
     map: Map,
-    /// The currently selected [`crate::models::Station`].
-    selected_station: Option<SelectedStation>,
+    /// The currently selected [`crate::models::Station`]s.
+    selected_stations: Vec<SelectedStation>,
     /// The currently selected [`crate::models::Line`].
     selected_line: Option<SelectedLine>,
     /// The type of action that is currently selected.
@@ -74,6 +65,9 @@ pub struct MapState {
     last_loaded: Option<Map>,
     /// If the `last_loaded` map should be overlayed on the current map.
     original_overlay_enabled: bool,
+    /// The point the user is dragging the map from and if they're dragging a
+    /// station or edge.
+    drag_offset: Option<((f64, f64), bool)>,
 }
 
 impl MapState {
@@ -82,7 +76,7 @@ impl MapState {
     pub fn new(map: Map) -> Self {
         Self {
             map,
-            selected_station: None,
+            selected_stations: Vec::new(),
             selected_line: None,
             selected_action: None,
             selected_edges: Vec::new(),
@@ -90,6 +84,7 @@ impl MapState {
             algorithm_settings: AlgorithmSettings::default(),
             last_loaded: None,
             original_overlay_enabled: false,
+            drag_offset: None,
         }
     }
 
@@ -109,19 +104,45 @@ impl MapState {
     }
 
     /// A getter method for the selected station.
-    pub fn get_selected_station(&self) -> Option<&SelectedStation> {
-        self.selected_station
-            .as_ref()
+    pub fn get_selected_stations(&self) -> &[SelectedStation] {
+        &self.selected_stations
+    }
+
+    /// A mutable getter method for the selected station.
+    pub fn get_mut_selected_stations(&mut self) -> &mut [SelectedStation] {
+        &mut self.selected_stations
     }
 
     /// A setter method for the selected station.
-    pub fn set_selected_station(&mut self, station: SelectedStation) {
-        self.selected_station = Some(station);
+    pub fn select_station(&mut self, station: SelectedStation) {
+        self.selected_stations
+            .push(station);
     }
 
-    /// Set the selected station to None.
-    pub fn clear_selected_station(&mut self) {
-        self.selected_station = None;
+    /// Deselect all stations.
+    pub fn clear_selected_stations(&mut self) {
+        self.selected_stations = Vec::new();
+    }
+
+    /// If the given node is on a selected object.
+    pub fn is_on_selected_object(&self, node: GridNode) -> bool {
+        self.get_selected_stations()
+            .iter()
+            .any(|station| {
+                station
+                    .get_station()
+                    .get_pos()
+                    == node
+            })
+            || self
+                .get_selected_edges()
+                .iter()
+                .any(|id| {
+                    self.map
+                        .get_edge(*id)
+                        .expect("Selected edge does not exist.")
+                        .visits_node(&self.map, node)
+                })
     }
 
     /// A getter method for the selected action.
@@ -166,6 +187,17 @@ impl MapState {
         &self.selected_edges
     }
 
+    /// Add a new edge to the selected edges.
+    pub fn select_edge(&mut self, edge: EdgeID) {
+        self.map
+            .get_mut_edge(edge)
+            .expect("Edge to select does not exist.")
+            .select();
+
+        self.selected_edges
+            .push(edge);
+    }
+
     /// A setter method for the selected edges.
     pub fn set_selected_edges(&mut self, edges: Vec<EdgeID>) {
         self.clear_selected_edges();
@@ -189,6 +221,60 @@ impl MapState {
         }
 
         self.selected_edges = Vec::new();
+    }
+
+    /// Lock all selected edges and stations.
+    pub fn lock_selected(&mut self) {
+        for id in &self.selected_edges {
+            self.map
+                .get_mut_edge(*id)
+                .expect("Edge to lock does not exist.")
+                .lock();
+        }
+        for station in &self.selected_stations {
+            if let Some(map_station) = self
+                .map
+                .get_mut_station(
+                    station
+                        .get_station()
+                        .get_id(),
+                )
+            {
+                map_station.lock();
+            }
+        }
+    }
+
+    /// Unlock all selected edges and stations.
+    pub fn unlock_selected(&mut self) {
+        for id in &self.selected_edges {
+            self.map
+                .get_mut_edge(*id)
+                .expect("Edge to unlock does not exist.")
+                .unlock();
+        }
+        for station in &self.selected_stations {
+            if let Some(map_station) = self
+                .map
+                .get_mut_station(
+                    station
+                        .get_station()
+                        .get_id(),
+                )
+            {
+                map_station.unlock();
+            }
+        }
+    }
+
+    /// A getter method for the drag offset.
+    pub fn get_drag_offset(&self) -> Option<((f64, f64), bool)> {
+        self.drag_offset
+    }
+
+    /// A setter method for the drag offset.
+    pub fn set_drag_offset(&mut self, offset: Option<((f64, f64), bool)>) {
+        self.drag_offset = offset;
     }
 
     /// A getter method for the last loaded map.
