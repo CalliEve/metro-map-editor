@@ -464,7 +464,6 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     {
         map_state.clear_selected_edges();
         map_state.clear_selected_stations();
-        return;
     }
 }
 
@@ -533,12 +532,11 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
             canvas.set_offset((
                 current_offset.0 - grid_offset.0,
                 current_offset.1 - grid_offset.1,
-            ))
+            ));
         });
 
         map_state.set_drag_offset(Some((canvas_pos, false)));
         map_state_signal.set(map_state);
-        return;
     }
 }
 
@@ -581,7 +579,7 @@ fn on_keydown(map_state_signal: &RwSignal<MapState>, ev: &KeyboardEvent) {
             map_state.clear_selected_stations();
             map_state.clear_selected_edges();
             map_state.clear_selected_action();
-        })
+        });
     }
 }
 

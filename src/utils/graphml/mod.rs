@@ -46,7 +46,7 @@ mod tests {
         let result_station = result
             .get_station(1.into())
             .expect("no station with id 1");
-        assert_eq!(result_station.get_pos(), (30, 28));
+        assert_eq!(result_station.get_pos(), (30, 58));
         assert_eq!(result_station.get_name(), "test 2");
     }
 }

@@ -116,6 +116,8 @@ impl SelectedStation {
     }
 
     /// Draw the selected station to the given canvas.
+    #[allow(clippy::too_many_lines)] // This function is long but it's mostly drawing code that can't be split up
+                                     // easily.
     pub fn draw(
         &self,
         map: &Map,
@@ -178,7 +180,6 @@ impl SelectedStation {
 
         canvas.set_line_width(edge_width);
         canvas.set_stroke_style_str("black");
-        canvas.set_global_alpha(0.5);
         canvas.begin_path();
 
         for before_id in self

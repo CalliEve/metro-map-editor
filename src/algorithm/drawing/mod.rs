@@ -43,7 +43,7 @@ where
                 &context,
                 state.get_canvas_state(),
                 state.get_selected_stations(),
-            )
+            );
         });
 
     map.draw(&context, state.get_canvas_state(), 1.0);
