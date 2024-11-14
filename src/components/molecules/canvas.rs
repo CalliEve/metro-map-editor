@@ -238,15 +238,24 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             return;
         }
 
-        for line in map.get_lines() {
-            let (before, after) = line.get_station_neighbors(
-                &map,
-                selected_station
+        for edge_id in selected_station
+            .get_station()
+            .get_edges()
+            .to_vec()
+        {
+            let edge = map
+                .get_edge(edge_id)
+                .cloned()
+                .expect("edge should exist");
+            if edge.get_from()
+                == selected_station
                     .get_station()
-                    .get_id(),
-            );
-            selected_station.add_before(before);
-            selected_station.add_after(after);
+                    .get_id()
+            {
+                selected_station.add_after(edge.get_to());
+            } else {
+                selected_station.add_before(edge.get_from());
+            }
         }
 
         if !shift_key {
@@ -296,6 +305,17 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         }
 
         map_state.set_drag_offset(Some((canvas_pos, true)));
+        return;
+    }
+
+    // If clicking outside of anything with shiftkey down, then we're doing a
+    // box-select.
+    if shift_key
+        && map_state
+            .get_drag_offset()
+            .is_none()
+    {
+        map_state.set_box_select_start(canvas_pos);
         return;
     }
 
@@ -398,11 +418,11 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
 
             map.add_line(line);
             map_state.set_map(map);
-            map_state.clear_selected_line();
+            map_state.clear_all_selections();
             return;
         }
 
-        map_state.clear_selected_line();
+        map_state.clear_all_selections();
 
         if let Some(grabbed_at) = selected_line.get_grabbed_at() {
             if grabbed_at != mouse_pos {
@@ -416,6 +436,10 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         .get_selected_stations()
         .is_empty()
         && !shift_key
+        && map_state
+            .get_selected_stations()
+            .iter()
+            .any(SelectedStation::has_moved)
     {
         for selected_station in map_state
             .get_selected_stations()
@@ -446,7 +470,59 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         }
 
         map_state.set_map(map);
-        map_state.clear_selected_stations();
+        map_state.clear_all_selections();
+        return;
+    }
+
+    // Handle the box-select selecting things.
+    if let Some((start_canvas, end_canvas)) = map_state.get_box_select() {
+        let start = GridNode::from_canvas_pos(start_canvas, canvas_state);
+        let end = GridNode::from_canvas_pos(end_canvas, canvas_state);
+
+        let mut selected_stations = Vec::new();
+        let mut selected_edges = Vec::new();
+
+        for station in map.get_stations() {
+            let pos = station.get_pos();
+            if pos.0 >= start.0 && pos.0 <= end.0 && pos.1 >= start.1 && pos.1 <= end.1 {
+                let mut selected_station = SelectedStation::new(station.clone());
+
+                for edge_id in selected_station
+                    .get_station()
+                    .get_edges()
+                    .to_vec()
+                {
+                    let edge = map
+                        .get_edge(edge_id)
+                        .cloned()
+                        .expect("edge should exist");
+
+                    if edge.get_from()
+                        == selected_station
+                            .get_station()
+                            .get_id()
+                    {
+                        selected_station.add_after(edge.get_to());
+                    } else {
+                        selected_station.add_before(edge.get_from());
+                    }
+                }
+
+                map_state.select_station(selected_station);
+                selected_stations.push(station.get_id());
+            }
+        }
+
+        for edge in map.get_edges() {
+            if selected_stations.contains(&edge.get_from())
+                && selected_stations.contains(&edge.get_to())
+            {
+                selected_edges.push(edge.get_id());
+            }
+        }
+
+        map_state.set_selected_edges(selected_edges);
+        map_state.clear_box_select();
         return;
     }
 
@@ -462,8 +538,7 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             && station_at_node.is_none()))
         && !shift_key
     {
-        map_state.clear_selected_edges();
-        map_state.clear_selected_stations();
+        map_state.clear_all_selections();
     }
 }
 
@@ -476,7 +551,7 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
     let canvas_pos = canvas_click_pos(canvas_state.get_size(), ev);
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
-    // Handle move of selected line
+    // Handle move of selected line.
     if let Some(selected) = map_state.get_mut_selected_line() {
         if selected.get_current_hover() != mouse_pos {
             selected.set_current_hover(mouse_pos);
@@ -485,7 +560,7 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
         return;
     }
 
-    // Handle move of selected stations
+    // Handle move of selected stations.
     if let Some((drag_origin, true)) = map_state.get_drag_offset() {
         let grid_offset = canvas_offset_to_grid_offset(
             (
@@ -509,6 +584,7 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
         return;
     }
 
+    // Handle the map as a whole getting dragged.
     if let Some((drag_origin, false)) = map_state.get_drag_offset() {
         let grid_offset = canvas_offset_to_grid_offset(
             (
@@ -537,6 +613,16 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
 
         map_state.set_drag_offset(Some((canvas_pos, false)));
         map_state_signal.set(map_state);
+        return;
+    }
+
+    // Handle the size of the box select changing.
+    if map_state
+        .get_box_select()
+        .is_some()
+    {
+        map_state.update_box_select_end(canvas_pos);
+        map_state_signal.set(map_state);
     }
 }
 
@@ -545,6 +631,7 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
 /// [mouseout]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
 fn on_mouse_out(map_state: &mut MapState) {
     map_state.clear_selected_line();
+    map_state.clear_box_select();
 }
 
 /// Listener for the [dblclick] event on the canvas.
@@ -565,7 +652,7 @@ fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
                 .collect(),
         );
     } else {
-        map_state.clear_selected_edges();
+        map_state.clear_all_selections();
     }
 }
 
@@ -575,10 +662,7 @@ fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
 fn on_keydown(map_state_signal: &RwSignal<MapState>, ev: &KeyboardEvent) {
     if ev.key() == "Escape" {
         map_state_signal.update(|map_state| {
-            map_state.clear_selected_line();
-            map_state.clear_selected_stations();
-            map_state.clear_selected_edges();
-            map_state.clear_selected_action();
+            map_state.clear_all_selections();
         });
     }
 }

@@ -65,9 +65,12 @@ pub struct MapState {
     last_loaded: Option<Map>,
     /// If the `last_loaded` map should be overlayed on the current map.
     original_overlay_enabled: bool,
-    /// The point the user is dragging the map from and if they're dragging a
-    /// station or edge.
+    /// The point the user is dragging the map from and if they're dragging the
+    /// map as a whole, or a station and/or edge.
     drag_offset: Option<((f64, f64), bool)>,
+    /// The point the user is selecting a part of the map with a box-select
+    /// from.
+    box_select: Option<((f64, f64), (f64, f64))>,
 }
 
 impl MapState {
@@ -85,7 +88,17 @@ impl MapState {
             last_loaded: None,
             original_overlay_enabled: false,
             drag_offset: None,
+            box_select: None,
         }
+    }
+
+    /// Clear all selections.
+    pub fn clear_all_selections(&mut self) {
+        self.clear_selected_stations();
+        self.clear_selected_line();
+        self.clear_selected_action();
+        self.clear_selected_edges();
+        self.clear_box_select();
     }
 
     /// A getter method for the [`Map`].
@@ -354,6 +367,29 @@ impl MapState {
     /// Setter for the algorithm settings.
     pub fn set_algorithm_settings(&mut self, settings: AlgorithmSettings) {
         self.algorithm_settings = settings;
+    }
+
+    /// Getter for the box select.
+    #[inline]
+    pub fn get_box_select(&self) -> Option<((f64, f64), (f64, f64))> {
+        self.box_select
+    }
+
+    /// Set the box selection start.
+    pub fn set_box_select_start(&mut self, start: (f64, f64)) {
+        self.box_select = Some((start, start));
+    }
+
+    /// Update the box selection end.
+    pub fn update_box_select_end(&mut self, end: (f64, f64)) {
+        if let Some((start, _)) = self.box_select {
+            self.box_select = Some((start, end));
+        }
+    }
+
+    /// Clear the box selection.
+    pub fn clear_box_select(&mut self) {
+        self.box_select = None;
     }
 
     /// Recalculate the x and y limits for the algorithm settings based on the

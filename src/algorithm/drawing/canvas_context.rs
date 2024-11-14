@@ -167,6 +167,13 @@ impl<'a> CanvasContext<'a> {
 
     pub fn set_global_alpha(&self, _: f64) {}
 
+    pub fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
+        self.record(
+            "rect",
+            format!("{x:.1},{y:.1},{width:.1},{height:.1}").as_str(),
+        );
+    }
+
     pub fn arc(
         &self,
         x: f64,

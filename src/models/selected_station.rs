@@ -63,17 +63,17 @@ impl SelectedStation {
     }
 
     /// Add a station that came before the station that was grabbed.
-    pub fn add_before(&mut self, mut before: Vec<StationID>) {
+    pub fn add_before(&mut self, before: StationID) {
         self.before_after
             .0
-            .append(&mut before);
+            .push(before);
     }
 
     /// Add a station that came after the station that was grabbed.
-    pub fn add_after(&mut self, mut after: Vec<StationID>) {
+    pub fn add_after(&mut self, after: StationID) {
         self.before_after
             .1
-            .append(&mut after);
+            .push(after);
     }
 
     /// Update the current grid position of the station.
@@ -150,34 +150,37 @@ impl SelectedStation {
             .unwrap();
         canvas.stroke();
 
-        // draw self-ghost
-        if self.has_moved() {
-            let mut width = state.drawn_square_size() / 10.0 + 1.0;
-            if width < 2.0 {
-                width = 2.0;
-            }
-
-            canvas.set_line_width(width);
-            canvas.set_global_alpha(0.5);
-            canvas.set_stroke_style_str("black");
-            canvas.begin_path();
-            canvas
-                .arc(
-                    canvas_pos.0,
-                    canvas_pos.1,
-                    state.drawn_square_size() / 3.0,
-                    0.0,
-                    2.0 * std::f64::consts::PI,
-                )
-                .unwrap();
-            canvas.stroke();
+        if !self.has_moved() {
+            return;
         }
+
+        // draw self-ghost
+        let mut width = state.drawn_square_size() / 10.0 + 1.0;
+        if width < 2.0 {
+            width = 2.0;
+        }
+
+        canvas.set_line_width(width);
+        canvas.set_global_alpha(0.5);
+        canvas.set_stroke_style_str("black");
+        canvas.begin_path();
+        canvas
+            .arc(
+                canvas_pos.0,
+                canvas_pos.1,
+                state.drawn_square_size() / 3.0,
+                0.0,
+                2.0 * std::f64::consts::PI,
+            )
+            .unwrap();
+        canvas.stroke();
 
         let mut edge_width = state.drawn_square_size() / 10.0 + 0.5;
         if edge_width < 1.0 {
             edge_width = 1.0;
         }
 
+        // draw edges to adjacent stations
         canvas.set_line_width(edge_width);
         canvas.set_stroke_style_str("black");
         canvas.begin_path();
