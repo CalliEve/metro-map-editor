@@ -20,7 +20,10 @@ use serde::{
 };
 
 use crate::{
-    algorithm::AlgorithmSettings,
+    algorithm::{
+        AlgorithmSettings,
+        OccupiedNodes,
+    },
     components::{
         atoms::Button,
         molecules::Canvas,
@@ -28,6 +31,7 @@ use crate::{
         MapState,
     },
     models::Map,
+    unwrap_or_return,
     utils::{
         IDData,
         IDManager,
@@ -44,6 +48,10 @@ struct AlgorithmRequest {
     id_manager_data: IDData,
     /// The map to run the algorithm on.
     map: Map,
+    /// If the map is a partial map or not.
+    partial: bool,
+    /// Already occupied grid nodes.
+    occupied: Option<OccupiedNodes>,
 }
 
 /// The response from the algorithm.
@@ -67,7 +75,7 @@ fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
     let mut temp_state = MapState::new(req.map);
     temp_state.set_algorithm_settings(req.settings);
 
-    let success = temp_state.run_algorithm();
+    let success = temp_state.run_algorithm(req.occupied);
 
     AlgorithmResponse {
         success,
@@ -114,6 +122,7 @@ pub fn CanvasControls() -> impl IntoView {
 
     let algorithm_req = create_action(move |req: &AlgorithmRequest| {
         let req = req.clone();
+        let is_partial = req.partial;
         async move {
             let (abort_handle, resp_fut) = executor
                 .get_untracked()
@@ -128,7 +137,14 @@ pub fn CanvasControls() -> impl IntoView {
                     .output_on_fail
             {
                 map_state.update(|state| {
-                    state.set_map(resp.map);
+                    if is_partial {
+                        state.clear_all_selections();
+                        unwrap_or_return!(state
+                            .get_mut_map()
+                            .update_from_partial(&resp.map));
+                    } else {
+                        state.set_map(resp.map);
+                    }
                 });
                 IDManager::from_data(resp.id_manager_data);
             }
@@ -139,6 +155,8 @@ pub fn CanvasControls() -> impl IntoView {
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_in));
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
+
+    // Run the algorithm on the entire map.
     let run_algorithm = move |_| {
         let req = AlgorithmRequest {
             settings: map_state
@@ -149,11 +167,32 @@ pub fn CanvasControls() -> impl IntoView {
                 .get_map()
                 .clone(),
             id_manager_data: IDManager::to_data(),
+            partial: false,
+            occupied: None,
         };
 
         algorithm_req.dispatch(req);
     };
 
+    // Run the algorithm only on the selected stations and edges.
+    let run_partial_algorithm = move |_| {
+        let (map, occupied) = map_state
+            .get_untracked()
+            .get_selected_partial_map();
+        let req = AlgorithmRequest {
+            settings: map_state
+                .get_untracked()
+                .get_algorithm_settings(),
+            map,
+            occupied: Some(occupied),
+            id_manager_data: IDManager::to_data(),
+            partial: true,
+        };
+
+        algorithm_req.dispatch(req);
+    };
+
+    // Abort the algorithm.
     let abort_algorithm = move |_| {
         if algorithm_req
             .pending()
@@ -179,29 +218,54 @@ pub fn CanvasControls() -> impl IntoView {
         class
     };
 
+    // Toggle the original map overlay.
     let overlay_original_map = move |_| {
         map_state.update(|state| {
             state.set_original_overlay_enabled(!state.is_original_overlay_enabled());
         });
     };
 
+    // If the original map overlay is active.
     let is_original_overlay_active = Signal::derive(move || {
         map_state
             .get()
             .is_original_overlay_enabled()
     });
 
+    // If parts of the map has been selected and is not being moved.
+    let has_parts_selected = Signal::derive(move || {
+        let state = map_state.get();
+        (!state
+            .get_selected_edges()
+            .is_empty())
+            && state
+                .get_selected_stations()
+                .iter()
+                .all(|s| !s.has_moved())
+    });
+
     view! {
     <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
         <div class=algorithm_button_class>
-            <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true bigger=true>
-                <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z"/>
-                    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
-                    <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />
-                </svg>
-            </Button>
+            <Show
+                when=has_parts_selected
+                fallback=move || view!{
+                    <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true bigger=true>
+                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z"/>
+                            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
+                            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />
+                        </svg>
+                    </Button>
+                }>
+                <Button text="recalculate selected parts" on_click=Box::new(run_partial_algorithm) overlay=true bigger=true>
+                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z"/>
+                            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
+                        </svg>
+                    </Button>
+            </Show>
         </div>
         <Show when=move || algorithm_req.pending().get()>
             <div class="absolute right-5 top-24">

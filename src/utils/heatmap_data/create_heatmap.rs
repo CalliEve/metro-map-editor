@@ -78,7 +78,7 @@ fn create_station_heatmap(
 ) -> StationHeatMap {
     let possible_positions = get_possible_positions(station.get_pos());
 
-    let heatmap: HashMap<String, f64> = possible_positions
+    let heatmap: HashMap<GridNode, f64> = possible_positions
         .into_iter()
         .filter_map(|pos| {
             try_station_pos(
@@ -88,7 +88,7 @@ fn create_station_heatmap(
                 pos,
                 occupied.clone(),
             )
-            .map(|res| (pos.to_string(), *res.cost))
+            .map(|res| (pos, *res.cost))
             .ok()
         })
         .collect();

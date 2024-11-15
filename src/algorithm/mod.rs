@@ -24,13 +24,14 @@ pub use local_search::{
     try_station_pos,
 };
 #[cfg(feature = "heatmap")]
-pub use occupation::{
-    OccupiedNode,
-    OccupiedNodes,
-};
+pub use occupation::OccupiedNode;
+pub use occupation::OccupiedNodes;
 pub use recalculate_map::recalculate_map;
-pub use utils::LogType;
 use utils::*;
+pub use utils::{
+    log_print,
+    LogType,
+};
 
 /// Stores the settings for the algorithm.
 // This is a settings struct, so many bools are needed

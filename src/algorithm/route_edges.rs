@@ -1,8 +1,6 @@
 //! This module contains the Route Edges algorithm and the functions for
 //! determining the to and from node-sets that it needs.
 
-use std::collections::HashMap;
-
 use super::{
     edge_dijkstra::edge_dijkstra,
     log_print,
@@ -118,9 +116,8 @@ pub fn route_edges(
     settings: AlgorithmSettings,
     map: &mut Map,
     mut edges: Vec<Edge>,
+    mut occupied: OccupiedNodes,
 ) -> Result<OccupiedNodes> {
-    let mut occupied = HashMap::new();
-
     for edge in &mut edges {
         if edge.is_locked() {
             continue;
@@ -202,6 +199,23 @@ pub fn route_edges(
             super::LogType::Debug,
         );
 
+        if nodes
+            .iter()
+            .any(|n| occupied.contains_key(n))
+        {
+            log_print(
+                settings,
+                &format!(
+                    "Nodes already occupied: {:?}",
+                    nodes
+                        .iter()
+                        .filter(|n| occupied.contains_key(n))
+                        .collect::<Vec<_>>()
+                ),
+                super::LogType::Error,
+            );
+        }
+
         occupied.extend(
             nodes
                 .iter()
@@ -244,6 +258,8 @@ pub fn route_edges(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use crate::models::Station;
 
@@ -349,6 +365,7 @@ mod tests {
             AlgorithmSettings::default(),
             &mut map,
             edges,
+            HashMap::new(),
         )
         .unwrap();
 

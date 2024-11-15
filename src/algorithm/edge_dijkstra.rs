@@ -250,7 +250,6 @@ mod tests {
         map.add_station(from_station.clone());
         map.add_station(to_station.clone());
         map.add_edge(edge.clone());
-        map.quickcalc_edges();
 
         edge = map
             .get_edge(edge.get_id())

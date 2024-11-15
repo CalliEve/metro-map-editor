@@ -311,6 +311,45 @@ impl Map {
         }
     }
 
+    /// Update the locations of stations and the edges from the ones in the
+    /// partial map.
+    pub fn update_from_partial(&mut self, other: &Map) -> Result<()> {
+        for station in other.get_stations() {
+            self.get_mut_station(station.get_id())
+                .ok_or(Error::other(format!(
+                    "Station {} from partial not found.",
+                    station.get_id()
+                )))?
+                .set_pos(station.get_pos());
+        }
+
+        for edge in other.get_edges() {
+            let own_id = self
+                .get_edge_id_between_if_exists(edge.get_from(), edge.get_to())
+                .ok_or(Error::other(format!(
+                    "Edge going from {} to {} in partial not found in full map.\nEdges of {}: {:?}\nEdges of {}: {:?}", // FIXME: this gets triggered? Do some stations switch around in expand??
+                    edge.get_from(),
+                    edge.get_to(),
+                    edge.get_from(),
+                    self.get_station(edge.get_from())
+                        .unwrap()
+                        .get_edges(),
+                    edge.get_to(),
+                    self.get_station(edge.get_to())
+                        .unwrap()
+                        .get_edges(),
+                )))?;
+            self.get_mut_edge(own_id)
+                .unwrap()
+                .set_nodes(
+                    edge.get_nodes()
+                        .to_owned(),
+                );
+        }
+
+        Ok(())
+    }
+
     /// Draw the map to the given canvas.
     pub fn draw(&self, canvas: &CanvasContext<'_>, state: CanvasState, base_alpha: f64) {
         for edge in self.get_edges() {

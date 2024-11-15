@@ -76,6 +76,7 @@ fn draw_map_benchmark(c: &mut Criterion) {
                 black_box(&map),
                 black_box(&context),
                 black_box(canvas),
+                1.0,
             )
         })
     });

@@ -27,7 +27,11 @@ use crate::{
 
 /// Recalculate the map, all the positions of the stations and the edges between
 /// them, as a whole. This is the Recalculate Map algorithm in the paper.
-pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<OccupiedNodes> {
+pub fn recalculate_map(
+    settings: AlgorithmSettings,
+    map: &mut Map,
+    mut occupied: OccupiedNodes,
+) -> Result<OccupiedNodes> {
     if map
         .get_edges()
         .is_empty()
@@ -39,11 +43,12 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
     log_print(
         settings,
         &format!(
-            "Recalculating map with {} edges and {} stations",
+            "Recalculating map with {} edges and {} stations, already {} nodes occupied",
             map.get_edges()
                 .len(),
             map.get_stations()
-                .len()
+                .len(),
+            occupied.len(),
         ),
         super::LogType::Debug,
     );
@@ -53,22 +58,24 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
     log_print(
         settings,
         &format!(
-            "Contracted stations, {} edges and {} stations left",
+            "Contracted stations, {} edges and {} stations left\nStations: {:?}",
             map.get_edges()
                 .len(),
             map.get_stations()
-                .len()
+                .len(),
+            map.get_stations()
+                .iter()
+                .map(|s| s.get_id())
+                .collect::<Vec<_>>(),
         ),
         super::LogType::Debug,
     );
 
-    map.quickcalc_edges();
     unsettle_map(map);
 
     let mut edges = order_edges(map)?;
     let mut attempt = 0;
     let mut found = false;
-    let mut occupied = HashMap::new();
 
     log_print(
         settings,
@@ -80,7 +87,12 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         let mut alg_map = map.clone();
 
         attempt += 1;
-        let res = route_edges(settings, &mut alg_map, edges.clone());
+        let res = route_edges(
+            settings,
+            &mut alg_map,
+            edges.clone(),
+            occupied.clone(),
+        );
 
         if let Err(e) = res {
             log_print(
@@ -182,7 +194,7 @@ mod tests {
                 .len()
         );
 
-        recalculate_map(settings, &mut map).expect(&format!(
+        recalculate_map(settings, &mut map, HashMap::new()).expect(&format!(
             "failed to recalculate map {map_file}"
         ));
 
@@ -264,7 +276,7 @@ mod tests {
                     .len()
             );
 
-            if let Err(e) = recalculate_map(settings, &mut map) {
+            if let Err(e) = recalculate_map(settings, &mut map, HashMap::new()) {
                 failed.push((map_file, e));
             }
         }

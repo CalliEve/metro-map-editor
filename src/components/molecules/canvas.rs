@@ -34,7 +34,10 @@ use crate::{
     },
     utils::{
         canvas_offset_to_grid_offset,
-        line_sections::trace_line_section,
+        line_sections::{
+            get_line_section_parts,
+            trace_line_section,
+        },
     },
 };
 
@@ -238,6 +241,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             return;
         }
 
+        #[allow(clippy::unnecessary_to_owned)] // otherwise conflicts with mutable borrow
         for edge_id in selected_station
             .get_station()
             .get_edges()
@@ -247,6 +251,7 @@ fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                 .get_edge(edge_id)
                 .cloned()
                 .expect("edge should exist");
+
             if edge.get_from()
                 == selected_station
                     .get_station()
@@ -436,10 +441,14 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         .get_selected_stations()
         .is_empty()
         && !shift_key
-        && map_state
+        && (map_state
             .get_selected_stations()
             .iter()
             .any(SelectedStation::has_moved)
+            || map_state
+                .get_selected_stations()
+                .len()
+                < 2)
     {
         for selected_station in map_state
             .get_selected_stations()
@@ -447,25 +456,20 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             .cloned()
             .map(SelectedStation::deselect)
         {
-            let mut edge_ids = Vec::new();
-            for station in map.get_mut_stations() {
-                if *station == selected_station {
-                    if station.get_pos() == selected_station.get_pos() {
-                        break;
-                    }
+            let station = map
+                .get_mut_station(selected_station.get_id())
+                .expect("selected station does not exist");
 
-                    station.set_pos(selected_station.get_pos());
-                    station.set_original_pos(selected_station.get_pos());
-                    station.lock();
-                    edge_ids = station
-                        .get_edges()
-                        .to_vec();
-                    break;
-                }
+            if station.get_pos() == selected_station.get_pos() {
+                continue;
             }
 
-            for edge_id in edge_ids {
-                recalculate_edge_nodes(&mut map, edge_id);
+            station.set_pos(selected_station.get_pos());
+            station.set_original_pos(selected_station.get_pos());
+            station.lock();
+
+            for edge_id in selected_station.get_edges() {
+                recalculate_edge_nodes(&mut map, *edge_id);
             }
         }
 
@@ -487,13 +491,9 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             if pos.0 >= start.0 && pos.0 <= end.0 && pos.1 >= start.1 && pos.1 <= end.1 {
                 let mut selected_station = SelectedStation::new(station.clone());
 
-                for edge_id in selected_station
-                    .get_station()
-                    .get_edges()
-                    .to_vec()
-                {
+                for edge_id in station.get_edges() {
                     let edge = map
-                        .get_edge(edge_id)
+                        .get_edge(*edge_id)
                         .cloned()
                         .expect("edge should exist");
 
@@ -526,18 +526,8 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         return;
     }
 
-    // Someone clicked on an empty node, deselect the currently selected edges and
-    // if stations are also selected, them too.
-    if ((!map_state
-        .get_selected_edges()
-        .is_empty()
-        && edge_at_node.is_none())
-        || (!map_state
-            .get_selected_stations()
-            .is_empty()
-            && station_at_node.is_none()))
-        && !shift_key
-    {
+    // Someone clicked on an empty node, deselect everything.
+    if !shift_key {
         map_state.clear_all_selections();
     }
 }
@@ -558,6 +548,18 @@ fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
             map_state_signal.set(map_state);
         }
         return;
+    }
+
+    // Handle a move while having a new station selected.
+    if let Some(selected) = map_state
+        .get_mut_selected_stations()
+        .first_mut()
+    {
+        if selected.is_new() {
+            selected.update_pos(mouse_pos);
+            map_state_signal.set(map_state);
+            return;
+        }
     }
 
     // Handle move of selected stations.
@@ -645,8 +647,25 @@ fn on_dblclick(map_state: &mut MapState, ev: &UiEvent) {
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     if let Some(edge_id) = map.edge_at_node(mouse_pos) {
+        let line_section = trace_line_section(map, edge_id, false);
+
+        let (_, middles) = get_line_section_parts(&line_section);
+
+        map_state.set_selected_stations(
+            middles
+                .into_iter()
+                .map(|s| {
+                    SelectedStation::new(
+                        map.get_station(s)
+                            .expect("Station in line section does not exist.")
+                            .clone(),
+                    )
+                })
+                .collect(),
+        );
+
         map_state.set_selected_edges(
-            trace_line_section(map, edge_id, false)
+            line_section
                 .into_iter()
                 .map(|e| e.get_id())
                 .collect(),

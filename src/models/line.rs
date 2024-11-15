@@ -15,6 +15,7 @@ use super::{
     EdgeID,
     GridNode,
     Map,
+    Station,
 };
 use crate::{
     algorithm::drawing::CanvasContext,
@@ -161,6 +162,8 @@ impl Line {
         {
             self.stations
                 .remove(index);
+        } else {
+            return;
         }
 
         let mut ends = Vec::new();
@@ -196,6 +199,20 @@ impl Line {
                 map,
             );
         }
+    }
+
+    /// Remove a station from the line without further removal of it from the
+    /// map or otherwise interacting with the map to edit objects there further.
+    pub fn remove_station_obj(&mut self, station: &Station) {
+        self.stations
+            .retain(|s| s != &station.get_id());
+        self.edges
+            .retain(|e| {
+                station
+                    .get_edges()
+                    .iter()
+                    .any(|id| id == e)
+            });
     }
 
     /// Add an edge that is being used by this line if it has not yet been

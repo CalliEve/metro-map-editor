@@ -40,7 +40,7 @@ pub struct StationHeatMap {
     /// The original position where the station was placed.
     pub original_pos: GridNode,
     /// The heatmap of costs around the station.
-    pub heatmap: HashMap<String, f64>,
+    pub heatmap: HashMap<GridNode, f64>,
     /// Data on the neighbors of the station.
     pub neighbors: Vec<NeighborData>,
     /// What is currently occupying the original position of the station.

@@ -17,7 +17,7 @@ use serde::{
 use crate::components::CanvasState;
 
 /// Represents a node on the grid.
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct GridNode(
     /// The x coordinate.
     pub i32,
@@ -143,6 +143,40 @@ impl PartialEq<(i32, i32)> for GridNode {
 impl Display for GridNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.0, self.1)
+    }
+}
+
+impl Serialize for GridNode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        format!("({}, {})", self.0, self.1).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for GridNode {
+    fn deserialize<D>(deserializer: D) -> Result<GridNode, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let s = s.trim_matches(|p| p == '(' || p == ')');
+        let mut split = s.split(", ");
+
+        let x = split
+            .next()
+            .ok_or_else(|| serde::de::Error::custom("Missing x value"))?
+            .parse::<i32>()
+            .map_err(serde::de::Error::custom)?;
+        let y = split
+            .next()
+            .ok_or_else(|| serde::de::Error::custom("Missing y value"))?
+            .parse::<i32>()
+            .map_err(serde::de::Error::custom)?;
+
+        Ok(GridNode(x, y))
     }
 }
 

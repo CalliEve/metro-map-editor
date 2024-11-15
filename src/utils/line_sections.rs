@@ -4,6 +4,7 @@ use crate::models::{
     Edge,
     EdgeID,
     Map,
+    StationID,
 };
 
 /// Get all the edges between two intersections where the given edge is
@@ -55,4 +56,33 @@ pub fn trace_line_section(map: &Map, edge_id: EdgeID, stop_at_locked: bool) -> V
     }
 
     edges
+}
+
+/// Get the end stations of the given line section as defined by a vec of edges
+/// and a list of all stations in between.
+pub fn get_line_section_parts(line_section: &[Edge]) -> (Vec<StationID>, Vec<StationID>) {
+    let mut ends = Vec::new();
+    let mut middles = Vec::new();
+
+    for edge in line_section {
+        if ends.contains(&edge.get_from()) {
+            ends.retain(|&id| id != edge.get_from());
+            middles.push(edge.get_from());
+        } else if middles.contains(&edge.get_from()) {
+            continue;
+        } else {
+            ends.insert(0, edge.get_from());
+        }
+
+        if ends.contains(&edge.get_to()) {
+            ends.retain(|&id| id != edge.get_to());
+            middles.push(edge.get_to());
+        } else if middles.contains(&edge.get_to()) {
+            continue;
+        } else {
+            ends.push(edge.get_to());
+        }
+    }
+
+    (ends, middles)
 }

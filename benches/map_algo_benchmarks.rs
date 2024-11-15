@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    collections::HashMap,
+    time::Duration,
+};
 
 use criterion::{
     black_box,
@@ -44,7 +47,12 @@ pub fn full_recalculation_simple_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_simple", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(black_box(settings), black_box(&mut map))
+            recalculate_map(
+                black_box(settings),
+                black_box(&mut map),
+                HashMap::new(),
+            )
+            .expect("failed to recalculate map")
         })
     });
 }
@@ -66,8 +74,12 @@ pub fn full_recalculation_karlsruhe_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_karlsruhe", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(black_box(settings), black_box(&mut map))
-                .expect("failed to recalculate map")
+            recalculate_map(
+                black_box(settings),
+                black_box(&mut map),
+                HashMap::new(),
+            )
+            .expect("failed to recalculate map")
         })
     });
 }

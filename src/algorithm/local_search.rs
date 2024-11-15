@@ -176,9 +176,15 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
         .collect::<Vec<_>>();
 
     for station in all_stations {
-        if station
-            .get_edges()
-            .is_empty()
+        if (cfg!(not(feature = "heatmap"))
+            && station
+                .get_edges()
+                .len()
+                < 3)
+            || (cfg!(feature = "heatmap")
+                && station
+                    .get_edges()
+                    .is_empty())
         {
             continue;
         }

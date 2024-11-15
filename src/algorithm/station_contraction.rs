@@ -17,40 +17,14 @@ use crate::{
         StationID,
     },
     utils::{
-        line_sections::trace_line_section,
+        line_sections::{
+            get_line_section_parts,
+            trace_line_section,
+        },
         Result,
     },
     Error,
 };
-
-/// Get the end stations of the given line section as defined by a vec of edges
-/// and a list of all stations in between.
-fn get_line_section_parts(line_section: &[Edge]) -> (Vec<StationID>, Vec<StationID>) {
-    let mut ends = Vec::new();
-    let mut middles = Vec::new();
-
-    for edge in line_section {
-        if ends.contains(&edge.get_from()) {
-            ends.retain(|&id| id != edge.get_from());
-            middles.push(edge.get_from());
-        } else if middles.contains(&edge.get_from()) {
-            continue;
-        } else {
-            ends.insert(0, edge.get_from());
-        }
-
-        if ends.contains(&edge.get_to()) {
-            ends.retain(|&id| id != edge.get_to());
-            middles.push(edge.get_to());
-        } else if middles.contains(&edge.get_to()) {
-            continue;
-        } else {
-            ends.push(edge.get_to());
-        }
-    }
-
-    (ends, middles)
-}
 
 /// Resolves a cycle of two stations in a line section by taking out the
 /// starting edge from the line section.
@@ -161,13 +135,15 @@ fn can_contract_into(
         .get_station(end)
         .unwrap();
 
+    let radius_mult = 2 - i32::from(start_station.is_locked()) - i32::from(end_station.is_locked());
+
     // Check if the stations are far enough apart. If they are too close, the
     // stations might become too close for the contracted station to be re-inserted
     // after the algorithm has ran its course.
     start_station
         .get_pos()
         .manhattan_distance_to(end_station.get_pos())
-        > settings.node_set_radius * 2 + station_count as i32
+        > settings.node_set_radius * radius_mult + station_count as i32
 }
 
 /// Contract all stations with degree two into an edge between their neighboring
