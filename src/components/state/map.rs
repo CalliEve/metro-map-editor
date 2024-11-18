@@ -1,7 +1,5 @@
 //! Contains the [`MapState`] and all its methods.
 
-use std::collections::HashMap;
-
 use leptos::{
     html::Canvas,
     *,
@@ -12,16 +10,12 @@ use super::CanvasState;
 use crate::{
     algorithm::{
         drawing::redraw_canvas,
-        log_print,
         recalculate_map,
         AlgorithmSettings,
-        LogType,
-        OccupiedNodes,
     },
     models::{
         EdgeID,
         GridNode,
-        Line,
         Map,
         SelectedLine,
         SelectedStation,
@@ -238,10 +232,12 @@ impl MapState {
     /// Deselect all selected edges.
     pub fn clear_selected_edges(&mut self) {
         for id in &self.selected_edges {
-            self.map
+            if let Some(edge) = self
+                .map
                 .get_mut_edge(*id)
-                .expect("Edge to deselect does not exist.")
-                .deselect();
+            {
+                edge.deselect();
+            }
         }
 
         self.selected_edges = Vec::new();
@@ -347,20 +343,6 @@ impl MapState {
         );
     }
 
-    /// Run the local search algorithm on the map.
-    pub fn run_local_search(&mut self) {
-        let map_clone = self
-            .map
-            .clone();
-
-        for edge in self
-            .map
-            .get_mut_edges()
-        {
-            edge.calculate_nodes(&map_clone);
-        }
-    }
-
     /// Getter for the algorithm settings.
     #[inline]
     pub fn get_algorithm_settings(&self) -> AlgorithmSettings {
@@ -403,138 +385,37 @@ impl MapState {
         self.box_select = None;
     }
 
-    /// Make a map from the selected edges and stations.
-    pub fn get_selected_partial_map(&self) -> (Map, OccupiedNodes) {
-        let mut map = Map::new();
-        let mut stations = Vec::new();
-        let mut lines = Vec::new();
-        let mut occupied = HashMap::new();
-
-        for edge_id in self.get_selected_edges() {
-            let edge = self
-                .map
-                .get_edge(*edge_id)
-                .expect("Selected edge does not exist.");
-            stations.push(edge.get_from());
-            stations.push(edge.get_to());
-            lines.append(
-                &mut edge
-                    .get_lines()
-                    .to_vec(),
-            );
-        }
-
-        stations.sort();
-        stations.dedup();
-        lines.sort();
-        lines.dedup();
-
-        for station_id in &stations {
-            let mut station = self
-                .map
-                .get_station(*station_id)
-                .expect("Station of selected edge does not exist.")
-                .clone();
-
-            let selected = self
-                .get_selected_stations()
-                .iter()
-                .find(|s| {
-                    s.get_station()
-                        .get_id()
-                        == *station_id
-                });
-            if selected.is_none()
-                || station
-                    .get_edges()
-                    .iter()
-                    .any(|e| {
-                        !self
-                            .selected_edges
-                            .contains(e)
-                    })
-            {
-                station.lock();
-            }
-
-            station.clear_edges();
-            map.add_station(station.clone());
-        }
-
-        for station in self
+    /// Create a map with all unselected stations and edges locked.
+    pub fn lock_all_unselected(&self) -> Map {
+        let mut map = self
             .map
-            .get_stations()
-        {
-            if stations.contains(&station.get_id()) {
-                continue;
-            }
+            .clone();
 
-            occupied.insert(
-                station.get_pos(),
-                station
-                    .get_id()
-                    .into(),
-            );
-        }
-
-        for line_id in &lines {
-            map.add_line(Line::new(Some(*line_id)));
-        }
-
-        for edge_id in &self.selected_edges {
-            let edge = self
-                .get_map()
-                .get_edge(*edge_id)
-                .expect("Selected edge does not exist.");
-
-            let new_edge_id = map.get_edge_id_between(edge.get_from(), edge.get_to());
-
-            for line_id in edge.get_lines() {
-                let mut line = map
-                    .get_line(*line_id)
-                    .expect("Line of selected edge does not exist.")
-                    .clone();
-
-                line.add_edge(new_edge_id, &mut map);
-                map.add_line(line);
-            }
-        }
-
-        for edge in self
-            .map
-            .get_edges()
-        {
-            if self
+        for edge in map.get_mut_edges() {
+            if !self
                 .selected_edges
                 .contains(&edge.get_id())
             {
-                continue;
-            }
-
-            for node in edge.get_nodes() {
-                occupied.insert(
-                    *node,
-                    edge.get_id()
-                        .into(),
-                );
+                edge.lock();
             }
         }
 
-        log_print(
-            self.get_algorithm_settings(),
-            &format!(
-                "Created partial map with {} stations, {} edges and {} lines.",
-                map.get_stations()
-                    .len(),
-                map.get_edges()
-                    .len(),
-                map.get_lines()
-                    .len(),
-            ),
-            LogType::Debug,
-        );
+        for station in map.get_mut_stations() {
+            if !self
+                .selected_stations
+                .iter()
+                .any(|selected| {
+                    selected
+                        .get_station()
+                        .get_id()
+                        == station.get_id()
+                })
+            {
+                station.lock();
+            }
+        }
 
-        (map, occupied)
+        map
     }
 
     /// Recalculate the x and y limits for the algorithm settings based on the
@@ -570,13 +451,9 @@ impl MapState {
     }
 
     /// Run the full algorithm on the map. Returns true if successful.
-    pub fn run_algorithm(&mut self, already_occupied: Option<OccupiedNodes>) -> bool {
+    pub fn run_algorithm(&mut self) -> bool {
         self.calculate_algorithm_settings();
-        let res = recalculate_map(
-            self.algorithm_settings,
-            &mut self.map,
-            already_occupied.unwrap_or_default(),
-        );
+        let res = recalculate_map(self.algorithm_settings, &mut self.map);
         if let Err(e) = res {
             e.print_error();
             false

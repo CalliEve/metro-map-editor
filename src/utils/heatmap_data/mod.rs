@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    path::Path,
-};
+use std::path::Path;
 
 use super::{
     graphml,
@@ -75,7 +72,7 @@ pub fn run_heatmap() {
     settings.local_search = false;
     settings.early_local_search_abort = false;
 
-    let occupied = recalculate_map(settings, &mut map, HashMap::new()).unwrap();
+    let occupied = recalculate_map(settings, &mut map).unwrap();
 
     let heatmap = create_heatmap::create_heatmap(settings, &map, &occupied);
 

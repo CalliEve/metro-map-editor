@@ -191,8 +191,10 @@ pub fn route_edges(
         log_print(
             settings,
             &format!(
-                "routed edge {} from {start} to {end} at cost {cost}\nOriginally from {} to {}",
+                "routed edge {} ({} -> {}) from {start} to {end} at cost {cost}\nOriginally from {} to {}",
                 edge.get_id(),
+                from_station.get_id(),
+                to_station.get_id(),
                 from_station.get_pos(),
                 to_station.get_pos(),
             ),
@@ -203,17 +205,14 @@ pub fn route_edges(
             .iter()
             .any(|n| occupied.contains_key(n))
         {
-            log_print(
-                settings,
-                &format!(
-                    "Nodes already occupied: {:?}",
-                    nodes
-                        .iter()
-                        .filter(|n| occupied.contains_key(n))
-                        .collect::<Vec<_>>()
-                ),
-                super::LogType::Error,
-            );
+            return Err(Error::other(format!(
+                "Nodes of edge {} already occupied: {:?}",
+                edge.get_id(),
+                nodes
+                    .iter()
+                    .filter(|n| occupied.contains_key(n))
+                    .collect::<Vec<_>>()
+            )));
         }
 
         occupied.extend(

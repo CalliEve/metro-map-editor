@@ -176,15 +176,10 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
         .collect::<Vec<_>>();
 
     for station in all_stations {
-        if (cfg!(not(feature = "heatmap"))
-            && station
-                .get_edges()
-                .len()
-                < 3)
-            || (cfg!(feature = "heatmap")
-                && station
-                    .get_edges()
-                    .is_empty())
+        if station
+            .get_edges()
+            .len()
+            < 3
         {
             continue;
         }
@@ -201,13 +196,18 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
         neighborhood.sort_by(|a, b| {
             total_distance(map, *a, &station).cmp(&total_distance(map, *b, &station))
         });
+        if station.get_pos() != station.get_original_pos()
+            && !station
+                .get_pos()
+                .get_neighbors()
+                .contains(&station.get_original_pos())
+        {
+            neighborhood.insert(0, station.get_original_pos());
+        }
 
         let mut best = None;
 
-        'neighborhood: for node in neighborhood
-            .into_iter()
-            .take(4)
-        {
+        'neighborhood: for node in neighborhood {
             if let Ok(station_pos) = try_station_pos(
                 settings,
                 map,

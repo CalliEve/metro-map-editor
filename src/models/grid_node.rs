@@ -210,6 +210,21 @@ mod tests {
     }
 
     #[test]
+    fn test_manhattan_distance() {
+        let dist = GridNode::from((4, 5)).manhattan_distance_to(GridNode::from((10, 7)));
+        assert_eq!(dist, 8);
+
+        let dist = GridNode::from((10, 7)).manhattan_distance_to(GridNode::from((4, 5)));
+        assert_eq!(dist, 8);
+
+        let dist = GridNode::from((4, 7)).manhattan_distance_to(GridNode::from((10, 5)));
+        assert_eq!(dist, 8);
+
+        let dist = GridNode::from((10, 5)).manhattan_distance_to(GridNode::from((4, 7)));
+        assert_eq!(dist, 8);
+    }
+
+    #[test]
     fn test_get_neighbors() {
         let neighbors = GridNode::from((4, 5)).get_neighbors();
 

@@ -17,7 +17,10 @@ use super::{
     Station,
 };
 use crate::{
-    algorithm::drawing::CanvasContext,
+    algorithm::{
+        drawing::CanvasContext,
+        OccupiedNodes,
+    },
     components::CanvasState,
     unwrap_or_return,
     utils::Result,
@@ -244,25 +247,6 @@ impl Map {
         }
     }
 
-    /// Update the nodes of all edges on the map, this errors if trying to
-    /// update a non-existing edge.
-    pub fn update_edges(&mut self, edges: Vec<Edge>) -> Result<()> {
-        for edge in edges {
-            let existing_edge = self
-                .get_mut_edge(edge.get_id())
-                .ok_or(Error::other(
-                    "edge not found when updating edge",
-                ))?;
-
-            existing_edge.set_nodes(
-                edge.get_nodes()
-                    .to_owned(),
-            );
-        }
-
-        Ok(())
-    }
-
     /// Get the station located on the given grid node.
     pub fn station_at_node(&self, node: GridNode) -> Option<StationID> {
         self.stations
@@ -348,6 +332,34 @@ impl Map {
         }
 
         Ok(())
+    }
+
+    /// Get the nodes that are occupied by locked stations and edges.
+    pub fn get_occupied_by_locks(&self) -> OccupiedNodes {
+        let mut occupied = OccupiedNodes::new();
+        for station in self.get_stations() {
+            if station.is_locked() {
+                occupied.insert(
+                    station.get_pos(),
+                    station
+                        .get_id()
+                        .into(),
+                );
+            }
+        }
+        for edge in self.get_edges() {
+            if edge.is_locked() {
+                for node in edge.get_nodes() {
+                    occupied.insert(
+                        *node,
+                        edge.get_id()
+                            .into(),
+                    );
+                }
+            }
+        }
+
+        occupied
     }
 
     /// Draw the map to the given canvas.

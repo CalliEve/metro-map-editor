@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::models::{
     Edge,
     EdgeID,
@@ -14,27 +12,62 @@ pub fn trace_line_section(map: &Map, edge_id: EdgeID, stop_at_locked: bool) -> V
     let edge = map
         .get_edge(edge_id)
         .expect("edge start of line section not found");
-    let lines = edge.get_lines();
-    let mut edges = vec![edge.clone()];
 
-    let mut queue = VecDeque::new();
-    queue.push_back((edge.get_to(), edge.clone()));
-    queue.push_back((edge.get_from(), edge.clone()));
+    let backwards = follow_line_section(
+        map,
+        edge.get_to(),
+        edge_id,
+        stop_at_locked,
+    );
 
-    while let Some((prev_station, edge)) = queue.pop_front() {
-        let station_id = edge
-            .opposite(prev_station)
-            .unwrap();
+    let backwards_end = backwards
+        .last()
+        .unwrap();
+
+    follow_line_section(
+        map,
+        backwards_end.get_from(),
+        backwards_end.get_id(),
+        stop_at_locked,
+    )
+}
+
+/// Follow a line section from the given edge until an intersection or a locked
+/// station is found.
+fn follow_line_section(
+    map: &Map,
+    start_station: StationID,
+    start_edge: EdgeID,
+    stop_at_locked: bool,
+) -> Vec<Edge> {
+    let mut edges = Vec::new();
+    let mut next = Some((start_station, start_edge));
+    let lines = map
+        .get_edge(start_edge)
+        .expect("edge start of line section not found")
+        .get_lines();
+
+    while let Some((station_id, edge_id)) = next {
+        let edge = map
+            .get_edge(edge_id)
+            .expect("edge of line section not found");
+        edges.push(edge.clone());
+
+        let opposite = edge
+            .opposite(station_id)
+            .expect("station in edge section does not have opposite");
+
         let station = map
-            .get_station(station_id)
-            .unwrap();
+            .get_station(opposite)
+            .expect("station of line section not found");
+
         if station
             .get_edges()
             .len()
             != 2
             || (stop_at_locked && station.is_locked())
         {
-            continue;
+            break;
         }
 
         let next_id = *station
@@ -48,11 +81,10 @@ pub fn trace_line_section(map: &Map, edge_id: EdgeID, stop_at_locked: bool) -> V
             .expect("Invalid next edge.");
 
         if edges.contains(next_edge) || next_edge.get_lines() != lines {
-            continue;
+            break;
         }
 
-        queue.push_back((station.get_id(), next_edge.clone()));
-        edges.push(next_edge.clone());
+        next = Some((station.get_id(), next_edge.get_id()));
     }
 
     edges

@@ -22,6 +22,7 @@ use crate::models::{
 pub fn unsettle_map(map: &mut Map) {
     for station in map.get_mut_stations() {
         station.unsettle();
+        station.set_cost(0.0);
     }
     for edge in map.get_mut_edges() {
         edge.unsettle();

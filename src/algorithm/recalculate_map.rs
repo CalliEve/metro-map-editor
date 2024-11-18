@@ -27,11 +27,7 @@ use crate::{
 
 /// Recalculate the map, all the positions of the stations and the edges between
 /// them, as a whole. This is the Recalculate Map algorithm in the paper.
-pub fn recalculate_map(
-    settings: AlgorithmSettings,
-    map: &mut Map,
-    mut occupied: OccupiedNodes,
-) -> Result<OccupiedNodes> {
+pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<OccupiedNodes> {
     if map
         .get_edges()
         .is_empty()
@@ -39,6 +35,8 @@ pub fn recalculate_map(
         logging::warn!("Recalculate map called on an empty map");
         return Ok(HashMap::new());
     }
+
+    let mut occupied = map.get_occupied_by_locks();
 
     log_print(
         settings,
@@ -194,7 +192,7 @@ mod tests {
                 .len()
         );
 
-        recalculate_map(settings, &mut map, HashMap::new()).expect(&format!(
+        recalculate_map(settings, &mut map).expect(&format!(
             "failed to recalculate map {map_file}"
         ));
 
@@ -276,7 +274,7 @@ mod tests {
                     .len()
             );
 
-            if let Err(e) = recalculate_map(settings, &mut map, HashMap::new()) {
+            if let Err(e) = recalculate_map(settings, &mut map) {
                 failed.push((map_file, e));
             }
         }

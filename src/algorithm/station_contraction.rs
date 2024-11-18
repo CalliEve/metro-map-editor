@@ -370,25 +370,6 @@ pub fn expand_stations(
             )));
         }
 
-        let start_station = map
-            .get_station(edge.get_from())
-            .ok_or(Error::other(
-                "Edge with contracted stations has no start station",
-            ))?
-            .clone();
-
-        // Sort the stations by distance to starting station of the edge. This ensures
-        // that they will be added back in in the correct order.
-        to_expand.sort_by(|a, b| {
-            a.get_pos()
-                .diagonal_distance_to(start_station.get_pos())
-                .partial_cmp(
-                    &b.get_pos()
-                        .diagonal_distance_to(start_station.get_pos()),
-                )
-                .unwrap()
-        });
-
         // Calculate the new locations of the contracted stations on the edge, these are
         // equi-distance between the start and end stations of the edge they were
         // contracted into.

@@ -20,10 +20,7 @@ use serde::{
 };
 
 use crate::{
-    algorithm::{
-        AlgorithmSettings,
-        OccupiedNodes,
-    },
+    algorithm::AlgorithmSettings,
     components::{
         atoms::Button,
         molecules::Canvas,
@@ -50,8 +47,6 @@ struct AlgorithmRequest {
     map: Map,
     /// If the map is a partial map or not.
     partial: bool,
-    /// Already occupied grid nodes.
-    occupied: Option<OccupiedNodes>,
 }
 
 /// The response from the algorithm.
@@ -75,7 +70,7 @@ fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
     let mut temp_state = MapState::new(req.map);
     temp_state.set_algorithm_settings(req.settings);
 
-    let success = temp_state.run_algorithm(req.occupied);
+    let success = temp_state.run_algorithm();
 
     AlgorithmResponse {
         success,
@@ -168,7 +163,6 @@ pub fn CanvasControls() -> impl IntoView {
                 .clone(),
             id_manager_data: IDManager::to_data(),
             partial: false,
-            occupied: None,
         };
 
         algorithm_req.dispatch(req);
@@ -176,15 +170,13 @@ pub fn CanvasControls() -> impl IntoView {
 
     // Run the algorithm only on the selected stations and edges.
     let run_partial_algorithm = move |_| {
-        let (map, occupied) = map_state
-            .get_untracked()
-            .get_selected_partial_map();
         let req = AlgorithmRequest {
             settings: map_state
                 .get_untracked()
                 .get_algorithm_settings(),
-            map,
-            occupied: Some(occupied),
+            map: map_state
+                .get_untracked()
+                .lock_all_unselected(),
             id_manager_data: IDManager::to_data(),
             partial: true,
         };
