@@ -31,25 +31,25 @@ pub fn draw_grid(canvas: &CanvasContext, state: CanvasState) {
 }
 
 /// Draw all vertical grid lines
-fn draw_vertical_lines(canvas: &CanvasContext, length: u32, square_size: f64, count: f64) {
+fn draw_vertical_lines(canvas: &CanvasContext, length: f64, square_size: f64, count: f64) {
     for i in 0..(count
         .round()
         .abs() as u32)
     {
         let x = f64::from(i) * square_size + square_size;
         canvas.move_to(x, 0.0);
-        canvas.line_to(x, f64::from(length));
+        canvas.line_to(x, length);
     }
 }
 
 /// Draw all horizontal grid lines
-fn draw_horizontal_lines(canvas: &CanvasContext, length: u32, square_size: f64, count: f64) {
+fn draw_horizontal_lines(canvas: &CanvasContext, length: f64, square_size: f64, count: f64) {
     for i in 0..(count
         .round()
         .abs() as u32)
     {
         let y = f64::from(i) * square_size + square_size;
         canvas.move_to(0.0, y);
-        canvas.line_to(f64::from(length), y);
+        canvas.line_to(length, y);
     }
 }

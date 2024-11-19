@@ -57,7 +57,8 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
         .inner_height()
         .unwrap()
         .as_f64()
-        .unwrap();
+        .unwrap()
+        .round();
 
     let navbar = doc
         .get_element_by_id("navbar")
@@ -68,20 +69,21 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
         .expect("should have style")
         .get_property_value("height")
         .expect("should have height property");
+    let nav_height = nav_height_px
+        .trim_end_matches("px")
+        .parse::<f64>()
+        .expect("height should be a number")
+        .round();
 
-    let height = (win_height
-        - nav_height_px
-            .trim_end_matches("px")
-            .parse::<f64>()
-            .expect("height should be a number")
-            .round()) as u32;
+    let height = win_height - nav_height;
 
     // the sidebar borders its side, so width is `window - sidebar`.
     let win_width = window()
         .inner_width()
         .unwrap()
         .as_f64()
-        .unwrap();
+        .unwrap()
+        .round();
 
     let sidebar = doc
         .get_element_by_id("sidebar")
@@ -92,13 +94,13 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
         .expect("should have style")
         .get_property_value("width")
         .expect("should have width property");
+    let side_width = side_width_px
+        .trim_end_matches("px")
+        .parse::<f64>()
+        .expect("width should be a number")
+        .round();
 
-    let width = (win_width
-        - side_width_px
-            .trim_end_matches("px")
-            .parse::<f64>()
-            .expect("width should be a number")
-            .round()) as u32;
+    let width = win_width - side_width;
 
     // update the state with the new size.
     logging::log!(
@@ -106,11 +108,16 @@ fn update_canvas_size(map_state: &RwSignal<MapState>) {
         height,
         width
     );
-    map_state.update(|state| state.update_canvas_state(|canvas| canvas.set_size((height, width))));
+    map_state.update(|state| {
+        state.update_canvas_state(|canvas| {
+            canvas.set_size((height, width));
+            canvas.set_neighbor_sizes((nav_height, side_width));
+        })
+    });
 }
 
 /// Gets the position on the canvas that was clicked.
-fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
+fn canvas_click_pos(map_size: (f64, f64), ev: &UiEvent) -> (f64, f64) {
     let win_height = window()
         .inner_height()
         .unwrap()
@@ -125,8 +132,8 @@ fn canvas_click_pos(map_size: (u32, u32), ev: &UiEvent) -> (f64, f64) {
         .round();
 
     (
-        (f64::from(ev.page_x()) - (win_width - f64::from(map_size.1))),
-        (f64::from(ev.page_y()) - (win_height - f64::from(map_size.0))),
+        (f64::from(ev.page_x()) - (win_width - map_size.1)),
+        (f64::from(ev.page_y()) - (win_height - map_size.0)),
     )
 }
 
@@ -427,12 +434,60 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             return;
         }
 
-        map_state.clear_all_selections();
+        map_state.clear_selected_line();
 
         if let Some(grabbed_at) = selected_line.get_grabbed_at() {
             if grabbed_at != mouse_pos {
+                map_state.clear_all_selections();
                 return;
+            } else {
+                // Handle a single click on an edge
+                if !shift_key
+                    && map_state
+                        .get_selected_edges()
+                        .len()
+                        == 1
+                {
+                    let selected_edge_id = map_state
+                        .get_selected_edges()
+                        .first()
+                        .cloned()
+                        .unwrap();
+
+                    let selected_edge = map
+                        .get_edge(selected_edge_id)
+                        .cloned()
+                        .expect("selected edge should exist");
+
+                    map_state.clear_all_selections();
+                    map_state.set_clicked_on_edge(selected_edge, canvas_pos);
+                    return;
+                }
             }
+        }
+    }
+
+    // Handle a single click on a station
+    if !shift_key
+        && map_state
+            .get_selected_stations()
+            .len()
+            == 1
+    {
+        let selected_station = map_state
+            .get_selected_stations()
+            .first()
+            .cloned()
+            .unwrap();
+
+        if !selected_station.has_moved() {
+            map_state.clear_all_selections();
+            map_state.set_clicked_on_station(
+                selected_station
+                    .get_station()
+                    .clone(),
+            );
+            return;
         }
     }
 
@@ -441,14 +496,10 @@ fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         .get_selected_stations()
         .is_empty()
         && !shift_key
-        && (map_state
+        && map_state
             .get_selected_stations()
             .iter()
             .any(SelectedStation::has_moved)
-            || map_state
-                .get_selected_stations()
-                .len()
-                < 2)
     {
         for selected_station in map_state
             .get_selected_stations()
@@ -738,8 +789,8 @@ pub fn Canvas() -> impl IntoView {
             .get()
             .get_canvas_state()
             .get_size();
-        canvas_node.set_height(s.0);
-        canvas_node.set_width(s.1);
+        canvas_node.set_height(s.0 as u32);
+        canvas_node.set_width(s.1 as u32);
 
         map_state
             .get()

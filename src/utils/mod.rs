@@ -49,6 +49,14 @@ pub fn canvas_offset_to_grid_offset(offset: (f64, f64), square_size: f64) -> (i3
     )
 }
 
+/// Converts a color tuple into a hex string.
+pub fn color_to_hex(color: (u8, u8, u8)) -> String {
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        color.0, color.1, color.2
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

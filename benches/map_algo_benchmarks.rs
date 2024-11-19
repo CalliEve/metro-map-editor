@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    time::Duration,
-};
+use std::time::Duration;
 
 use criterion::{
     black_box,
@@ -47,12 +44,8 @@ pub fn full_recalculation_simple_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_simple", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(
-                black_box(settings),
-                black_box(&mut map),
-                HashMap::new(),
-            )
-            .expect("failed to recalculate map")
+            recalculate_map(black_box(settings), black_box(&mut map))
+                .expect("failed to recalculate map")
         })
     });
 }
@@ -61,7 +54,7 @@ pub fn full_recalculation_simple_benchmark(c: &mut Criterion) {
 pub fn full_recalculation_karlsruhe_benchmark(c: &mut Criterion) {
     let mut canvas = CanvasState::new();
     canvas.set_square_size(7);
-    canvas.set_size((800, 1648)); // Without enlarging the canvas, some stations will overlap due to map size
+    canvas.set_size((800.0, 1648.0)); // Without enlarging the canvas, some stations will overlap due to map size
 
     let test_file_content = std::fs::read_to_string("existing_maps/karlsruhe.graphml")
         .expect("test data file does not exist");
@@ -74,12 +67,8 @@ pub fn full_recalculation_karlsruhe_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_karlsruhe", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(
-                black_box(settings),
-                black_box(&mut map),
-                HashMap::new(),
-            )
-            .expect("failed to recalculate map")
+            recalculate_map(black_box(settings), black_box(&mut map))
+                .expect("failed to recalculate map")
         })
     });
 }

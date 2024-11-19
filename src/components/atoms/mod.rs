@@ -2,6 +2,7 @@
 
 mod button;
 mod button_group;
+mod canvas_info_box;
 mod modal;
 mod number_input;
 mod toggle;
@@ -11,6 +12,7 @@ pub use button::{
     ButtonProps,
 };
 pub use button_group::ButtonGroup;
+pub use canvas_info_box::CanvasInfoBox;
 pub use modal::Modal;
 pub use number_input::NumberInput;
 pub use toggle::Toggle;

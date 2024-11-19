@@ -143,7 +143,7 @@ mod tests {
     fn test_normalize_stations() {
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
-        canvas.set_size((100, 100));
+        canvas.set_size((100.0, 100.0));
 
         let result = normalize_stations(
             vec![
@@ -198,7 +198,7 @@ mod tests {
     fn test_json_to_map() {
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
-        canvas.set_size((100, 100));
+        canvas.set_size((100.0, 100.0));
 
         let result = json_to_map(
             JSONMap {

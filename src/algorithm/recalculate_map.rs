@@ -163,7 +163,7 @@ mod tests {
 
         let mut canvas = CanvasState::new();
         canvas.set_square_size(7);
-        canvas.set_size((674, 1648));
+        canvas.set_size((674.0, 1648.0));
 
         let test_file_content = std::fs::read_to_string(map_file).expect(&format!(
             "test data file {map_file} does not exist"
@@ -244,7 +244,7 @@ mod tests {
         for map_file in &map_files {
             let mut canvas = CanvasState::new();
             canvas.set_square_size(7);
-            canvas.set_size((800, 1648));
+            canvas.set_size((800.0, 1648.0));
 
             let test_file_content = std::fs::read_to_string(map_file).expect(&format!(
                 "test data file {map_file} does not exist"

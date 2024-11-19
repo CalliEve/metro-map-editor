@@ -65,7 +65,7 @@ mod tests {
             .expect("test data file does not exist");
         let mut canvas = CanvasState::new();
         canvas.set_square_size(5);
-        canvas.set_size((100, 100));
+        canvas.set_size((100.0, 100.0));
 
         let map = decode_map(&test_file_content, canvas).expect("failed to decode json");
         let result = encode_map(&map, canvas).expect("failed to encode map");

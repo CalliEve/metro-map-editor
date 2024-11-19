@@ -82,8 +82,7 @@ pub fn Sidebar() -> impl IntoView {
         {
             map_state.update(|state| {
                 state.lock_selected();
-                state.clear_selected_stations();
-                state.clear_selected_edges();
+                state.clear_all_selections();
             });
             return;
         }
@@ -102,8 +101,7 @@ pub fn Sidebar() -> impl IntoView {
         {
             map_state.update(|state| {
                 state.unlock_selected();
-                state.clear_selected_stations();
-                state.clear_selected_edges();
+                state.clear_all_selections();
             });
             return;
         }
@@ -114,7 +112,10 @@ pub fn Sidebar() -> impl IntoView {
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
-                on_click=Box::new(move |_| map_state.update(|state| state.set_map(state.get_last_loaded().cloned().unwrap_or_else(testmap))))
+                on_click=Box::new(move |_| map_state.update(|state| {
+                    state.clear_all_selections();
+                    state.set_map(state.get_last_loaded().cloned().unwrap_or_else(testmap))
+                }))
                 text="reset map" />
             <ButtonGroup
                 children={vec![

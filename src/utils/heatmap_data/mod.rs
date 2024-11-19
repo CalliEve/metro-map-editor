@@ -24,7 +24,7 @@ pub fn run_heatmap() {
 
     let mut canvas = CanvasState::new();
     canvas.set_square_size(7);
-    canvas.set_size((800, 1648));
+    canvas.set_size((800.0, 1648.0));
 
     let test_file_content = std::fs::read_to_string(
         "existing_maps/".to_string()

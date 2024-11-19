@@ -23,7 +23,7 @@ fn draw_edge_benchmark(c: &mut Criterion) {
     let context = CanvasContext::new();
     let mut state = CanvasState::default();
     state.set_square_size(5);
-    state.set_size((50, 50));
+    state.set_size((50.0, 50.0));
     let from = GridNode::from((0, 0));
     let to = GridNode::from((8, 8));
     let steps = vec![
@@ -64,7 +64,7 @@ fn draw_map_benchmark(c: &mut Criterion) {
     let context = CanvasContext::new();
     let mut canvas = CanvasState::new();
     canvas.set_square_size(7);
-    canvas.set_size((700, 1500)); // Without enlarging the canvas, some stations will overlap due to map size
+    canvas.set_size((700.0, 1500.0)); // Without enlarging the canvas, some stations will overlap due to map size
 
     let test_file_content = std::fs::read_to_string("existing_maps/berlin.graphml")
         .expect("test data file does not exist");

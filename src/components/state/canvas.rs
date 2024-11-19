@@ -6,7 +6,7 @@ use crate::models::GridNode;
 #[derive(Clone, Copy, Debug)]
 pub struct CanvasState {
     /// The height and width of the current canvas.
-    size: (u32, u32),
+    size: (f64, f64),
     /// The size of the map grid squares.
     square_size: u32,
     /// How much the canvas is zoomed in.
@@ -17,25 +17,28 @@ pub struct CanvasState {
     x_limit: (i32, i32),
     /// The maximum and minimum values for the x-axis.
     y_limit: (i32, i32),
+    /// The size of the sidebar and navbar, which border the canvas.
+    neighbor_sizes: (f64, f64),
 }
 
 impl CanvasState {
     /// Create a new canvas state with default values.
     pub fn new() -> Self {
         let mut s = Self {
-            size: (300, 300),
+            size: (300.0, 300.0),
             square_size: 7,
             zoom_factor: 1.0,
             offset: (0, 0),
             x_limit: (0, 0),
             y_limit: (0, 0),
+            neighbor_sizes: (0.0, 0.0),
         };
         s.recalculate_limits();
         s
     }
 
     /// A getter method for the canvas size.
-    pub fn get_size(&self) -> (u32, u32) {
+    pub fn get_size(&self) -> (f64, f64) {
         self.size
     }
 
@@ -58,7 +61,7 @@ impl CanvasState {
     }
 
     /// A setter method for the canvas size.
-    pub fn set_size(&mut self, size: (u32, u32)) {
+    pub fn set_size(&mut self, size: (f64, f64)) {
         self.size = size;
         self.recalculate_limits();
     }
@@ -233,6 +236,16 @@ impl CanvasState {
     pub fn set_offset(&mut self, offset: (i32, i32)) {
         self.offset = offset;
         self.recalculate_limits();
+    }
+
+    /// A getter method for the neighbor sizes
+    pub fn get_neighbor_sizes(&self) -> (f64, f64) {
+        self.neighbor_sizes
+    }
+
+    /// A setter method for the neighbor sizes
+    pub fn set_neighbor_sizes(&mut self, sizes: (f64, f64)) {
+        self.neighbor_sizes = sizes;
     }
 
     /// Recalculates the maximum and minimum values for the x and y coordinates

@@ -508,7 +508,7 @@ mod tests {
         let canvas = CanvasContext::new();
         let mut state = CanvasState::new();
         state.set_square_size(5);
-        state.set_size((100, 100));
+        state.set_size((100.0, 100.0));
         assert_eq!(state.drawn_square_size(), 5.0);
 
         let mut line1 = Line::new(None);

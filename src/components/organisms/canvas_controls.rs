@@ -23,7 +23,11 @@ use crate::{
     algorithm::AlgorithmSettings,
     components::{
         atoms::Button,
-        molecules::Canvas,
+        molecules::{
+            Canvas,
+            EdgeInfoBox,
+            StationInfoBox,
+        },
         CanvasState,
         MapState,
     },
@@ -277,6 +281,8 @@ pub fn CanvasControls() -> impl IntoView {
         <div class="absolute right-5 bottom-5">
             <Button text="zoom out" on_click=Box::new(zoom_out) overlay=true>-</Button>
         </div>
+        <StationInfoBox/>
+        <EdgeInfoBox/>
     </div>
     }
 }

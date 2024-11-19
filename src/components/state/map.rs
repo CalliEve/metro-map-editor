@@ -14,11 +14,13 @@ use crate::{
         AlgorithmSettings,
     },
     models::{
+        Edge,
         EdgeID,
         GridNode,
         Map,
         SelectedLine,
         SelectedStation,
+        Station,
     },
 };
 
@@ -71,6 +73,10 @@ pub struct MapState {
     /// The point the user is selecting a part of the map with a box-select
     /// from.
     box_select: Option<((f64, f64), (f64, f64))>,
+    /// The station the user clicked on for more information or editing.
+    clicked_on_station: Option<Station>,
+    /// The edge the user clicked on for more information or editing.
+    clicked_on_edge: Option<(Edge, (f64, f64))>,
 }
 
 impl MapState {
@@ -89,6 +95,8 @@ impl MapState {
             original_overlay_enabled: false,
             drag_offset: None,
             box_select: None,
+            clicked_on_station: None,
+            clicked_on_edge: None,
         }
     }
 
@@ -99,6 +107,8 @@ impl MapState {
         self.clear_selected_action();
         self.clear_selected_edges();
         self.clear_box_select();
+        self.clear_clicked_on_station();
+        self.clear_clicked_on_edge();
     }
 
     /// A getter method for the [`Map`].
@@ -383,6 +393,46 @@ impl MapState {
     /// Clear the box selection.
     pub fn clear_box_select(&mut self) {
         self.box_select = None;
+    }
+
+    /// Getter for the clicked on station.
+    pub fn get_clicked_on_station(&self) -> Option<&Station> {
+        self.clicked_on_station
+            .as_ref()
+    }
+
+    /// Setter for the clicked on station.
+    pub fn set_clicked_on_station(&mut self, station: Station) {
+        self.clicked_on_station = Some(station);
+    }
+
+    /// Clear the clicked on station.
+    pub fn clear_clicked_on_station(&mut self) {
+        self.clicked_on_station = None;
+    }
+
+    /// Getter for the clicked on edge.
+    pub fn get_clicked_on_edge(&self) -> Option<&Edge> {
+        self.clicked_on_edge
+            .as_ref()
+            .map(|(edge, _)| edge)
+    }
+
+    /// Getter for the location of the clicked on edge.
+    pub fn get_clicked_on_edge_location(&self) -> Option<(f64, f64)> {
+        self.clicked_on_edge
+            .as_ref()
+            .map(|(_, loc)| *loc)
+    }
+
+    /// Setter for the clicked on edge.
+    pub fn set_clicked_on_edge(&mut self, edge: Edge, click_location: (f64, f64)) {
+        self.clicked_on_edge = Some((edge, click_location));
+    }
+
+    /// Clear the clicked on edge.
+    pub fn clear_clicked_on_edge(&mut self) {
+        self.clicked_on_edge = None;
     }
 
     /// Create a map with all unselected stations and edges locked.
