@@ -4,6 +4,7 @@
 #![allow(clippy::too_many_lines)]
 
 mod atoms;
+mod canvas;
 mod molecules;
 mod organisms;
 mod pages;

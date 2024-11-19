@@ -23,8 +23,8 @@ use crate::{
     algorithm::AlgorithmSettings,
     components::{
         atoms::Button,
+        canvas::Canvas,
         molecules::{
-            Canvas,
             EdgeInfoBox,
             StationInfoBox,
         },
