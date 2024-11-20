@@ -64,7 +64,7 @@ where
             .1;
 
         // Offset by 15px to the left, aka 1rem - 1px
-        let screen_pos = map_pos + sidebar_width - 15.0;
+        let screen_pos = map_pos + sidebar_width + 2.0;
         format!("{}px", screen_pos)
     };
     let top = move || {
@@ -78,7 +78,7 @@ where
             .0;
 
         // Offset by 15px to the top, aka 1rem - 1px
-        let screen_pos = map_pos + navbar_height - 15.0;
+        let screen_pos = map_pos + navbar_height + 2.0;
         format!("{}px", screen_pos)
     };
 
@@ -93,9 +93,10 @@ where
             on:click=on_outside_click>
             <div
                 _ref=info_box_ref
+                style:pointer-events="auto"
                 style:top=top
                 style:left=left
-                class="absolute p-4 w-80 max-w-2xl max-h-full">
+                class="absolute w-80 max-w-2xl max-h-full">
                 // title
                 <div class=move || String::from("text-lg px-2 pb-0.5 font-semibold bg-white shadow dark:bg-gray-700") + if has_children { " rounded-t-lg" } else {" rounded-lg"}>
                     <h2>{title.to_string()}</h2>
@@ -103,7 +104,7 @@ where
                 <div
                     aria-hidden={move || if has_children {"false"} else {"true"}}
                     style:display=move || if has_children {"block"} else {"none"}
-                    class="relative px-2 pb-1 rounded-b-lg bg-white shadow dark:bg-gray-700">
+                    class="relative leading-tight px-2 pb-1 rounded-b-lg whitespace-pre-line bg-white shadow dark:bg-gray-700">
                     <hr/>
                     // content
                     <div>

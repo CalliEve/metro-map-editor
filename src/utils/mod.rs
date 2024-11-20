@@ -19,6 +19,7 @@ pub use id_manager::{
     IDData,
     IDManager,
 };
+pub use parsing::parse_color;
 
 use crate::models::GridNode;
 

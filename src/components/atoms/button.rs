@@ -11,9 +11,9 @@ type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 
 /// A clickable button html element.
 #[component]
-pub fn Button(
+pub fn Button<S>(
     /// The text displayed on the button.
-    text: &'static str,
+    text: S,
     /// Gets called when the button is clicked.
     on_click: OnButtonClick,
     /// If false the button is filled-in with one color, else just the border
@@ -30,6 +30,10 @@ pub fn Button(
     /// text or icons.
     #[prop(optional)]
     bigger: bool,
+    /// If the button should be smaller, especially useful when having smaller
+    /// text or icons or using the button in-line.
+    #[prop(optional)]
+    smaller: bool,
     /// If the button has been selected.
     #[prop(optional)]
     #[prop(into)]
@@ -41,7 +45,10 @@ pub fn Button(
     /// If present, the button will show the text on hover.
     #[prop(optional)]
     children: Option<Children>,
-) -> impl IntoView {
+) -> impl IntoView
+where
+    S: ToString + 'static,
+{
     let has_children = children.is_some();
 
     let color = if danger {
@@ -60,25 +67,44 @@ pub fn Button(
     let dark_active = if dark >= 800 { 950 } else { dark + 200 };
 
     let class_func = move || {
-        let mut class = "inline-block group px-4 \
-        py-1.5 text-center uppercase \
+        let mut class = "inline-block \
+        text-center uppercase group relative \
         leading-snug shadow-neutral-800 \
         dark:shadow-neutral-950 hover:shadow-blue-900 \
         dark:hover:shadow-neutral-900"
             .to_owned();
 
-        if overlay && bigger {
-            class += " rounded-full text-xl font-bold h-16 w-16";
-        } else if overlay {
-            class += " rounded-full text-xl font-bold h-11 w-11";
+        if overlay {
+            class += " rounded-full text-xl font-bold";
+
+            if bigger {
+                class += " h-16 w-16";
+            } else {
+                class += " h-11 w-11";
+            }
         } else {
-            class += " rounded text-sm font-semibold";
+            class += " rounded";
+
+            if smaller {
+                class += " text-xs";
+            } else if bigger {
+                class += " text-xl";
+            } else {
+                class += " text-sm font-semibold";
+            }
+        }
+
+        if smaller {
+            class += " px-1 py-0.5";
+        } else {
+            class += " px-4 py-1.5";
         }
 
         if outlined {
             class += &format!(
                 " border-solid border-4 text-{color}-{base} \
-                border-{color}-{base} hover:text-{color}-{base_hover} \
+                border-{color}-{base} \
+                hover:text-{color}-{base_hover} \
                 hover:border-{color}-{base_hover} \
                 active:text-{color}-{base_active} \
                 active:border-{color}-{base_active} \
@@ -135,10 +161,10 @@ pub fn Button(
             focus=active
             on:click=on_click>
             <>
-                {children.map_or(Fragment::from(Text::new(text.into()).into_view()), |c| c())}
+                {children.map_or(Fragment::from(Text::new(text.to_string().into()).into_view()), |c| c())}
                 <Show when=move || has_children>
                     <span class=hover_class>
-                        {text}
+                        {text.to_string()}
                     </span>
                 </Show>
             </>

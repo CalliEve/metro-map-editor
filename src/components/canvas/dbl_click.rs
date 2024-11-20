@@ -1,5 +1,6 @@
 //! Contains the dblclick event handler for the [`Canvas`] component.
 
+use itertools::Itertools;
 use web_sys::UiEvent;
 
 use super::other::canvas_click_pos;
@@ -18,7 +19,11 @@ use crate::{
 /// Listener for the [dblclick] event on the canvas.
 ///
 /// [dblclick]: https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
-pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent) {
+pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
+    if !shift_key {
+        map_state.clear_all_selections();
+    }
+
     let map = map_state.get_map();
 
     let canvas_state = map_state.get_canvas_state();
@@ -34,12 +39,39 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent) {
             middles
                 .into_iter()
                 .map(|s| {
-                    SelectedStation::new(
+                    let mut selected = SelectedStation::new(
                         map.get_station(s)
                             .expect("Station in line section does not exist.")
                             .clone(),
-                    )
+                    );
+
+                    for neighbor_edge_id in selected
+                        .get_station()
+                        .clone()
+                        .get_edges()
+                    {
+                        if let Some(edge) = map.get_edge(*neighbor_edge_id) {
+                            if s == edge.get_from() {
+                                selected.add_before(edge.get_to());
+                            } else {
+                                selected.add_after(edge.get_from());
+                            }
+                        }
+                    }
+
+                    selected
                 })
+                .chain(
+                    map_state
+                        .get_selected_stations()
+                        .to_vec()
+                        .into_iter(),
+                )
+                .sorted_by_key(|s| {
+                    s.get_station()
+                        .get_id()
+                })
+                .dedup_by(|a, b| a.get_station() == b.get_station())
                 .collect(),
         );
 
@@ -47,6 +79,14 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent) {
             line_section
                 .into_iter()
                 .map(|e| e.get_id())
+                .chain(
+                    map_state
+                        .get_selected_edges()
+                        .to_vec()
+                        .into_iter(),
+                )
+                .sorted()
+                .dedup()
                 .collect(),
         );
     } else {

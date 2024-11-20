@@ -59,7 +59,7 @@ pub fn StationInfoBox() -> impl IntoView {
                     });
                 }>
                 <div>
-                    <span class="text-md font-semibold"><b>Name: </b> {station_name()}</span>
+                    <span class="text-md font-semibold"><b>"Name:\n"</b> {station_name()}</span>
                 </div>
             </CanvasInfoBox>
         </Show>

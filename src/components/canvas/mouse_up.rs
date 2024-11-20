@@ -19,6 +19,10 @@ use crate::{
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
 pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
+    if ev.detail() > 1 {
+        return;
+    }
+
     let mut map = map_state
         .get_map()
         .clone();
@@ -117,7 +121,8 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                 return;
             } else {
                 // Handle a single click on an edge
-                if !shift_key
+                if edge_at_node.is_some()
+                    && !shift_key
                     && map_state
                         .get_selected_edges()
                         .len()
@@ -143,7 +148,8 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     }
 
     // Handle a single click on a station
-    if !shift_key
+    if station_at_node.is_some()
+        && !shift_key
         && map_state
             .get_selected_stations()
             .len()

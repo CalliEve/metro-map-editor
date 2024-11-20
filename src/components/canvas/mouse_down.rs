@@ -17,6 +17,10 @@ use crate::{
 ///
 /// [mousedown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
 pub fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
+    if ev.detail() > 1 {
+        return;
+    }
+
     // Actions are only performed on mouseup
     if map_state
         .get_selected_action()
@@ -164,10 +168,6 @@ pub fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
 
     // Select the clicked edge, unless this was a double click.
     if let Some(edge_id) = map.edge_at_node(mouse_pos) {
-        if ev.detail() > 1 {
-            return;
-        }
-
         if map_state
             .get_selected_edges()
             .contains(&edge_id)

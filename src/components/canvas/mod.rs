@@ -102,7 +102,7 @@ pub fn Canvas() -> impl IntoView {
                 on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
-                on:dblclick=move |ev| map_state.update(|state| on_dbl_click(state, ev.as_ref()))
+                on:dblclick=move |ev| map_state.update(|state| on_dbl_click(state, ev.as_ref(), ev.shift_key()))
 
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
                 on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
