@@ -7,7 +7,10 @@ use crate::{
         CanvasInfoBox,
         TextWithEdit,
     },
-    models::LineID,
+    models::{
+        Line,
+        LineID,
+    },
     utils::{
         color_to_hex,
         parse_color,
@@ -16,18 +19,10 @@ use crate::{
 };
 
 #[component]
-fn LineInfo(line_id: LineID, i: usize) -> impl IntoView {
+fn LineInfo(line: Line, i: usize) -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
-
-    let line = move || {
-        map_state
-            .get()
-            .get_map()
-            .get_line(line_id)
-            .cloned()
-            .expect("Can't find line.")
-    };
+    let (line, set_line) = create_signal(line);
 
     let edit_line_color = move |line_id: LineID, new_color: String| {
         if let Ok(color) = parse_color(&new_color) {
@@ -37,9 +32,14 @@ fn LineInfo(line_id: LineID, i: usize) -> impl IntoView {
                     .get_mut_line(line_id)
                 {
                     line.set_color(color);
+                    set_line(line.clone());
                 }
             });
         }
+    };
+    let line_id = move || {
+        line.get()
+            .get_id()
     };
 
     view! {
@@ -52,15 +52,15 @@ fn LineInfo(line_id: LineID, i: usize) -> impl IntoView {
             }.into_view()}
         }
         <p class="text-md font-semibold"><b>"Name:\n"</b> {
-            if line().get_name().is_empty() {"Unnamed".to_owned()} else {line().get_name().to_owned()}
+            if line.get().get_name().is_empty() {"Unnamed".to_owned()} else {line.get().get_name().to_owned()}
         }</p>
         <p class="text-md font-semibold">
             <b>"Color:\n"</b>
-            <span style:color=color_to_hex(line().get_color())>
+            <span style:color=move || color_to_hex(line.get().get_color())>
                 <TextWithEdit
                     edit_label={"Edit line color".to_owned()}
-                    text=color_to_hex(line().get_color())
-                    on_edit=move |s| edit_line_color(line_id, s)/>
+                    text=color_to_hex(line.get().get_color())
+                    on_edit=move |s| edit_line_color(line_id(), s)/>
             </span>
         </p>
     }
@@ -90,7 +90,15 @@ pub fn EdgeInfoBox() -> impl IntoView {
             .get_clicked_on_edge()
             .map_or(Vec::new(), |e| {
                 e.get_lines()
-                    .to_vec()
+                    .into_iter()
+                    .map(|l| {
+                        state
+                            .get_map()
+                            .get_line(*l)
+                            .unwrap()
+                            .clone()
+                    })
+                    .collect()
             })
             .into_iter()
             .enumerate()
@@ -108,10 +116,10 @@ pub fn EdgeInfoBox() -> impl IntoView {
                 }>
                 <div>
                     <For each=edge_lines
-                        key=|(_, line)| *line
-                        children=move |(i, line_id)| {
+                        key=|(_, line)| line.get_id()
+                        children=move |(i, line)| {
                             view!{
-                                <LineInfo line_id=line_id i=i/>
+                                <LineInfo line=line i=i/>
                             }
                         }
                     />

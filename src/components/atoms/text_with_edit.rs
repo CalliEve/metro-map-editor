@@ -63,7 +63,7 @@ where
             when=move || editing.get()
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
-                    {text_input} // FIXME: actually use the text from the input, this obfuscates the bug
+                    {text_input}
                     <Button text={button_label.clone()} smaller=true on_click=Box::new(on_click)>
                         "edit"
                     </Button>
