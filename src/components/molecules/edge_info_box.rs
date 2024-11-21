@@ -37,9 +37,40 @@ fn LineInfo(line: Line, i: usize) -> impl IntoView {
             });
         }
     };
+    let edit_line_name = move |line_id: LineID, new_name: String| {
+        map_state.update(|state| {
+            if let Some(line) = state
+                .get_mut_map()
+                .get_mut_line(line_id)
+            {
+                line.set_name(&new_name);
+                set_line(line.clone());
+            }
+        });
+    };
+
     let line_id = move || {
         line.get()
             .get_id()
+    };
+    let line_name = move || {
+        if line
+            .get()
+            .get_name()
+            .is_empty()
+        {
+            "Unnamed".to_owned()
+        } else {
+            line.get()
+                .get_name()
+                .to_owned()
+        }
+    };
+    let line_color = move || {
+        color_to_hex(
+            line.get()
+                .get_color(),
+        )
     };
 
     view! {
@@ -51,15 +82,18 @@ fn LineInfo(line: Line, i: usize) -> impl IntoView {
                 <></>
             }.into_view()}
         }
-        <p class="text-md font-semibold"><b>"Name:\n"</b> {
-            if line.get().get_name().is_empty() {"Unnamed".to_owned()} else {line.get().get_name().to_owned()}
-        }</p>
+        <p class="text-md font-semibold"><b>"Name:\n"</b>
+            <TextWithEdit
+                    edit_label={"Edit line name".to_owned()}
+                    text=line_name
+                    on_edit=move |s| edit_line_name(line_id(), s)/>
+        </p>
         <p class="text-md font-semibold">
             <b>"Color:\n"</b>
-            <span style:color=move || color_to_hex(line.get().get_color())>
+            <span style:color=line_color>
                 <TextWithEdit
                     edit_label={"Edit line color".to_owned()}
-                    text=color_to_hex(line.get().get_color())
+                    text=line_color
                     on_edit=move |s| edit_line_color(line_id(), s)/>
             </span>
         </p>

@@ -1,5 +1,7 @@
 //! Contains the [`Button`] component.
 
+use std::borrow::Borrow;
+
 use leptos::{
     ev::MouseEvent,
     *,
@@ -11,9 +13,10 @@ type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 
 /// A clickable button html element.
 #[component]
-pub fn Button<S>(
+pub fn Button(
     /// The text displayed on the button.
-    text: S,
+    #[prop(into)]
+    text: MaybeSignal<String>,
     /// Gets called when the button is clicked.
     on_click: OnButtonClick,
     /// If false the button is filled-in with one color, else just the border
@@ -44,11 +47,8 @@ pub fn Button<S>(
     /// The children of the button, if any.
     /// If present, the button will show the text on hover.
     #[prop(optional)]
-    children: Option<Children>,
-) -> impl IntoView
-where
-    S: ToString + 'static,
-{
+    children: Option<ChildrenFn>,
+) -> impl IntoView {
     let has_children = children.is_some();
 
     let color = if danger {
@@ -154,6 +154,24 @@ where
     let hover_class =
         "hidden group-hover:block rounded text-xs absolute z-10 width-fit p-1.5 bg-neutral-800 text-center bottom-[110%] right-0 whitespace-pre";
 
+    let text_for_children = text.clone();
+    let children_signal = move || {
+        children
+            .clone()
+            .map_or(
+                Fragment::from(
+                    Text::new(
+                        text_for_children
+                            .borrow()
+                            .get()
+                            .into(),
+                    )
+                    .into_view(),
+                ),
+                |c| c(),
+            )
+    };
+
     view! {
         <button
             type="button"
@@ -161,10 +179,10 @@ where
             focus=active
             on:click=on_click>
             <>
-                {children.map_or(Fragment::from(Text::new(text.to_string().into()).into_view()), |c| c())}
+                {children_signal}
                 <Show when=move || has_children>
                     <span class=hover_class>
-                        {text.to_string()}
+                        {text.clone()}
                     </span>
                 </Show>
             </>

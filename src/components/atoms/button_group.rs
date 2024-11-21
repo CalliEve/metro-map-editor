@@ -6,13 +6,10 @@ use super::button::ButtonProps;
 
 /// A group of buttons
 #[component]
-pub fn ButtonGroup<S>(
+pub fn ButtonGroup(
     /// These will be transformed into [`super::Button`] elements.
-    children: Vec<ButtonProps<S>>,
-) -> impl IntoView
-where
-    S: ToString + 'static,
-{
+    children: Vec<ButtonProps>,
+) -> impl IntoView {
     let class = "max-w-full flex align-center gap-px [&>*]:flex-1 \
         [&>*:not(:first-child):not(:last-child)]:ml-0 \
         [&>*:not(:first-child):not(:last-child)]:rounded-none \

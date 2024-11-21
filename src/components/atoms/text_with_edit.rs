@@ -8,31 +8,39 @@ use crate::components::atoms::Button;
 /// An html element for displaying text with an edit button and the ability to
 /// edit that text.
 #[component]
-pub fn TextWithEdit<S, F>(
+pub fn TextWithEdit<F>(
     /// The text to display.
-    text: S,
+    #[prop(into)]
+    text: TextProp,
     /// Gets called when the text is changed.
     on_edit: F,
     /// The label when hovering over the edit button.
     #[prop(optional)]
-    edit_label: Option<S>,
+    #[prop(into)]
+    edit_label: Option<TextProp>,
 ) -> impl IntoView
 where
-    S: ToString + 'static,
     F: Fn(String) + Copy + 'static,
 {
     let (editing, set_editing) = create_signal(false);
-    let (text_input, set_text_input) = create_signal(text.to_string());
+    let (text_input, set_text_input) = create_signal("".to_string());
 
     // Generate the id for the input element and label.
-    let id = edit_label
-        .as_ref()
-        .map_or_else(
-            || format!("edit_{}", text.to_string()),
-            |s| s.to_string(),
-        )
-        .to_lowercase()
-        .replace(' ', "_");
+    let edit_label_for_id = edit_label.clone();
+    let text_for_id = text.clone();
+    let id = MaybeSignal::derive(move || {
+        edit_label_for_id
+            .clone()
+            .map_or_else(
+                || format!("edit_{}", text_for_id.get()),
+                |s| {
+                    s.get()
+                        .to_string()
+                },
+            )
+            .to_lowercase()
+            .replace(' ', "_")
+    });
 
     let on_click = move |_| {
         set_editing(true);
@@ -42,28 +50,52 @@ where
     let on_done = move |_| {
         set_editing(false);
         on_edit(text_input.get());
+        set_text_input("".to_string());
     };
     let on_submit = move |ev: KeyboardEvent| {
         if ev.key() == "Enter" {
             set_editing(false);
             on_edit(text_input.get());
+            set_text_input("".to_string());
         }
     };
 
     // If the edit_label is not provided, use the text as the label.
-    let edit_label = edit_label.map_or_else(
-        || format!("Edit {}", text.to_string()),
-        |s| s.to_string(),
-    );
+    let text_for_edit_label = text.clone();
+    let edit_label = MaybeSignal::derive(move || {
+        edit_label
+            .as_ref()
+            .map_or_else(
+                || format!("Edit {}", text_for_edit_label.get()),
+                |s| {
+                    s.get()
+                        .to_string()
+                },
+            )
+    });
     // Clone to satisfy lifetimes and moves.
     let button_label = edit_label.clone();
+
+    let text_for_effect = text.clone();
+    create_effect(move |_| {
+        if text_input
+            .get()
+            .is_empty()
+        {
+            set_text_input(
+                text_for_effect
+                    .get()
+                    .to_string(),
+            );
+        }
+    });
 
     view! {
         <Show
             when=move || editing.get()
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
-                    {text_input}
+                    {text.clone()}
                     <Button text={button_label.clone()} smaller=true on_click=Box::new(on_click)>
                         "edit"
                     </Button>
