@@ -19,7 +19,12 @@ use crate::{
 };
 
 #[component]
-fn LineInfo(line: Line, i: usize) -> impl IntoView {
+fn LineInfo(
+    /// The line to show information about.
+    line: Line,
+    /// The index of the line in the list of lines.
+    i: usize,
+) -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let (line, set_line) = create_signal(line);
@@ -78,9 +83,7 @@ fn LineInfo(line: Line, i: usize) -> impl IntoView {
             if i > 0 {view!{
                 <hr class="my-0.5"/>
             }.into_view()} else {
-                view!{
-                <></>
-            }.into_view()}
+                view!{}.into_view()}
         }
         <p class="text-md font-semibold"><b>"Name:\n"</b>
             <TextWithEdit
@@ -124,7 +127,7 @@ pub fn EdgeInfoBox() -> impl IntoView {
             .get_clicked_on_edge()
             .map_or(Vec::new(), |e| {
                 e.get_lines()
-                    .into_iter()
+                    .iter()
                     .map(|l| {
                         state
                             .get_map()

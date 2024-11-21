@@ -23,7 +23,7 @@ where
     F: Fn(String) + Copy + 'static,
 {
     let (editing, set_editing) = create_signal(false);
-    let (text_input, set_text_input) = create_signal("".to_string());
+    let (text_input, set_text_input) = create_signal(String::new());
 
     // Generate the id for the input element and label.
     let edit_label_for_id = edit_label.clone();
@@ -50,13 +50,13 @@ where
     let on_done = move |_| {
         set_editing(false);
         on_edit(text_input.get());
-        set_text_input("".to_string());
+        set_text_input(String::new());
     };
     let on_submit = move |ev: KeyboardEvent| {
         if ev.key() == "Enter" {
             set_editing(false);
             on_edit(text_input.get());
-            set_text_input("".to_string());
+            set_text_input(String::new());
         }
     };
 
@@ -115,7 +115,7 @@ where
                     class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate pt-[0.37rem] leading-[1.6] text-neutral-500 peer-focus:text-primary -translate-y-[0.9rem] scale-[0.8] dark:text-neutral-400 dark:peer-focus:text-primary"
                     >{edit_label.clone()}
                 </label>
-                <Button text="finish editing" smaller=true on_click=Box::new(on_done.clone())>
+                <Button text="finish editing" smaller=true on_click=Box::new(on_done)>
                     "done"
                 </Button>
             </div>

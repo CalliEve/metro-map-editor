@@ -266,7 +266,7 @@ fn diagonal_occupied(
                 return map
                     .get_station(station_id)
                     .zip(diag_two.get_edge_id())
-                    .map_or(false, |(s, edge_id)| {
+                    .is_some_and(|(s, edge_id)| {
                         s.get_edges()
                             .contains(&edge_id)
                     });
@@ -276,7 +276,7 @@ fn diagonal_occupied(
                 return map
                     .get_station(station_id)
                     .zip(diag_one.get_edge_id())
-                    .map_or(false, |(s, edge_id)| {
+                    .is_some_and(|(s, edge_id)| {
                         s.get_edges()
                             .contains(&edge_id)
                     });

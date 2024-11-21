@@ -79,7 +79,7 @@ pub fn update_canvas_size(map_state: &RwSignal<MapState>) {
         state.update_canvas_state(|canvas| {
             canvas.set_size((height, width));
             canvas.set_neighbor_sizes((nav_height, side_width));
-        })
+        });
     });
 }
 

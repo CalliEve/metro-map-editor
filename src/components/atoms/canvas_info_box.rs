@@ -7,6 +7,7 @@ use wasm_bindgen::JsCast;
 use crate::MapState;
 
 /// A generic canvas info box that others can be based upon.
+#[allow(clippy::needless_pass_by_value)] // cannot be a reference because of the `Fn` trait
 #[component]
 pub fn CanvasInfoBox<S, C>(
     /// The title of the info box,
@@ -20,7 +21,7 @@ pub fn CanvasInfoBox<S, C>(
     children: Option<Children>,
 ) -> impl IntoView
 where
-    S: ToString,
+    S: ToString + 'static,
     C: Fn() + 'static,
 {
     let info_box_ref: NodeRef<html::Div> = create_node_ref();
@@ -65,7 +66,7 @@ where
 
         // Offset by 15px to the left, aka 1rem - 1px
         let screen_pos = map_pos + sidebar_width + 2.0;
-        format!("{}px", screen_pos)
+        format!("{screen_pos}px")
     };
     let top = move || {
         let map_pos = click_position
@@ -79,7 +80,7 @@ where
 
         // Offset by 15px to the top, aka 1rem - 1px
         let screen_pos = map_pos + navbar_height + 2.0;
-        format!("{}px", screen_pos)
+        format!("{screen_pos}px")
     };
 
     view! {

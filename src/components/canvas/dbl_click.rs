@@ -64,8 +64,7 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                 .chain(
                     map_state
                         .get_selected_stations()
-                        .to_vec()
-                        .into_iter(),
+                        .to_vec(),
                 )
                 .sorted_by_key(|s| {
                     s.get_station()
@@ -82,8 +81,7 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                 .chain(
                     map_state
                         .get_selected_edges()
-                        .to_vec()
-                        .into_iter(),
+                        .to_vec(),
                 )
                 .sorted()
                 .dedup()

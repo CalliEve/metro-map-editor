@@ -18,13 +18,13 @@ pub fn draw_grid(canvas: &CanvasContext, state: CanvasState) {
         canvas,
         height,
         drawn_square_size,
-        f64::from(width) / drawn_square_size,
+        width / drawn_square_size,
     );
     draw_horizontal_lines(
         canvas,
         width,
         drawn_square_size,
-        f64::from(height) / drawn_square_size,
+        height / drawn_square_size,
     );
 
     canvas.stroke();

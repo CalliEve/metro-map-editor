@@ -116,10 +116,7 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         map_state.clear_selected_line();
 
         if let Some(grabbed_at) = selected_line.get_grabbed_at() {
-            if grabbed_at != mouse_pos {
-                map_state.clear_all_selections();
-                return;
-            } else {
+            if grabbed_at == mouse_pos {
                 // Handle a single click on an edge
                 if edge_at_node.is_some()
                     && !shift_key
@@ -131,7 +128,7 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                     let selected_edge_id = map_state
                         .get_selected_edges()
                         .first()
-                        .cloned()
+                        .copied()
                         .unwrap();
 
                     let selected_edge = map
@@ -143,6 +140,9 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
                     map_state.set_clicked_on_edge(selected_edge, canvas_pos);
                     return;
                 }
+            } else {
+                map_state.clear_all_selections();
+                return;
             }
         }
     }

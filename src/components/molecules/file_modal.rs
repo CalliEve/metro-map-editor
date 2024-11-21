@@ -53,13 +53,9 @@ where
     let file_name = file.name();
     let file_ext = Path::new(&file_name).extension();
 
-    let file_type = if file_ext.map_or(false, |ext| {
-        ext.eq_ignore_ascii_case("json")
-    }) {
+    let file_type = if file_ext.is_some_and(|ext| ext.eq_ignore_ascii_case("json")) {
         FileType::Json
-    } else if file_ext.map_or(false, |ext| {
-        ext.eq_ignore_ascii_case("graphml")
-    }) {
+    } else if file_ext.is_some_and(|ext| ext.eq_ignore_ascii_case("graphml")) {
         FileType::GraphML
     } else {
         return;

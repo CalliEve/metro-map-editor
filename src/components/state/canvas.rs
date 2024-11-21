@@ -251,15 +251,15 @@ impl CanvasState {
     /// Recalculates the maximum and minimum values for the x and y coordinates
     /// to fit on the canvas.
     fn recalculate_limits(&mut self) {
-        let width_node_count = (f64::from(
-            self.size
-                .1,
-        ) / self.drawn_square_size())
+        let width_node_count = (self
+            .size
+            .1
+            / self.drawn_square_size())
         .round() as i32;
-        let height_node_count = (f64::from(
-            self.size
-                .0,
-        ) / self.drawn_square_size())
+        let height_node_count = (self
+            .size
+            .0
+            / self.drawn_square_size())
         .round() as i32;
 
         self.x_limit = (

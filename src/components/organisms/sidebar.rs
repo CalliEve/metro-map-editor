@@ -114,7 +114,7 @@ pub fn Sidebar() -> impl IntoView {
             <Button
                 on_click=Box::new(move |_| map_state.update(|state| {
                     state.clear_all_selections();
-                    state.set_map(state.get_last_loaded().cloned().unwrap_or_else(testmap))
+                    state.set_map(state.get_last_loaded().cloned().unwrap_or_else(testmap));
                 }))
                 text="reset map" />
             <ButtonGroup

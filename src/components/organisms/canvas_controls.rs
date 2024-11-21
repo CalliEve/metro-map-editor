@@ -3,6 +3,8 @@
 // Async is used for futures, which are used in the worker, even though the algorithm itself is
 // sync.
 #![allow(clippy::unused_async)]
+// This otherwise gets triggered by one in the wasm worker.
+#![allow(unexpected_cfgs)]
 
 use ev::KeyboardEvent;
 use html::Div;

@@ -7,7 +7,10 @@ use crate::{
         CanvasInfoBox,
         TextWithEdit,
     },
-    models::StationID,
+    models::{
+        Station,
+        StationID,
+    },
     MapState,
 };
 
@@ -40,7 +43,7 @@ pub fn StationInfoBox() -> impl IntoView {
         map_state
             .get()
             .get_clicked_on_station()
-            .map_or("".to_string(), |s| {
+            .map_or(String::new(), |s| {
                 logging::log!(
                     "Name of station: {}: {}",
                     s.get_id(),
@@ -60,7 +63,7 @@ pub fn StationInfoBox() -> impl IntoView {
         map_state
             .get()
             .get_clicked_on_station()
-            .map(|s| s.get_id())
+            .map(Station::get_id)
     };
 
     let edit_station_name = move |station_id_opt: Option<StationID>, new_name: String| {
