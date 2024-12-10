@@ -7,6 +7,7 @@ use super::{
     edge_dijkstra::edge_dijkstra,
     log_print,
     occupation::OccupiedNodes,
+    recalculate_map::Updater,
     AlgorithmSettings,
 };
 use crate::{
@@ -16,7 +17,10 @@ use crate::{
         Map,
         Station,
     },
-    utils::Result,
+    utils::{
+        IDManager,
+        Result,
+    },
     Error,
 };
 
@@ -168,7 +172,12 @@ pub fn try_station_pos(
 /// Perform a local search on the map.
 /// This will try to find a better position for each station.
 /// This is the Local Search algorithm in the paper.
-pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut OccupiedNodes) {
+pub async fn local_search(
+    settings: AlgorithmSettings,
+    map: &mut Map,
+    occupied: &mut OccupiedNodes,
+    midway_updater: Updater,
+) {
     let all_stations = map
         .get_stations()
         .into_iter()
@@ -247,5 +256,9 @@ pub fn local_search(settings: AlgorithmSettings, map: &mut Map, occupied: &mut O
             map.add_edge(edge);
         }
         *occupied = best.occupied;
+
+        if let Updater::Updater(updater) = midway_updater.clone() {
+            updater(map.clone(), IDManager::to_data()).await;
+        }
     }
 }

@@ -10,7 +10,6 @@ use super::CanvasState;
 use crate::{
     algorithm::{
         drawing::redraw_canvas,
-        recalculate_map,
         AlgorithmSettings,
     },
     models::{
@@ -498,17 +497,5 @@ impl MapState {
             .grid_x_limits = (x_limits.0 - 2, x_limits.1 + 2);
         self.algorithm_settings
             .grid_y_limits = (y_limits.0 - 2, y_limits.1 + 2);
-    }
-
-    /// Run the full algorithm on the map. Returns true if successful.
-    pub fn run_algorithm(&mut self) -> bool {
-        self.calculate_algorithm_settings();
-        let res = recalculate_map(self.algorithm_settings, &mut self.map);
-        if let Err(e) = res {
-            e.print_error();
-            false
-        } else {
-            true
-        }
     }
 }

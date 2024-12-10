@@ -7,7 +7,7 @@ license = "MIT"
 
 [dependencies]
 leptos = { version = "0.6.15", features = ["csr", "nightly"] }
-web-sys = { version = "0.3.72", features = [
+web-sys = { version = "0.3.76", features = [
     "KeyboardEvent",
     "HtmlCanvasElement",
     "HtmlInputElement",
@@ -21,7 +21,8 @@ web-sys = { version = "0.3.72", features = [
     "Element",
     "Window",
 ] }
-wasm-bindgen = { version = "0.2.95" }
+js-sys = "0.3.76"
+wasm-bindgen = { version = "0.2.99" }
 console_log = "1"
 log = "0.4"
 console_error_panic_hook = "0.1"
@@ -34,6 +35,11 @@ priority-queue = "2.1"
 ordered-float = "4.4"
 itertools = "0.13"
 leptos_workers = "0.2.2"
+futures-core = "0.3"
+futures-util = "0.3"
+futures-test = "0.3"
+wasm-bindgen-futures = "0.4"
+gloo-timers = { version = "0.3.0", features = ["futures"] }
 rayon = { version = "1.10", optional = true }
 
 [dev-dependencies]

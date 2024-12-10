@@ -9,6 +9,7 @@ mod a_star;
 mod cost_calculation;
 pub mod drawing;
 mod edge_dijkstra;
+mod executor;
 mod local_search;
 mod occupation;
 mod order_edges;
@@ -18,6 +19,10 @@ mod station_contraction;
 mod utils;
 
 pub use a_star::run_a_star;
+pub use executor::{
+    AlgorithmExecutor,
+    AlgorithmResponse,
+};
 #[cfg(feature = "heatmap")]
 pub use local_search::{
     total_distance,
@@ -26,7 +31,10 @@ pub use local_search::{
 #[cfg(feature = "heatmap")]
 pub use occupation::OccupiedNode;
 pub use occupation::OccupiedNodes;
-pub use recalculate_map::recalculate_map;
+pub use recalculate_map::{
+    recalculate_map,
+    Updater,
+};
 use utils::*;
 pub use utils::{
     log_print,

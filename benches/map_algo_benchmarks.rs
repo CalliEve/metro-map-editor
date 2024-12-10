@@ -6,10 +6,12 @@ use criterion::{
     criterion_main,
     Criterion,
 };
+use futures_util::FutureExt;
 use metro_map_editor::{
     algorithm::{
         recalculate_map,
         run_a_star,
+        Updater,
     },
     models::GridNode,
     utils::{
@@ -44,8 +46,14 @@ pub fn full_recalculation_simple_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_simple", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(black_box(settings), black_box(&mut map))
-                .expect("failed to recalculate map")
+            recalculate_map(
+                black_box(settings),
+                black_box(&mut map),
+                Updater::NoUpdates,
+            )
+            .now_or_never()
+            .expect("recalculate not yet finished")
+            .expect("failed to recalculate map")
         })
     });
 }
@@ -67,8 +75,14 @@ pub fn full_recalculation_karlsruhe_benchmark(c: &mut Criterion) {
     c.bench_function("full_recalculation_karlsruhe", |b| {
         b.iter(|| {
             let mut map = map.clone();
-            recalculate_map(black_box(settings), black_box(&mut map))
-                .expect("failed to recalculate map")
+            recalculate_map(
+                black_box(settings),
+                black_box(&mut map),
+                Updater::NoUpdates,
+            )
+            .now_or_never()
+            .expect("recalculate not yet finished")
+            .expect("failed to recalculate map")
         })
     });
 }

@@ -1,8 +1,12 @@
 //! This module contains the Recalculate Map algorithm, which is the main
 //! function to run the map algorithm.
 
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+};
 
+use futures_core::future::LocalBoxFuture;
 use leptos::logging;
 
 use super::{
@@ -20,14 +24,81 @@ use super::{
 };
 use crate::{
     algorithm::log_print,
-    models::Map,
-    utils::Result,
+    models::{
+        Edge,
+        Map,
+    },
+    utils::{
+        IDData,
+        IDManager,
+        Result,
+    },
     Error,
 };
 
+/// The updater for the map, which can be used to send updates on the progress
+/// of the map back to the caller.
+#[derive(Clone)]
+#[allow(clippy::type_complexity)]
+pub enum Updater {
+    NoUpdates,
+    Updater(Arc<Box<dyn Fn(Map, IDData) -> LocalBoxFuture<'static, ()> + Send>>),
+}
+
+/// Attempt to route the edges of the map, retrying with different, random, edge
+/// orders if it fails.
+fn attempt_edge_routing(
+    settings: AlgorithmSettings,
+    map: &mut Map,
+    occupied: &mut OccupiedNodes,
+    mut edges: Vec<Edge>,
+) -> Result<()> {
+    let mut attempt = 0;
+    let mut found = false;
+
+    while !found {
+        let mut alg_map = map.clone();
+
+        attempt += 1;
+        let res = route_edges(
+            settings,
+            &mut alg_map,
+            edges.clone(),
+            occupied.clone(),
+        );
+
+        if let Err(e) = res {
+            log_print(
+                settings,
+                &format!("Failed to route edges: {e}"),
+                super::LogType::Error,
+            );
+
+            if attempt >= settings.edge_routing_attempts {
+                *map = alg_map;
+                return Err(Error::other(
+                    "Reached max amount of retries when routing edges.",
+                ));
+            }
+
+            randomize_edges(&mut edges);
+        } else {
+            found = true;
+            *map = alg_map;
+            *occupied = res.unwrap();
+        }
+    }
+
+    Ok(())
+}
+
 /// Recalculate the map, all the positions of the stations and the edges between
 /// them, as a whole. This is the Recalculate Map algorithm in the paper.
-pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<OccupiedNodes> {
+pub async fn recalculate_map(
+    settings: AlgorithmSettings,
+    map: &mut Map,
+    midway_updater: Updater,
+) -> Result<OccupiedNodes> {
     if map
         .get_edges()
         .is_empty()
@@ -69,11 +140,13 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         super::LogType::Debug,
     );
 
+    if let Updater::Updater(updater) = midway_updater.clone() {
+        updater(map.clone(), IDManager::to_data()).await;
+    }
+
     unsettle_map(map);
 
-    let mut edges = order_edges(map)?;
-    let mut attempt = 0;
-    let mut found = false;
+    let edges = order_edges(map)?;
 
     log_print(
         settings,
@@ -81,37 +154,14 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
         super::LogType::Debug,
     );
 
-    while !found {
-        let mut alg_map = map.clone();
+    if let Updater::Updater(updater) = midway_updater.clone() {
+        updater(map.clone(), IDManager::to_data()).await;
+    }
 
-        attempt += 1;
-        let res = route_edges(
-            settings,
-            &mut alg_map,
-            edges.clone(),
-            occupied.clone(),
-        );
+    attempt_edge_routing(settings, map, &mut occupied, edges)?;
 
-        if let Err(e) = res {
-            log_print(
-                settings,
-                &format!("Failed to route edges: {e}"),
-                super::LogType::Error,
-            );
-
-            if attempt >= settings.edge_routing_attempts {
-                *map = alg_map;
-                return Err(Error::other(
-                    "Reached max amount of retries when routing edges.",
-                ));
-            }
-
-            randomize_edges(&mut edges);
-        } else {
-            found = true;
-            *map = alg_map;
-            occupied = res.unwrap();
-        }
+    if let Updater::Updater(updater) = midway_updater.clone() {
+        updater(map.clone(), IDManager::to_data()).await;
     }
 
     log_print(
@@ -121,7 +171,13 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
     );
 
     if settings.local_search {
-        local_search(settings, map, &mut occupied);
+        local_search(
+            settings,
+            map,
+            &mut occupied,
+            midway_updater,
+        )
+        .await;
     }
 
     log_print(
@@ -143,6 +199,8 @@ pub fn recalculate_map(settings: AlgorithmSettings, map: &mut Map) -> Result<Occ
 
 #[cfg(test)]
 mod tests {
+    use futures_test::test;
+
     use super::*;
     use crate::{
         algorithm::{
@@ -158,7 +216,7 @@ mod tests {
     };
 
     #[test]
-    fn test_recalculate_map_no_overlap_check() {
+    async fn test_recalculate_map_no_overlap_check() {
         let map_file = "existing_maps/wien.graphml";
 
         let mut canvas = CanvasState::new();
@@ -192,9 +250,11 @@ mod tests {
                 .len()
         );
 
-        recalculate_map(settings, &mut map).expect(&format!(
-            "failed to recalculate map {map_file}"
-        ));
+        recalculate_map(settings, &mut map, Updater::NoUpdates)
+            .await
+            .expect(&format!(
+                "failed to recalculate map {map_file}"
+            ));
 
         let mut occupied: OccupiedNodes = HashMap::new();
         for station in map.get_stations() {
@@ -230,7 +290,7 @@ mod tests {
     }
 
     #[test]
-    fn test_recalculate_map() {
+    async fn test_recalculate_map() {
         let map_files = vec![
             "existing_maps/disjointed_test.json",
             "existing_maps/routing_test.json",
@@ -274,7 +334,7 @@ mod tests {
                     .len()
             );
 
-            if let Err(e) = recalculate_map(settings, &mut map) {
+            if let Err(e) = recalculate_map(settings, &mut map, Updater::NoUpdates).await {
                 failed.push((map_file, e));
             }
         }

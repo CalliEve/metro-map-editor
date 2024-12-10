@@ -7,6 +7,7 @@
 #![allow(unexpected_cfgs)]
 
 use ev::KeyboardEvent;
+use futures_util::StreamExt;
 use html::Div;
 use leptos::*;
 use leptos_workers::{
@@ -22,7 +23,11 @@ use serde::{
 };
 
 use crate::{
-    algorithm::AlgorithmSettings,
+    algorithm::{
+        AlgorithmExecutor,
+        AlgorithmResponse,
+        AlgorithmSettings,
+    },
     components::{
         atoms::Button,
         canvas::Canvas,
@@ -34,7 +39,6 @@ use crate::{
         MapState,
     },
     models::Map,
-    unwrap_or_return,
     utils::{
         IDData,
         IDManager,
@@ -53,38 +57,28 @@ struct AlgorithmRequest {
     map: Map,
     /// If the map is a partial map or not.
     partial: bool,
-}
-
-/// The response from the algorithm.
-#[derive(Clone, Serialize, Deserialize)]
-struct AlgorithmResponse {
-    /// If the algorithm ran successfully.
-    success: bool,
-    /// The Map outputted by the algorithm.
-    map: Map,
-    /// The data for the [`IDManager`] after the algorithm has run, ensuring the
-    /// main thread will not create IDs in conflict with those in the map.
-    id_manager_data: IDData,
+    /// If the algorithm should output the midway responses to the canvas.
+    midway_updates: bool,
 }
 
 /// The worker that runs the algorithm.
 #[allow(dead_code)] // usage is hidden
 #[worker(AlgorithmWorker)]
-fn run_algorithm(req: AlgorithmRequest) -> AlgorithmResponse {
+fn run_algorithm(req: AlgorithmRequest) -> impl leptos_workers::Stream<Item = AlgorithmResponse> {
     IDManager::from_data(req.id_manager_data);
 
     let mut temp_state = MapState::new(req.map);
     temp_state.set_algorithm_settings(req.settings);
+    temp_state.calculate_algorithm_settings();
 
-    let success = temp_state.run_algorithm();
-
-    AlgorithmResponse {
-        success,
-        map: temp_state
+    // Start the stream and thus the algorithm.
+    AlgorithmExecutor::new(
+        temp_state.get_algorithm_settings(),
+        temp_state
             .get_map()
             .clone(),
-        id_manager_data: IDManager::to_data(),
-    }
+        req.midway_updates,
+    )
 }
 
 /// The canvas and the controls overlayed on it.
@@ -97,7 +91,7 @@ pub fn CanvasControls() -> impl IntoView {
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
     let (abort_handle, set_abort_handle) =
-        create_signal(Option::<AbortHandle<AlgorithmWorker>>::None);
+        create_signal(Option::<(AbortHandle<AlgorithmWorker>, Map)>::None);
 
     create_effect(move |_| {
         window_event_listener(
@@ -121,33 +115,68 @@ pub fn CanvasControls() -> impl IntoView {
         );
     });
 
+    // If parts of the map has been selected and is not being moved.
+    let has_parts_selected = Signal::derive(move || {
+        let state = map_state.get();
+        (!state
+            .get_selected_edges()
+            .is_empty())
+            && state
+                .get_selected_stations()
+                .iter()
+                .all(|s| !s.has_moved())
+    });
+
+    // Handle the response from the algorithm.
+    let handle_algorithm_response = move |resp: AlgorithmResponse| {
+        if resp.success
+            || map_state
+                .get_untracked()
+                .get_algorithm_settings()
+                .output_on_fail
+        {
+            map_state.update(|state| {
+                state.set_map(resp.map);
+            });
+            IDManager::from_data(resp.id_manager_data);
+        }
+    };
+
+    // Dispatch the algorithm request.
     let algorithm_req = create_action(move |req: &AlgorithmRequest| {
         let req = req.clone();
-        let is_partial = req.partial;
         async move {
-            let (abort_handle, resp_fut) = executor
+            let (abort_handle, resp_stream) = executor
                 .get_untracked()
-                .run(req)
+                .stream(&req)
                 .expect("failed to start algorithm worker");
-            set_abort_handle(Some(abort_handle));
-            let resp = resp_fut.await;
-            if resp.success
-                || map_state
-                    .get_untracked()
-                    .get_algorithm_settings()
-                    .output_on_fail
-            {
-                map_state.update(|state| {
-                    if is_partial {
-                        state.clear_all_selections();
-                        unwrap_or_return!(state
-                            .get_mut_map()
-                            .update_from_partial(&resp.map));
-                    } else {
-                        state.set_map(resp.map);
+            set_abort_handle(Some((
+                abort_handle,
+                req.map
+                    .clone(),
+            )));
+
+            // Handle the responses from the algorithm.
+            // This is done in a fold to ensure only the last response is handled later, but
+            // all midway updates are handled conditionally.
+            let last = resp_stream
+                .inspect(|resp| {
+                    if req.midway_updates {
+                        handle_algorithm_response(resp.clone());
                     }
-                });
-                IDManager::from_data(resp.id_manager_data);
+                })
+                .fold(
+                    None,
+                    |_, next| async move { Some(next) },
+                )
+                .await;
+
+            // If we got a response and it wasn't handled by the midway handler, handle it
+            // now.
+            if !req.midway_updates {
+                if let Some(resp) = last {
+                    handle_algorithm_response(resp);
+                }
             }
         }
     });
@@ -169,6 +198,7 @@ pub fn CanvasControls() -> impl IntoView {
                 .clone(),
             id_manager_data: IDManager::to_data(),
             partial: false,
+            midway_updates: false,
         };
 
         algorithm_req.dispatch(req);
@@ -185,6 +215,26 @@ pub fn CanvasControls() -> impl IntoView {
                 .lock_all_unselected(),
             id_manager_data: IDManager::to_data(),
             partial: true,
+            midway_updates: false,
+        };
+
+        algorithm_req.dispatch(req);
+    };
+
+    // Run the algorithm on the entire map.
+    let run_stream_algorithm = move |_| {
+        let partial = has_parts_selected.get_untracked();
+        let req = AlgorithmRequest {
+            settings: map_state
+                .get_untracked()
+                .get_algorithm_settings(),
+            map: map_state
+                .get_untracked()
+                .get_map()
+                .clone(),
+            id_manager_data: IDManager::to_data(),
+            partial,
+            midway_updates: true,
         };
 
         algorithm_req.dispatch(req);
@@ -196,13 +246,17 @@ pub fn CanvasControls() -> impl IntoView {
             .pending()
             .get()
         {
-            if let Some(handle) = abort_handle.get() {
+            if let Some((handle, original_map)) = abort_handle.get() {
                 handle.abort();
                 algorithm_req.set_pending(false);
+                map_state.update(|state| {
+                    state.set_map(original_map);
+                });
             }
         }
     };
 
+    // The class for the algorithm button.
     let algorithm_button_class = move || {
         let mut class = "absolute right-5 top-5 group".to_owned();
 
@@ -228,18 +282,6 @@ pub fn CanvasControls() -> impl IntoView {
         map_state
             .get()
             .is_original_overlay_enabled()
-    });
-
-    // If parts of the map has been selected and is not being moved.
-    let has_parts_selected = Signal::derive(move || {
-        let state = map_state.get();
-        (!state
-            .get_selected_edges()
-            .is_empty())
-            && state
-                .get_selected_stations()
-                .iter()
-                .all(|s| !s.has_moved())
     });
 
     view! {
@@ -268,6 +310,17 @@ pub fn CanvasControls() -> impl IntoView {
         <Show when=move || algorithm_req.pending().get()>
             <div class="absolute right-5 top-24">
                 <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true><span class="text-red-300">x</span></Button>
+            </div>
+        </Show>
+        <Show when=move || !algorithm_req.pending().get()>
+            <div class="absolute right-5 top-24">
+                <Button text="recalculate with\nreal-time updates" on_click=Box::new(run_stream_algorithm) overlay=true>
+                    <svg class="text-blue-500 -ml-1 mt-1 h-6 w-6"  width="24" height="24" viewBox="0 0 28 28" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z"/>
+                        <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
+                        <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />
+                    </svg>
+                </Button>
             </div>
         </Show>
         <div class="absolute right-24 top-5 group">
