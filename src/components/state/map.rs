@@ -30,6 +30,10 @@ pub enum ActionType {
     ///
     /// [`Station`]: crate::models::Station
     RemoveStation,
+    /// User wants to remove a checkpoint [`Station`].
+    ///
+    /// [`Station`]: crate::models::Station
+    RemoveCheckpoint,
     /// User wants to remove a [`Line`].
     ///
     /// [`Line`]: crate::models::Line

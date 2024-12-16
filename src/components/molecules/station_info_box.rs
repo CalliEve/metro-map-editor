@@ -25,8 +25,17 @@ pub fn StationInfoBox() -> impl IntoView {
         map_state
             .get()
             .get_clicked_on_station()
+            .filter(|s| !s.is_checkpoint())
             .is_some()
     };
+    let checkpoint_was_clicked = move || {
+        map_state
+            .get()
+            .get_clicked_on_station()
+            .filter(|s| s.is_checkpoint())
+            .is_some()
+    };
+
     let position = Signal::derive(move || {
         map_state
             .get()
@@ -85,6 +94,7 @@ pub fn StationInfoBox() -> impl IntoView {
     };
 
     view! {
+        <>
         <Show when=station_was_clicked>
             <CanvasInfoBox
                 title="Station Info"
@@ -104,5 +114,18 @@ pub fn StationInfoBox() -> impl IntoView {
                 </div>
             </CanvasInfoBox>
         </Show>
+        <Show when=checkpoint_was_clicked>
+            <CanvasInfoBox
+                title="Checkpoint"
+                click_position=position
+                on_close=move || {
+                    map_state.update(|state| {
+                        state.clear_clicked_on_station();
+                    });
+                }>
+                <></>
+            </CanvasInfoBox>
+        </Show>
+        </>
     }
 }

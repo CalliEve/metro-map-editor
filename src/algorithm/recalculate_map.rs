@@ -47,11 +47,12 @@ pub enum Updater {
 
 /// Attempt to route the edges of the map, retrying with different, random, edge
 /// orders if it fails.
-fn attempt_edge_routing(
+async fn attempt_edge_routing(
     settings: AlgorithmSettings,
     map: &mut Map,
     occupied: &mut OccupiedNodes,
     mut edges: Vec<Edge>,
+    midway_updater: Updater,
 ) -> Result<()> {
     let mut attempt = 0;
     let mut found = false;
@@ -65,7 +66,9 @@ fn attempt_edge_routing(
             &mut alg_map,
             edges.clone(),
             occupied.clone(),
-        );
+            midway_updater.clone(),
+        )
+        .await;
 
         if let Err(e) = res {
             log_print(
@@ -140,11 +143,11 @@ pub async fn recalculate_map(
         super::LogType::Debug,
     );
 
+    unsettle_map(map);
+
     if let Updater::Updater(updater) = midway_updater.clone() {
         updater(map.clone(), IDManager::to_data()).await;
     }
-
-    unsettle_map(map);
 
     let edges = order_edges(map)?;
 
@@ -158,7 +161,14 @@ pub async fn recalculate_map(
         updater(map.clone(), IDManager::to_data()).await;
     }
 
-    attempt_edge_routing(settings, map, &mut occupied, edges)?;
+    attempt_edge_routing(
+        settings,
+        map,
+        &mut occupied,
+        edges,
+        midway_updater.clone(),
+    )
+    .await?;
 
     if let Updater::Updater(updater) = midway_updater.clone() {
         updater(map.clone(), IDManager::to_data()).await;

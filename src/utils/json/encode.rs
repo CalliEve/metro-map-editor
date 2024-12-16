@@ -1,6 +1,7 @@
 //! Contains the functions used to dencode a [`Map`] into a [`JSONMap`].
 
 use super::json_models::{
+    EdgeNode,
     JSONEdge,
     JSONLine,
     JSONMap,
@@ -71,7 +72,7 @@ fn encode_line(line: &Line) -> JSONLine {
 }
 
 /// Encodes an [`Edge`] as a [`JSONEdge`].
-fn encode_edge(edge: &Edge) -> JSONEdge {
+fn encode_edge(edge: &Edge, state: CanvasState) -> JSONEdge {
     let source = "s".to_owned() + &u64::from(edge.get_from()).to_string();
     let target = "s".to_owned() + &u64::from(edge.get_to()).to_string();
 
@@ -88,9 +89,19 @@ fn encode_edge(edge: &Edge) -> JSONEdge {
         lines.sort();
     }
 
+    let mut nodes = Vec::new();
+    for node in edge.get_nodes() {
+        let pos = node.to_canvas_pos(state);
+        nodes.push(EdgeNode {
+            x: pos.0,
+            y: pos.1,
+        });
+    }
+
     JSONEdge {
         source,
         target,
+        nodes,
         lines,
     }
 }
@@ -102,6 +113,18 @@ pub fn map_to_json(graph: &Map, state: CanvasState) -> JSONMap {
         lines: Vec::new(),
         edges: Vec::new(),
     };
+
+    let mut graph = graph.clone();
+    let all_stations = graph
+        .get_stations()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    for station in all_stations {
+        if station.is_checkpoint() {
+            graph.remove_station(station.get_id());
+        }
+    }
 
     // Add stations
     json_map.stations = graph
@@ -141,7 +164,7 @@ pub fn map_to_json(graph: &Map, state: CanvasState) -> JSONMap {
     json_map.edges = graph
         .get_edges()
         .into_iter()
-        .map(encode_edge)
+        .map(|e| encode_edge(e, state))
         .collect();
 
     // Sort edges for deterministic output

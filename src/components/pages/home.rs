@@ -16,7 +16,7 @@ pub fn Home() -> impl IntoView {
                 <Navbar/>
             </header>
             <div class="grow flex flex-row justify-start">
-                <div class="flex-none self-start self-stretch w-1/5 md:w-52">
+                <div class="flex-none self-start self-stretch w-1/5 md:w-60">
                     <Sidebar/>
                 </div>
                 <div class="grow flex self-stretch">

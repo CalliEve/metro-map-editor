@@ -21,11 +21,16 @@ use crate::models::{
 /// for moving in the algorithm.
 pub fn unsettle_map(map: &mut Map) {
     for station in map.get_mut_stations() {
-        station.unsettle();
-        station.set_cost(0.0);
+        if !station.is_locked() {
+            station.unsettle();
+            station.set_cost(0.0);
+        }
     }
     for edge in map.get_mut_edges() {
-        edge.unsettle();
+        if !edge.is_locked() {
+            edge.unsettle();
+            edge.set_nodes(Vec::new());
+        }
     }
 }
 

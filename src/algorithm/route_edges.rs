@@ -6,6 +6,7 @@ use super::{
     log_print,
     occupation::OccupiedNodes,
     AlgorithmSettings,
+    Updater,
 };
 use crate::{
     models::{
@@ -14,7 +15,10 @@ use crate::{
         Map,
         Station,
     },
-    utils::Result,
+    utils::{
+        IDManager,
+        Result,
+    },
     Error,
 };
 
@@ -112,11 +116,12 @@ fn split_overlap(
 /// Route all the edges on the map (as given by the input list of edges) and
 /// return them. This is the Route Edges algorithm in the paper.
 #[allow(clippy::too_many_lines)] // mostly due to large calls like debug prints
-pub fn route_edges(
+pub async fn route_edges(
     settings: AlgorithmSettings,
     map: &mut Map,
     mut edges: Vec<Edge>,
     mut occupied: OccupiedNodes,
+    midway_updater: Updater,
 ) -> Result<OccupiedNodes> {
     for edge in &mut edges {
         if edge.is_locked() {
@@ -251,6 +256,10 @@ pub fn route_edges(
             end_station.add_cost(*cost);
         }
         map.add_edge(edge.clone());
+
+        if let Updater::Updater(updater) = midway_updater.clone() {
+            updater(map.clone(), IDManager::to_data()).await;
+        }
     }
     Ok(occupied)
 }
@@ -259,11 +268,13 @@ pub fn route_edges(
 mod tests {
     use std::collections::HashMap;
 
+    use futures_test::test;
+
     use super::*;
     use crate::models::Station;
 
     #[test]
-    fn test_get_node_set() {
+    async fn test_get_node_set() {
         let mut map = Map::new();
         let station = Station::new((0, 0).into(), None);
         map.add_station(station.clone());
@@ -308,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn test_split_overlap() {
+    async fn test_split_overlap() {
         let from = Station::new((0, 0).into(), None);
         let from_set = vec![
             (GridNode::from((0, 0)), 0.0),
@@ -356,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn test_route_edges() {
+    async fn test_route_edges() {
         let mut map = Map::new();
         let edges = vec![];
 
@@ -365,7 +376,9 @@ mod tests {
             &mut map,
             edges,
             HashMap::new(),
+            Updater::NoUpdates,
         )
+        .await
         .unwrap();
 
         assert_eq!(result, HashMap::new());

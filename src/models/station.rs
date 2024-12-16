@@ -58,8 +58,6 @@ pub struct Station {
     original_pos: GridNode,
     /// ID of the station.
     id: StationID,
-    /// If when drawn the station should be greyed out (like when moving).
-    is_ghost: bool,
     /// The station name.
     name: String,
     /// The edges that are connected to this station.
@@ -69,6 +67,8 @@ pub struct Station {
     is_locked: bool,
     /// Marks the location of the station as settled in the algorithm.
     is_settled: bool,
+    /// If the station is not actually real, but just a checkpoint.
+    is_checkpoint: bool,
     /// The total cost of all the edges attached to the station, used in the
     /// local search algorithm.
     cost: f64,
@@ -86,11 +86,31 @@ impl Station {
             pos,
             original_pos: pos,
             id: id.unwrap_or_else(IDManager::next_station_id),
-            is_ghost: false,
             name: String::new(),
             edges: Vec::new(),
             is_locked: false,
             is_settled: false,
+            is_checkpoint: false,
+            cost: 0.0,
+        }
+    }
+
+    /// Create a new checkpoint [`Station`] at the given grid coordinate.
+    /// If id is None, the next sequential id is used.
+    pub fn new_checkpoint(pos: GridNode, id: Option<StationID>) -> Self {
+        if let Some(new_id) = id {
+            IDManager::update_station_id(new_id);
+        }
+
+        Self {
+            pos,
+            original_pos: pos,
+            id: id.unwrap_or_else(IDManager::next_station_id),
+            name: String::new(),
+            edges: Vec::new(),
+            is_locked: false,
+            is_settled: false,
+            is_checkpoint: true,
             cost: 0.0,
         }
     }
@@ -105,11 +125,6 @@ impl Station {
     #[inline]
     pub fn get_pos(&self) -> GridNode {
         self.pos
-    }
-
-    /// A setter for if the stations should be greyed out.
-    pub fn set_is_ghost(&mut self, ghost: bool) {
-        self.is_ghost = ghost;
     }
 
     /// A setter for the grid position of the station.
@@ -177,6 +192,12 @@ impl Station {
     #[inline]
     pub fn is_locked(&self) -> bool {
         self.is_locked
+    }
+
+    /// Check if the station is a checkpoint.
+    #[inline]
+    pub fn is_checkpoint(&self) -> bool {
+        self.is_checkpoint
     }
 
     /// Get the cost of the station.
@@ -267,22 +288,37 @@ impl Station {
         if width < 2.0 {
             width = 2.0;
         }
+        let radius = state.drawn_square_size() / 3.0;
 
         canvas.set_line_width(width);
         canvas.set_global_alpha(1.0 * base_alpha);
-
         canvas.set_stroke_style_str("black");
-        canvas.begin_path();
-        canvas
-            .arc(
-                canvas_pos.0,
-                canvas_pos.1,
-                state.drawn_square_size() / 3.0,
-                0.0,
-                2.0 * f64::consts::PI,
-            )
-            .unwrap();
-        canvas.stroke();
+
+        if self.is_checkpoint() {
+            canvas.begin_path();
+            canvas.move_to(canvas_pos.0, canvas_pos.1 - radius);
+            canvas.line_to(canvas_pos.0 + radius, canvas_pos.1);
+            canvas.line_to(canvas_pos.0, canvas_pos.1 + radius);
+            canvas.line_to(canvas_pos.0 - radius, canvas_pos.1);
+            canvas.line_to(canvas_pos.0, canvas_pos.1 - radius);
+            canvas.line_to(
+                canvas_pos.0 + width,
+                canvas_pos.1 - radius + width,
+            );
+            canvas.stroke();
+        } else {
+            canvas.begin_path();
+            canvas
+                .arc(
+                    canvas_pos.0,
+                    canvas_pos.1,
+                    radius,
+                    0.0,
+                    2.0 * f64::consts::PI,
+                )
+                .unwrap();
+            canvas.stroke();
+        }
 
         if self.is_locked() {
             let locked_label_pos = calc_label_pos(state, canvas_pos, None, None)[0]; // FIXME: Check for occupancy

@@ -31,8 +31,7 @@ pub struct SelectedStation {
 
 impl SelectedStation {
     /// Select a station.
-    pub fn new(mut station: Station) -> Self {
-        station.set_is_ghost(true);
+    pub fn new(station: Station) -> Self {
         Self {
             moved_from: Some(station.get_pos()),
             station,
@@ -42,8 +41,17 @@ impl SelectedStation {
 
     /// Select a newly created station.
     pub fn new_station() -> Self {
-        let mut station = Station::new((i32::MIN, i32::MIN).into(), None);
-        station.set_is_ghost(true);
+        let station = Station::new((i32::MIN, i32::MIN).into(), None);
+        Self {
+            station,
+            before_after: (Vec::new(), Vec::new()),
+            moved_from: None,
+        }
+    }
+
+    /// Select a newly created checkpoint.
+    pub fn new_checkpoint() -> Self {
+        let station = Station::new_checkpoint((i32::MIN, i32::MIN).into(), None);
         Self {
             station,
             before_after: (Vec::new(), Vec::new()),
@@ -89,9 +97,7 @@ impl SelectedStation {
     }
 
     /// Deselects the station and returns it.
-    pub fn deselect(mut self) -> Station {
-        self.station
-            .set_is_ghost(false);
+    pub fn deselect(self) -> Station {
         self.station
     }
 
@@ -125,9 +131,11 @@ impl SelectedStation {
         state: CanvasState,
         all_selected: &[Self],
     ) {
-        let canvas_pos = self
+        let mut station = self
             .station
-            .get_canvas_pos(state);
+            .clone();
+        station.unlock();
+        let canvas_pos = station.get_canvas_pos(state);
 
         let mut selected_width = state.drawn_square_size() / 3.5;
         if selected_width < 2.5 {
@@ -154,33 +162,15 @@ impl SelectedStation {
             return;
         }
 
-        // draw self-ghost
-        let mut width = state.drawn_square_size() / 10.0 + 1.0;
-        if width < 2.0 {
-            width = 2.0;
-        }
+        // draw station
+        station.draw(canvas, state, 0.5);
 
-        canvas.set_line_width(width);
-        canvas.set_global_alpha(0.5);
-        canvas.set_stroke_style_str("black");
-        canvas.begin_path();
-        canvas
-            .arc(
-                canvas_pos.0,
-                canvas_pos.1,
-                state.drawn_square_size() / 3.0,
-                0.0,
-                2.0 * std::f64::consts::PI,
-            )
-            .unwrap();
-        canvas.stroke();
-
+        // draw edges to adjacent stations
         let mut edge_width = state.drawn_square_size() / 10.0 + 0.5;
         if edge_width < 1.0 {
             edge_width = 1.0;
         }
 
-        // draw edges to adjacent stations
         canvas.set_line_width(edge_width);
         canvas.set_stroke_style_str("black");
         canvas.begin_path();
@@ -205,13 +195,8 @@ impl SelectedStation {
                 .expect("invalid id");
             draw_edge(
                 before.get_pos(),
-                self.station
-                    .get_pos(),
-                &run_a_star(
-                    before.get_pos(),
-                    self.station
-                        .get_pos(),
-                ),
+                station.get_pos(),
+                &run_a_star(before.get_pos(), station.get_pos()),
                 canvas,
                 state,
                 0.0,
@@ -236,14 +221,9 @@ impl SelectedStation {
             };
 
             draw_edge(
-                self.station
-                    .get_pos(),
+                station.get_pos(),
                 after.get_pos(),
-                &run_a_star(
-                    self.station
-                        .get_pos(),
-                    after.get_pos(),
-                ),
+                &run_a_star(station.get_pos(), after.get_pos()),
                 canvas,
                 state,
                 0.0,

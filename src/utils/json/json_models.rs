@@ -9,11 +9,20 @@ use serde::{
     Serialize,
 };
 
+/// Represents a node in an edge for the JSON file.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct EdgeNode {
+    pub x: f64,
+    pub y: f64,
+}
+
 /// Represents a connection between two stations for the JSON file.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct JSONEdge {
     pub source: String,
     pub target: String,
+    #[serde(default)]
+    pub nodes: Vec<EdgeNode>,
     pub lines: Vec<String>,
 }
 

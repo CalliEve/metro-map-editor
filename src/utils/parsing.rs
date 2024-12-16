@@ -9,10 +9,35 @@ use std::hash::{
 use super::Result;
 use crate::components::CanvasState;
 
+/// Settings used to normalize coordinates.
+#[derive(Debug, Clone, Copy)]
+pub(super) struct NormalizationSettings {
+    /// The minimum x coordinate.
+    pub(super) min_x: f64,
+    /// The maximum x coordinate.
+    pub(super) max_x: f64,
+    /// The minimum y coordinate.
+    pub(super) min_y: f64,
+    /// The maximum y coordinate.
+    pub(super) max_y: f64,
+    /// The width of the canvas in the x-coordinate.
+    pub(super) size_x: f64,
+    /// The height of the canvas in the y-coordinate.
+    pub(super) size_y: f64,
+    /// The offset of the canvas.
+    pub(super) offset: (f64, f64),
+    /// The size of a square on the canvas.
+    pub(super) square_size: f64,
+}
+
 /// Saved data sometimes has maps/stations located in weird places (like all x
 /// coordinates being negative or only difference being in the decimals), this
-/// normalizes them so they fit within the canvas as it currently is.
-pub(super) fn normalize_coords(mut items: Vec<(f64, f64)>, state: CanvasState) -> Vec<(f64, f64)> {
+/// normalizes them so they fit within the canvas as it currently is. Returns
+/// the generated [`NormalizationSettings`] and the normalized coordinates.
+pub(super) fn normalize_coords(
+    mut items: Vec<(f64, f64)>,
+    state: CanvasState,
+) -> (Vec<(f64, f64)>, NormalizationSettings) {
     let square_size = state.drawn_square_size();
 
     let size_x = f64::from(
@@ -51,24 +76,50 @@ pub(super) fn normalize_coords(mut items: Vec<(f64, f64)>, state: CanvasState) -
         }
     }
 
-    for (x, y) in &mut items {
-        *x = (*x - min_x) / (max_x - min_x) * size_x
-            + f64::from(
+    let settings = NormalizationSettings {
+        min_x,
+        max_x,
+        min_y,
+        max_y,
+        size_x,
+        size_y,
+        square_size,
+        offset: (
+            f64::from(
                 state
                     .get_offset()
                     .0,
-            ) / square_size
-            + 2.0 * square_size;
-        *y = (*y - min_y) / (max_y - min_y) * size_y
-            + f64::from(
+            ),
+            f64::from(
                 state
                     .get_offset()
                     .1,
-            ) / square_size
-            + 2.0 * square_size;
+            ),
+        ),
+    };
+
+    for (x, y) in &mut items {
+        (*x, *y) = normalize_coordinate(*x, *y, settings);
     }
 
-    items
+    (items, settings)
+}
+
+/// Normalize the given coordinate using the given settings.
+pub(super) fn normalize_coordinate(x: f64, y: f64, settings: NormalizationSettings) -> (f64, f64) {
+    let x = (x - settings.min_x) / (settings.max_x - settings.min_x) * settings.size_x
+        + (settings
+            .offset
+            .0
+            / settings.square_size)
+        + 2.0 * settings.square_size;
+    let y = (y - settings.min_y) / (settings.max_y - settings.min_y) * settings.size_y
+        + (settings
+            .offset
+            .1
+            / settings.square_size)
+        + 2.0 * settings.square_size;
+    (x, y)
 }
 
 /// Parse the given string into an u64 to create an ID from.
@@ -114,7 +165,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.0,
             vec![(10.0, 10.0), (50.0, 50.0), (90.0, 90.0)]
         );
     }

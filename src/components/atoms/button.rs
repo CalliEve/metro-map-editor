@@ -86,9 +86,9 @@ pub fn Button(
             class += " rounded";
 
             if smaller {
-                class += " text-xs";
+                class += " text-xs font-semibold";
             } else if bigger {
-                class += " text-xl";
+                class += " text-xl font-semibold";
             } else {
                 class += " text-sm font-semibold";
             }

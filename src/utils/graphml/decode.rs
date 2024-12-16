@@ -139,7 +139,7 @@ fn normalize_stations(mut items: Vec<GraphItem>, state: CanvasState) -> Result<V
         })
         .collect::<Result<Vec<_>>>()?;
 
-    coords = normalize_coords(coords, state);
+    coords = normalize_coords(coords, state).0;
 
     for (item, (x, y)) in items
         .iter_mut()

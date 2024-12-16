@@ -37,6 +37,7 @@ pub(super) struct Edge {
     pub(super) target: String,
     pub(super) data: Vec<Data>,
 }
+// TODO: add an optional list of nodes to the edge
 
 /// This GraphML object can either be a [`Node`] (station) or [`Edge`] (edge
 /// connecting two stations).

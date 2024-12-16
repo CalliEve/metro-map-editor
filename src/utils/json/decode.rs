@@ -15,9 +15,11 @@ use crate::{
     },
     utils::{
         parsing::{
+            normalize_coordinate,
             normalize_coords,
             parse_color,
             parse_id,
+            NormalizationSettings,
         },
         Error,
         Result,
@@ -27,13 +29,16 @@ use crate::{
 /// JSON data sometimes has maps/stations located in weird places (like all x
 /// coordinates being negative or only difference being in the decimals), this
 /// normalizes them so they fit within the canvas as it currently is.
-fn normalize_stations(mut stations: Vec<JSONStation>, state: CanvasState) -> Vec<JSONStation> {
+fn normalize_stations(
+    mut stations: Vec<JSONStation>,
+    state: CanvasState,
+) -> (Vec<JSONStation>, NormalizationSettings) {
     let coords = stations
         .iter()
         .map(|s| (s.x, s.y))
         .collect();
 
-    let normalized_coords = normalize_coords(coords, state);
+    let (normalized_coords, normalization_settings) = normalize_coords(coords, state);
 
     for (station, (x, y)) in stations
         .iter_mut()
@@ -43,14 +48,16 @@ fn normalize_stations(mut stations: Vec<JSONStation>, state: CanvasState) -> Vec
         station.y = y;
     }
 
-    stations
+    (stations, normalization_settings)
 }
 
 /// Translates the [`JSONMap`] to a [`Map`]
 pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
     let mut map = Map::new();
 
-    graph.stations = normalize_stations(graph.stations, state);
+    let temp = normalize_stations(graph.stations, state);
+    graph.stations = temp.0;
+    let normalization_settings = temp.1;
 
     // Add stations
     for json_station in graph
@@ -114,6 +121,18 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
             parse_id(&json_edge.target).into(),
         );
 
+        let nodes = json_edge
+            .nodes
+            .iter()
+            .map(|node| {
+                let node = normalize_coordinate(node.x, node.y, normalization_settings);
+                GridNode::from_canvas_pos((node.0, node.1), state)
+            })
+            .collect();
+        map.get_mut_edge(edge_id)
+            .unwrap()
+            .set_nodes(nodes);
+
         // Add edge to lines
         for line_id in &json_edge.lines {
             let mut line = map
@@ -135,6 +154,7 @@ pub fn json_to_map(mut graph: JSONMap, state: CanvasState) -> Result<Map> {
 mod tests {
     use super::*;
     use crate::utils::json::json_models::{
+        EdgeNode,
         JSONEdge,
         JSONLine,
     };
@@ -170,7 +190,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.0,
             vec![
                 JSONStation {
                     id: "1".to_string(),
@@ -232,11 +252,16 @@ mod tests {
                         source: "0".to_string(),
                         target: "1".to_string(),
                         lines: vec!["0".to_string()],
+                        nodes: vec![EdgeNode {
+                            x: 0.0,
+                            y: 0.0,
+                        }],
                     },
                     JSONEdge {
                         source: "1".to_string(),
                         target: "s3".to_string(),
                         lines: vec!["0".to_string()],
+                        nodes: vec![],
                     },
                 ],
             },

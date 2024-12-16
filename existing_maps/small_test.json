@@ -30,11 +30,13 @@
     {
       "source": "s0",
       "target": "s1",
+      "nodes": [],
       "lines": ["l0"]
     },
     {
       "source": "s1",
       "target": "s2",
+      "nodes": [],
       "lines": ["l0"]
     }
   ]

@@ -44,7 +44,7 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     // Handle a click while having an operation selected
     if let Some(action_type) = map_state.get_selected_action() {
         match action_type {
-            ActionType::RemoveStation => {
+            ActionType::RemoveStation | ActionType::RemoveCheckpoint => {
                 if let Some(station_id) = station_at_node {
                     map.remove_station(station_id);
                 }

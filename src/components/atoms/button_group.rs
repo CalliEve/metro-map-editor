@@ -10,7 +10,8 @@ pub fn ButtonGroup(
     /// These will be transformed into [`super::Button`] elements.
     children: Vec<ButtonProps>,
 ) -> impl IntoView {
-    let class = "max-w-full flex align-center gap-px [&>*]:flex-1 \
+    let class = "max-w-full flex align-center gap-px \
+        [&>*]:flex-1 [&>*]:max-w-[50%] \
         [&>*:not(:first-child):not(:last-child)]:ml-0 \
         [&>*:not(:first-child):not(:last-child)]:rounded-none \
         [&>*:not(:only-child):first-child]:rounded-r-none \

@@ -58,6 +58,12 @@ pub fn Sidebar() -> impl IntoView {
         });
     };
 
+    let add_checkpoint = move |_| {
+        map_state.update(|state| {
+            state.select_station(SelectedStation::new_checkpoint());
+        });
+    };
+
     let add_line = move |_| {
         map_state.update(|state| {
             let line = SelectedLine::new_line(state.get_mut_map());
@@ -67,6 +73,9 @@ pub fn Sidebar() -> impl IntoView {
 
     let remove_station = move |_| update_action(ActionType::RemoveStation);
     let remove_station_selected = action_selected(ActionType::RemoveStation);
+
+    let remove_checkpoint = move |_| update_action(ActionType::RemoveCheckpoint);
+    let remove_checkpoint_selected = action_selected(ActionType::RemoveCheckpoint);
 
     let remove_line = move |_| update_action(ActionType::RemoveLine);
     let remove_line_selected = action_selected(ActionType::RemoveLine);
@@ -156,6 +165,20 @@ pub fn Sidebar() -> impl IntoView {
                         .text("Unlock")
                         .on_click(Box::new(unlock))
                         .active(unlock_selected)
+                        .danger(true)
+                        .build(),
+                ]}/>
+                <ButtonGroup
+                children={vec![
+                    ButtonProps::builder()
+                        .text("Add Checkpoint")
+                        .on_click(Box::new(add_checkpoint))
+                        .can_focus(true)
+                        .build(),
+                    ButtonProps::builder()
+                        .text("Remove Checkpoint")
+                        .on_click(Box::new(remove_checkpoint))
+                        .active(remove_checkpoint_selected)
                         .danger(true)
                         .build(),
                 ]}/>

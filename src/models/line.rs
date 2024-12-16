@@ -154,11 +154,12 @@ impl Line {
     }
 
     /// Remove a station from the line.
-    pub fn remove_station(&mut self, map: &mut Map, station: StationID) {
+    pub fn remove_station(&mut self, map: &mut Map, station: &Station) {
+        let station_id = station.get_id();
         if let Some(index) = self
             .stations
             .iter()
-            .position(|s| s == &station)
+            .position(|s| s == &station_id)
         {
             self.stations
                 .remove(index);
@@ -166,7 +167,7 @@ impl Line {
             return;
         }
 
-        let mut ends = Vec::new();
+        let mut ends: Vec<(StationID, Vec<GridNode>)> = Vec::new();
         let edges = self
             .edges
             .clone();
@@ -175,14 +176,22 @@ impl Line {
                 .get_edge(edge_id)
                 .expect("invalid edge id in line");
 
-            if edge.get_to() == station {
-                ends.push(edge.get_from());
+            if edge.get_to() == station_id {
+                ends.push((
+                    edge.get_from(),
+                    edge.get_nodes()
+                        .to_vec(),
+                ));
 
                 self.edges
                     .retain(|e| *e != edge_id);
                 map.removed_edge(edge_id, self.get_id());
-            } else if edge.get_from() == station {
-                ends.push(edge.get_to());
+            } else if edge.get_from() == station_id {
+                ends.push((
+                    edge.get_to(),
+                    edge.get_nodes()
+                        .to_vec(),
+                ));
 
                 self.edges
                     .retain(|e| *e != edge_id);
@@ -194,10 +203,62 @@ impl Line {
             .into_iter()
             .combinations(2)
         {
-            self.add_edge(
-                map.get_edge_id_between(combinations[0], combinations[1]),
-                map,
-            );
+            let edge_id = map.get_edge_id_between(combinations[0].0, combinations[1].0);
+            {
+                let mut nodes = Vec::new();
+
+                if !combinations[0]
+                    .1
+                    .is_empty()
+                {
+                    if station
+                        .get_pos()
+                        .get_neighbors()
+                        .contains(&combinations[0].1[0])
+                    {
+                        let mut temp = combinations[0]
+                            .1
+                            .clone();
+                        temp.reverse();
+                        nodes.append(&mut temp);
+                    } else {
+                        nodes.append(
+                            &mut combinations[0]
+                                .1
+                                .clone(),
+                        );
+                    }
+                }
+                nodes.push(station.get_pos());
+                if !combinations[1]
+                    .1
+                    .is_empty()
+                {
+                    if station
+                        .get_pos()
+                        .get_neighbors()
+                        .contains(&combinations[1].1[0])
+                    {
+                        nodes.append(
+                            &mut combinations[1]
+                                .1
+                                .clone(),
+                        );
+                    } else {
+                        let mut temp = combinations[1]
+                            .1
+                            .clone();
+                        temp.reverse();
+                        nodes.append(&mut temp);
+                    }
+                }
+
+                map.get_mut_edge(edge_id)
+                    .unwrap()
+                    .set_nodes(nodes);
+            }
+
+            self.add_edge(edge_id, map);
         }
     }
 
@@ -615,7 +676,11 @@ mod tests {
             Some(station2),
         );
 
-        line.remove_station(&mut map, station3);
+        let removed_station = map
+            .get_station(station3)
+            .cloned()
+            .expect("invalid station id");
+        line.remove_station(&mut map, &removed_station);
 
         assert_eq!(
             line.get_stations(),

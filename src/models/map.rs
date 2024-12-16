@@ -157,13 +157,20 @@ impl Map {
 
     /// Remove a station from the map.
     pub fn remove_station(&mut self, id: StationID) {
+        let Some(station) = self
+            .get_station(id)
+            .cloned()
+        else {
+            return;
+        };
+
         let lines: Vec<_> = self
             .lines
             .values()
             .cloned()
             .collect();
         for mut line in lines {
-            line.remove_station(self, id);
+            line.remove_station(self, &station);
             self.add_line(line);
         }
 
