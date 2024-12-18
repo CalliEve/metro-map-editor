@@ -112,6 +112,7 @@ impl MapState {
         self.clear_box_select();
         self.clear_clicked_on_station();
         self.clear_clicked_on_edge();
+        self.clear_drag_offset();
     }
 
     /// A getter method for the [`Map`].
@@ -308,6 +309,11 @@ impl MapState {
     /// A setter method for the drag offset.
     pub fn set_drag_offset(&mut self, offset: Option<((f64, f64), bool)>) {
         self.drag_offset = offset;
+    }
+
+    /// Clear the drag offset.
+    pub fn clear_drag_offset(&mut self) {
+        self.drag_offset = None;
     }
 
     /// A getter method for the last loaded map.

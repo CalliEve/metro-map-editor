@@ -39,6 +39,7 @@ use crate::{
         MapState,
     },
     models::Map,
+    unwrap_or_return,
     utils::{
         IDData,
         IDManager,
@@ -128,7 +129,7 @@ pub fn CanvasControls() -> impl IntoView {
     });
 
     // Handle the response from the algorithm.
-    let handle_algorithm_response = move |resp: AlgorithmResponse| {
+    let handle_algorithm_response = move |resp: AlgorithmResponse, partial: bool| {
         if resp.success
             || map_state
                 .get_untracked()
@@ -136,7 +137,13 @@ pub fn CanvasControls() -> impl IntoView {
                 .output_on_fail
         {
             map_state.update(|state| {
-                state.set_map(resp.map);
+                if partial {
+                    unwrap_or_return!(state
+                        .get_mut_map()
+                        .update_from_partial(&resp.map));
+                } else {
+                    state.set_map(resp.map);
+                }
             });
             IDManager::from_data(resp.id_manager_data);
         }
@@ -144,6 +151,10 @@ pub fn CanvasControls() -> impl IntoView {
 
     // Dispatch the algorithm request.
     let algorithm_req = create_action(move |req: &AlgorithmRequest| {
+        map_state.update_untracked(|state| {
+            state.clear_all_selections();
+        });
+
         let req = req.clone();
         async move {
             let (abort_handle, resp_stream) = executor
@@ -162,7 +173,7 @@ pub fn CanvasControls() -> impl IntoView {
             let last = resp_stream
                 .inspect(|resp| {
                     if req.midway_updates {
-                        handle_algorithm_response(resp.clone());
+                        handle_algorithm_response(resp.clone(), req.partial);
                     }
                 })
                 .fold(
@@ -175,7 +186,7 @@ pub fn CanvasControls() -> impl IntoView {
             // now.
             if !req.midway_updates {
                 if let Some(resp) = last {
-                    handle_algorithm_response(resp);
+                    handle_algorithm_response(resp, req.partial);
                 }
             }
         }

@@ -38,7 +38,7 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
         .get_drag_offset()
         .is_some()
     {
-        map_state.set_drag_offset(None);
+        map_state.clear_drag_offset();
     }
 
     // Handle a click while having an operation selected

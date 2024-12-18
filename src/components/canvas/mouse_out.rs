@@ -8,4 +8,5 @@ use crate::MapState;
 pub fn on_mouse_out(map_state: &mut MapState) {
     map_state.clear_selected_line();
     map_state.clear_box_select();
+    map_state.clear_drag_offset();
 }
