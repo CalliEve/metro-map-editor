@@ -11,6 +11,7 @@ use crate::{
             FileType,
             SettingsModal,
         },
+        ErrorState,
         MapState,
     },
     unwrap_or_return,
@@ -28,19 +29,24 @@ pub fn Navbar() -> impl IntoView {
     let (show_settings_modal, set_show_settings_modal) = create_signal(false);
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
 
     let on_submit = move |file_type: FileType, s: String| {
         set_show_file_modal(false);
 
         map_state.update(|state| {
-            let map = unwrap_or_return!(match file_type {
-                FileType::Json => {
-                    json::decode_map(&s, state.get_canvas_state())
-                },
-                FileType::GraphML => {
-                    graphml::decode_map(&s, state.get_canvas_state())
-                },
-            });
+            let map = unwrap_or_return!(
+                error_state,
+                match file_type {
+                    FileType::Json => {
+                        json::decode_map(&s, state.get_canvas_state())
+                    },
+                    FileType::GraphML => {
+                        graphml::decode_map(&s, state.get_canvas_state())
+                    },
+                }
+            );
 
             state.set_map(map.clone());
             state.set_last_loaded(map);

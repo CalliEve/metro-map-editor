@@ -16,6 +16,7 @@ use super::FileType;
 use crate::{
     components::{
         atoms::Button,
+        ErrorState,
         MapState,
     },
     unwrap_or_return,
@@ -27,31 +28,42 @@ use crate::{
 pub fn FileDownloader() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
 
     let download_map = move |file_type: FileType| {
-        let encoded = unwrap_or_return!(match file_type {
-            FileType::Json => {
-                let state = map_state.get_untracked();
-                encode_map(
-                    state.get_map(),
-                    state.get_canvas_state(),
-                )
-            },
-            FileType::GraphML => return,
-        });
+        let encoded = unwrap_or_return!(
+            error_state,
+            match file_type {
+                FileType::Json => {
+                    let state = map_state.get_untracked();
+                    encode_map(
+                        state.get_map(),
+                        state.get_canvas_state(),
+                    )
+                },
+                FileType::GraphML => return,
+            }
+        );
         let options = BlobPropertyBag::new();
         options.set_type(file_type.to_mime_type());
 
         let str_sequence = std::iter::once(JsValue::from_str(&encoded)).collect::<Array>();
-        let blob = unwrap_or_return!(Blob::new_with_str_sequence_and_options(
-            &str_sequence,
-            &options
-        ));
-        let url = unwrap_or_return!(Url::create_object_url_with_blob(&blob));
+        let blob = unwrap_or_return!(
+            error_state,
+            Blob::new_with_str_sequence_and_options(&str_sequence, &options)
+        );
+        let url = unwrap_or_return!(
+            error_state,
+            Url::create_object_url_with_blob(&blob)
+        );
 
-        let elem = unwrap_or_return!(document().create_element("a"))
-            .dyn_into::<web_sys::HtmlAnchorElement>()
-            .expect("to convert the element to an anchor element");
+        let elem = unwrap_or_return!(
+            error_state,
+            document().create_element("a")
+        )
+        .dyn_into::<web_sys::HtmlAnchorElement>()
+        .expect("to convert the element to an anchor element");
 
         elem.set_href(&url);
         elem.set_download(&format!(
@@ -63,7 +75,10 @@ pub fn FileDownloader() -> impl IntoView {
         ));
         elem.click();
 
-        unwrap_or_return!(Url::revoke_object_url(&url));
+        unwrap_or_return!(
+            error_state,
+            Url::revoke_object_url(&url)
+        );
     };
 
     view! {

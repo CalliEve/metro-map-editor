@@ -374,8 +374,7 @@ fn calc_station_exit_cost(
                     station.get_pos(),
                     node,
                     true,
-                )
-                .map(|c| c / 5.0);
+                );
             }
         }
     }

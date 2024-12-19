@@ -1,6 +1,7 @@
 //! Contains the custom [`Error`] type and the [`Result`] type alias.
 
 use std::{
+    collections::HashMap,
     fmt::Display,
     sync::Arc,
 };
@@ -51,6 +52,20 @@ impl Error {
             Self::EarlyAbort => "early_abort",
             Self::DecodeError(_) => "decode_error",
             Self::Other(_) => "other",
+        }
+    }
+
+    /// Returns the error message as an user-friendly string.
+    pub fn to_user_friendly_string(&self) -> String {
+        match self {
+            Self::Json(_) => "An error happened while encoding/decoding JSON.".to_string(),
+            Self::GraphML(_) => "An error happened while encoding/decoding GraphML.".to_string(),
+            Self::InvalidFloat(_) => "An invalid float was encountered.".to_string(),
+            Self::EarlyAbort => {
+                "Algorithm was aborted early as no possible improvement can be reached.".to_string()
+            },
+            Self::DecodeError(_) => "Failed to decode the given file.".to_string(),
+            Self::Other(e) => format!("Error: {e}"),
         }
     }
 }
@@ -158,44 +173,29 @@ impl<'de> Deserialize<'de> for Error {
     where
         D: serde::Deserializer<'de>,
     {
-        let value = serde_json::Value::deserialize(deserializer)?;
-        let map = value
-            .as_object()
-            .ok_or(D::Error::custom(
-                "expected object for error",
-            ))?;
+        let map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
         match map
             .get("type")
             .ok_or(D::Error::custom(
                 "error object must have type",
             ))?
             .as_str()
-            .ok_or(D::Error::custom(
-                "error type must be a string",
-            ))? {
+        {
             "json" => {
-                let e = value
+                let e = map
                     .get("data")
                     .ok_or(D::Error::custom(
                         "json error must have data",
-                    ))?
-                    .as_str()
-                    .ok_or(D::Error::custom(
-                        "json error data must be a string",
                     ))?;
                 Ok(Self::Json(Arc::new(
                     serde_json::Error::custom(e),
                 )))
             },
             "graphml" => {
-                let e = value
+                let e = map
                     .get("data")
                     .ok_or(D::Error::custom(
                         "graphml error must have data",
-                    ))?
-                    .as_str()
-                    .ok_or(D::Error::custom(
-                        "graphml error data must be a string",
                     ))?;
                 Ok(Self::GraphML(
                     quick_xml::DeError::custom(e),
@@ -203,26 +203,18 @@ impl<'de> Deserialize<'de> for Error {
             },
             "invalid_float" => Ok(Self::InvalidFloat(FloatIsNan)),
             "decode_error" => {
-                let e = value
+                let e = map
                     .get("data")
                     .ok_or(D::Error::custom(
                         "decode error must have data",
-                    ))?
-                    .as_str()
-                    .ok_or(D::Error::custom(
-                        "decode error data must be a string",
                     ))?;
                 Ok(Self::DecodeError(e.to_string()))
             },
             "other" => {
-                let e = value
+                let e = map
                     .get("data")
                     .ok_or(D::Error::custom(
                         "other error must have data",
-                    ))?
-                    .as_str()
-                    .ok_or(D::Error::custom(
-                        "other error data must be a string",
                     ))?;
                 Ok(Self::Other(e.to_string()))
             },
@@ -239,11 +231,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// prints the error and returns without panicing.
 #[macro_export]
 macro_rules! unwrap_or_return {
-    ($e:expr) => {
+    ($state:expr, $e:expr) => {
         match $e {
             Ok(v) => v,
             Err(e) => {
-                $crate::Error::from(e).print_error();
+                let err = $crate::Error::from(e);
+                err.clone()
+                    .print_error();
+                $state.update(|state| state.set_error(err));
                 return;
             },
         }

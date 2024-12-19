@@ -17,7 +17,10 @@ use wasm_bindgen::{
     JsValue,
 };
 
-use crate::components::MapState;
+use crate::components::{
+    ErrorState,
+    MapState,
+};
 
 mod dbl_click;
 mod keydown;
@@ -49,6 +52,8 @@ pub fn Canvas() -> impl IntoView {
     let canvas_ref = create_node_ref::<HtmlCanvas>();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
 
     // ensures we know the size of the canvas and that one page resizing, the canvas
     // is also resized.
@@ -99,13 +104,13 @@ pub fn Canvas() -> impl IntoView {
                 _ref=canvas_ref
 
                 on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
-                on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
+                on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, error_state, ev.as_ref(), ev.shift_key()))
                 on:mousemove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:mouseout=move |_| map_state.update(on_mouse_out)
                 on:dblclick=move |ev| map_state.update(|state| on_dbl_click(state, ev.as_ref(), ev.shift_key()))
 
                 on:touchstart=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
-                on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, ev.as_ref(), ev.shift_key()))
+                on:touchend=move |ev| map_state.update(|state| on_mouse_up(state, error_state, ev.as_ref(), ev.shift_key()))
                 on:touchmove=move |ev| on_mouse_move(&map_state, ev.as_ref())
                 on:touchcancel=move |_| map_state.update(on_mouse_out)
 

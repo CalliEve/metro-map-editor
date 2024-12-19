@@ -1,5 +1,9 @@
 //! Contains the mouseup event handler for the [`Canvas`] component.
 
+use leptos::{
+    RwSignal,
+    SignalUpdate,
+};
 use web_sys::UiEvent;
 
 use super::other::{
@@ -7,7 +11,10 @@ use super::other::{
     recalculate_edge_nodes,
 };
 use crate::{
-    components::state::ActionType,
+    components::{
+        state::ActionType,
+        ErrorState,
+    },
     models::{
         GridNode,
         SelectedStation,
@@ -18,7 +25,12 @@ use crate::{
 /// Listener for the [mouseup] event on the canvas.
 ///
 /// [mouseup]: https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
-pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
+pub fn on_mouse_up(
+    map_state: &mut MapState,
+    error_state: RwSignal<ErrorState>,
+    ev: &UiEvent,
+    shift_key: bool,
+) {
     if ev.detail() > 1 {
         return;
     }
@@ -51,7 +63,9 @@ pub fn on_mouse_up(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             },
             ActionType::RemoveLine => {
                 if let Some(selected_line) = map.line_at_node(mouse_pos) {
-                    map.remove_line(selected_line.get_id());
+                    if let Err(err) = map.remove_line(selected_line.get_id()) {
+                        error_state.update(|state| state.set_error(err));
+                    }
                 }
             },
             ActionType::Lock => {

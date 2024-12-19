@@ -28,6 +28,7 @@ use crate::{
         IDData,
         IDManager,
     },
+    Error,
 };
 
 /// The response from the algorithm.
@@ -40,6 +41,8 @@ pub struct AlgorithmResponse {
     /// The data for the [`IDManager`] after the algorithm has run, ensuring the
     /// main thread will not create IDs in conflict with those in the map.
     pub id_manager_data: IDData,
+    /// If an error occurred during the algorithm, this contains it.
+    pub error: Option<Error>,
 }
 
 /// The inner state of the executor.
@@ -51,6 +54,8 @@ struct ExecutorState {
     done: bool,
     /// The waker for the stream.
     waker: Option<std::task::Waker>,
+    /// Any error that occurred during the algorithm.
+    error: Option<Error>,
 }
 
 /// The executor for the algorithm.
@@ -74,6 +79,7 @@ impl AlgorithmExecutor {
                 last_res: None,
                 done: false,
                 waker: None,
+                error: None,
             })),
             midway_updates,
         };
@@ -113,6 +119,9 @@ impl AlgorithmExecutor {
                 .update_last_res(map, IDManager::to_data(), res.is_ok())
                 .await;
             closure_executor
+                .set_error(res.err())
+                .await;
+            closure_executor
                 .mark_done()
                 .await;
             closure_executor
@@ -129,6 +138,7 @@ impl AlgorithmExecutor {
             success,
             map,
             id_manager_data,
+            error: None,
         };
 
         self.inner
@@ -145,6 +155,23 @@ impl AlgorithmExecutor {
             .await
             .last_res
             .take()
+    }
+
+    /// Set the error of the algorithm.
+    async fn set_error(&self, error: Option<Error>) {
+        self.inner
+            .lock()
+            .await
+            .error = error;
+    }
+
+    /// Get the error of the algorithm.
+    async fn get_error(&self) -> Option<Error> {
+        self.inner
+            .lock()
+            .await
+            .error
+            .clone()
     }
 
     /// Mark the algorithm and thus stream as done.
@@ -209,13 +236,20 @@ impl Stream for AlgorithmExecutor {
         let res = this
             .pop_last_res()
             .now_or_never();
+        let error = this
+            .get_error()
+            .now_or_never()
+            .flatten();
         let done = this
             .get_done()
             .now_or_never()
             .unwrap_or(false);
 
         match res {
-            Some(Some(res)) => std::task::Poll::Ready(Some(res)),
+            Some(Some(mut res)) => {
+                res.error = error;
+                std::task::Poll::Ready(Some(res))
+            },
             Some(None) if done => std::task::Poll::Ready(None),
             _ => std::task::Poll::Pending,
         }

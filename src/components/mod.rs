@@ -13,6 +13,7 @@ mod state;
 pub use pages::Home;
 pub use state::{
     CanvasState,
+    ErrorState,
     MapState,
     StateProvider,
 };

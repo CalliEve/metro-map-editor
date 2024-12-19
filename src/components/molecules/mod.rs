@@ -2,12 +2,14 @@
 //! interactions.
 
 mod edge_info_box;
+mod error_box;
 mod file_downloader;
 mod file_modal;
 mod settings_modal;
 mod station_info_box;
 
 pub use edge_info_box::EdgeInfoBox;
+pub use error_box::ErrorBox;
 pub use file_downloader::FileDownloader;
 pub use file_modal::{
     FileModal,

@@ -47,6 +47,7 @@ pub fn Sidebar() -> impl IntoView {
             });
         } else {
             map_state.update(|state| {
+                state.clear_all_selections();
                 state.set_selected_action(action);
             });
         }
@@ -54,18 +55,21 @@ pub fn Sidebar() -> impl IntoView {
 
     let add_station = move |_| {
         map_state.update(|state| {
+            state.clear_all_selections();
             state.select_station(SelectedStation::new_station());
         });
     };
 
     let add_checkpoint = move |_| {
         map_state.update(|state| {
+            state.clear_all_selections();
             state.select_station(SelectedStation::new_checkpoint());
         });
     };
 
     let add_line = move |_| {
         map_state.update(|state| {
+            state.clear_all_selections();
             let line = SelectedLine::new_line(state.get_mut_map());
             state.set_selected_line(line);
         });

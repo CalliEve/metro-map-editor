@@ -98,12 +98,7 @@ pub fn StationInfoBox() -> impl IntoView {
         <Show when=station_was_clicked>
             <CanvasInfoBox
                 title="Station Info"
-                click_position=position
-                on_close=move || {
-                    map_state.update(|state| {
-                        state.clear_clicked_on_station();
-                    });
-                }>
+                click_position=position>
                 <div>
                     <span class="text-md font-semibold"><b>"Name:\n"</b>
                         <TextWithEdit
@@ -117,12 +112,7 @@ pub fn StationInfoBox() -> impl IntoView {
         <Show when=checkpoint_was_clicked>
             <CanvasInfoBox
                 title="Checkpoint"
-                click_position=position
-                on_close=move || {
-                    map_state.update(|state| {
-                        state.clear_clicked_on_station();
-                    });
-                }>
+                click_position=position>
                 <></>
             </CanvasInfoBox>
         </Show>

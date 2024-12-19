@@ -3,9 +3,11 @@
 use leptos::*;
 
 mod canvas;
+mod error;
 mod map;
 
 pub use canvas::CanvasState;
+pub use error::ErrorState;
 pub use map::{
     ActionType,
     MapState,
@@ -21,8 +23,10 @@ pub fn StateProvider(
     children: Children,
 ) -> impl IntoView {
     let map_state = create_rw_signal(MapState::new(Map::new()));
+    let error_state = create_rw_signal(error::ErrorState::new());
 
     provide_context(map_state);
+    provide_context(error_state);
 
     view! {
         {children()}

@@ -10,9 +10,12 @@ use wasm_bindgen::{
 use web_sys::HtmlInputElement;
 
 use crate::{
-    components::atoms::{
-        Button,
-        Modal,
+    components::{
+        atoms::{
+            Button,
+            Modal,
+        },
+        ErrorState,
     },
     unwrap_or_return,
     Error,
@@ -43,6 +46,9 @@ fn get_file<S>(input: &HtmlInputElement, on_submit: S)
 where
     S: Fn(FileType, String) + 'static,
 {
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
+
     let Some(file) = input
         .files()
         .and_then(|l| l.item(0))
@@ -64,11 +70,13 @@ where
     let cb = Closure::new(move |v: JsValue| {
         on_submit(
             file_type,
-            unwrap_or_return!(v
-                .as_string()
-                .ok_or(Error::other(
-                    "file contents should be a string"
-                ))),
+            unwrap_or_return!(
+                error_state,
+                v.as_string()
+                    .ok_or(Error::other(
+                        "file contents should be a string"
+                    ))
+            ),
         );
     });
 

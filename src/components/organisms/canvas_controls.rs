@@ -36,6 +36,7 @@ use crate::{
             StationInfoBox,
         },
         CanvasState,
+        ErrorState,
         MapState,
     },
     models::Map,
@@ -88,6 +89,8 @@ pub fn CanvasControls() -> impl IntoView {
     let container_ref = create_node_ref::<Div>();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
     let (executor, _) = create_signal(
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
@@ -138,20 +141,37 @@ pub fn CanvasControls() -> impl IntoView {
         {
             map_state.update(|state| {
                 if partial {
-                    unwrap_or_return!(state
-                        .get_mut_map()
-                        .update_from_partial(&resp.map));
+                    unwrap_or_return!(
+                        error_state,
+                        state
+                            .get_mut_map()
+                            .update_from_partial(&resp.map)
+                    );
                 } else {
                     state.set_map(resp.map);
                 }
             });
             IDManager::from_data(resp.id_manager_data);
+        } else {
+            map_state.update(|state| {
+                if let Some(map) = state
+                    .get_last_loaded()
+                    .cloned()
+                {
+                    state.set_map(map);
+                }
+            })
+        }
+        if let Some(error) = resp.error {
+            error_state.update(|state| {
+                state.set_error(error);
+            });
         }
     };
 
     // Dispatch the algorithm request.
     let algorithm_req = create_action(move |req: &AlgorithmRequest| {
-        map_state.update_untracked(|state| {
+        map_state.update(|state| {
             state.clear_all_selections();
         });
 
@@ -303,7 +323,7 @@ pub fn CanvasControls() -> impl IntoView {
                 when=has_parts_selected
                 fallback=move || view!{
                     <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true bigger=true>
-                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin group-[.is-calculating]:cursor-wait"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z"/>
                             <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
                             <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" />
@@ -311,7 +331,7 @@ pub fn CanvasControls() -> impl IntoView {
                     </Button>
                 }>
                 <Button text="recalculate selected parts" on_click=Box::new(run_partial_algorithm) overlay=true bigger=true>
-                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin group-[.is-calculating]:cursor-wait"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z"/>
                             <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
                         </svg>

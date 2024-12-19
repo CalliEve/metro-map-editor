@@ -145,12 +145,7 @@ pub fn EdgeInfoBox() -> impl IntoView {
         <Show when=edge_was_clicked>
             <CanvasInfoBox
                 title="Edge Info"
-                click_position=position
-                on_close=move || {
-                    map_state.update(|state| {
-                        state.clear_clicked_on_station();
-                    });
-                }>
+                click_position=position>
                 <div>
                     <For each=edge_lines
                         key=|(_, line)| line.get_id()

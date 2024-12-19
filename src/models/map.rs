@@ -22,7 +22,6 @@ use crate::{
         OccupiedNodes,
     },
     components::CanvasState,
-    unwrap_or_return,
     utils::Result,
     Error,
 };
@@ -202,11 +201,11 @@ impl Map {
     }
 
     /// Remove a line from the map.
-    pub fn remove_line(&mut self, id: LineID) {
-        let line = unwrap_or_return!(self
+    pub fn remove_line(&mut self, id: LineID) -> Result<()> {
+        let line = self
             .lines
             .remove(&id)
-            .ok_or(Error::other("line to remove not found")));
+            .ok_or(Error::other("line to remove not found"))?;
 
         for edge_id in line.get_edges() {
             if let Some(edge) = self.get_mut_edge(*edge_id) {
@@ -220,6 +219,8 @@ impl Map {
                 }
             }
         }
+
+        Ok(())
     }
 
     /// Add an edge to map, if an edge with that ID already exists, it will get
