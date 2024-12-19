@@ -1,9 +1,12 @@
+//! Contains the [`ErrorState`] and its methods.
+
 use crate::Error;
 
 /// Contains the current error state.
 /// This state is then used to display the error message to the user.
 #[derive(Clone, Debug)]
 pub struct ErrorState {
+    /// The error last encountered.
     error: Option<Error>,
 }
 

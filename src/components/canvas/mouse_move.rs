@@ -20,11 +20,16 @@ pub fn on_mouse_move(map_state_signal: &RwSignal<MapState>, ev: &UiEvent) {
     let mouse_pos = GridNode::from_canvas_pos(canvas_pos, canvas_state);
 
     // Handle move of selected line.
-    if let Some(selected) = map_state.get_mut_selected_line() {
-        if selected.get_current_hover() != mouse_pos {
-            selected.set_current_hover(mouse_pos);
-            map_state_signal.set(map_state);
+    if !map_state
+        .get_selected_lines()
+        .is_empty()
+    {
+        for selected in map_state.get_mut_selected_lines() {
+            if selected.get_current_hover() != mouse_pos {
+                selected.set_current_hover(mouse_pos);
+            }
         }
+        map_state_signal.set(map_state);
         return;
     }
 

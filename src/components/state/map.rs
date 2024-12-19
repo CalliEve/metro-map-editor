@@ -56,8 +56,8 @@ pub struct MapState {
     map: Map,
     /// The currently selected [`crate::models::Station`]s.
     selected_stations: Vec<SelectedStation>,
-    /// The currently selected [`crate::models::Line`].
-    selected_line: Option<SelectedLine>,
+    /// The currently selected [`crate::models::Line`]s.
+    selected_lines: Vec<SelectedLine>,
     /// The type of action that is currently selected.
     selected_action: Option<ActionType>,
     /// The currently selected edges.
@@ -89,7 +89,7 @@ impl MapState {
         Self {
             map,
             selected_stations: Vec::new(),
-            selected_line: None,
+            selected_lines: Vec::new(),
             selected_action: None,
             selected_edges: Vec::new(),
             canvas: CanvasState::default(),
@@ -106,7 +106,7 @@ impl MapState {
     /// Clear all selections.
     pub fn clear_all_selections(&mut self) {
         self.clear_selected_stations();
-        self.clear_selected_line();
+        self.clear_selected_lines();
         self.clear_selected_action();
         self.clear_selected_edges();
         self.clear_box_select();
@@ -192,26 +192,27 @@ impl MapState {
         self.selected_action = None;
     }
 
-    /// A mutable getter method for the selected line.
-    pub fn get_mut_selected_line(&mut self) -> Option<&mut SelectedLine> {
-        self.selected_line
+    /// A mutable getter method for the selected lines.
+    pub fn get_mut_selected_lines(&mut self) -> &mut [SelectedLine] {
+        self.selected_lines
             .as_mut()
     }
 
-    /// A getter method for the selected line.
-    pub fn get_selected_line(&self) -> Option<&SelectedLine> {
-        self.selected_line
+    /// A getter method for the selected lines.
+    pub fn get_selected_lines(&self) -> &[SelectedLine] {
+        self.selected_lines
             .as_ref()
     }
 
-    /// A setter method for the selected line.
-    pub fn set_selected_line(&mut self, line: SelectedLine) {
-        self.selected_line = Some(line);
+    /// A setter method for the selected lines.
+    pub fn set_selected_lines(&mut self, lines: Vec<SelectedLine>) {
+        self.selected_lines = lines;
     }
 
-    /// Set the selected line to None.
-    pub fn clear_selected_line(&mut self) {
-        self.selected_line = None;
+    /// Clear the list of selected lines.
+    pub fn clear_selected_lines(&mut self) {
+        self.selected_lines
+            .clear();
     }
 
     /// A getter method for the selected edges.

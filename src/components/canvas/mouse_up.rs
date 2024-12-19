@@ -17,6 +17,7 @@ use crate::{
     },
     models::{
         GridNode,
+        SelectedLine,
         SelectedStation,
     },
     MapState,
@@ -62,7 +63,10 @@ pub fn on_mouse_up(
                 }
             },
             ActionType::RemoveLine => {
-                if let Some(selected_line) = map.line_at_node(mouse_pos) {
+                for selected_line in map
+                    .lines_at_node(mouse_pos)
+                    .clone()
+                {
                     if let Err(err) = map.remove_line(selected_line.get_id()) {
                         error_state.update(|state| state.set_error(err));
                     }
@@ -99,37 +103,47 @@ pub fn on_mouse_up(
     }
 
     // Handle a mouseup while having a line selected
-    if let Some(selected_line) = map_state
-        .get_selected_line()
-        .copied()
-    {
-        if let Some(station_at_pos) = station_at_node {
-            let (before, after) = selected_line.get_before_after();
-            let mut line = map
-                .get_or_add_line(selected_line.get_line())
-                .clone();
+    let selected_lines = map_state
+        .get_selected_lines()
+        .to_vec();
+    if !selected_lines.is_empty() {
+        let mut added_station = false;
+        for selected_line in selected_lines.clone() {
+            if let Some(station_at_pos) = station_at_node {
+                let (before, after) = selected_line.get_before_after();
+                let mut line = map
+                    .get_or_add_line(selected_line.get_line())
+                    .clone();
 
-            line.add_station(&mut map, station_at_pos, before, after);
+                line.add_station(&mut map, station_at_pos, before, after);
 
-            if let Some(before_station) = before {
-                let edge_id = map.get_edge_id_between(before_station, station_at_pos);
-                recalculate_edge_nodes(&mut map, edge_id);
+                if let Some(before_station) = before {
+                    let edge_id = map.get_edge_id_between(before_station, station_at_pos);
+                    recalculate_edge_nodes(&mut map, edge_id);
+                }
+
+                if let Some(after_station) = after {
+                    let edge_id = map.get_edge_id_between(station_at_pos, after_station);
+                    recalculate_edge_nodes(&mut map, edge_id);
+                }
+
+                map.add_line(line);
+                added_station = true;
             }
+        }
 
-            if let Some(after_station) = after {
-                let edge_id = map.get_edge_id_between(station_at_pos, after_station);
-                recalculate_edge_nodes(&mut map, edge_id);
-            }
-
-            map.add_line(line);
+        if added_station {
             map_state.set_map(map);
-            map_state.clear_all_selections();
+            map_state.clear_selected_lines();
             return;
         }
 
-        map_state.clear_selected_line();
+        map_state.clear_selected_lines();
 
-        if let Some(grabbed_at) = selected_line.get_grabbed_at() {
+        if let Some(grabbed_at) = selected_lines
+            .first()
+            .and_then(SelectedLine::get_grabbed_at)
+        {
             if grabbed_at == mouse_pos {
                 // Handle a single click on an edge
                 if edge_at_node.is_some()
@@ -154,9 +168,6 @@ pub fn on_mouse_up(
                     map_state.set_clicked_on_edge(selected_edge, canvas_pos);
                     return;
                 }
-            } else {
-                map_state.clear_all_selections();
-                return;
             }
         }
     }

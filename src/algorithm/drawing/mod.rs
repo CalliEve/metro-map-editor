@@ -49,8 +49,9 @@ where
     map.draw(&context, state.get_canvas_state(), 1.0);
 
     state
-        .get_selected_line()
-        .inspect(|d| d.draw(map, &context, state.get_canvas_state()));
+        .get_selected_lines()
+        .iter()
+        .for_each(|d| d.draw(map, &context, state.get_canvas_state()));
 
     state
         .get_box_select()

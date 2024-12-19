@@ -160,7 +160,7 @@ pub fn CanvasControls() -> impl IntoView {
                 {
                     state.set_map(map);
                 }
-            })
+            });
         }
         if let Some(error) = resp.error {
             error_state.update(|state| {

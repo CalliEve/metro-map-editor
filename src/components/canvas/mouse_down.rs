@@ -57,22 +57,24 @@ pub fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     }
 
     // Handle a click while having a new line selected
-    if let Some(selected_line) = map_state
-        .get_selected_line()
-        .copied()
-    {
-        if let Some(station_at_pos) = station_at_node {
-            let (before, after) = selected_line.get_before_after();
-            let mut line = map
-                .get_or_add_line(selected_line.get_line())
-                .clone();
+    let selected_lines = map_state
+        .get_selected_lines()
+        .to_vec();
+    if !selected_lines.is_empty() {
+        for selected_line in selected_lines {
+            if let Some(station_at_pos) = station_at_node {
+                let (before, after) = selected_line.get_before_after();
+                let mut line = map
+                    .get_or_add_line(selected_line.get_line())
+                    .clone();
 
-            line.add_station(&mut map, station_at_pos, before, after);
+                line.add_station(&mut map, station_at_pos, before, after);
 
-            map.add_line(line);
-            map_state.set_map(map);
-            map_state.clear_selected_line();
+                map.add_line(line);
+            }
         }
+        map_state.set_map(map);
+        map_state.clear_selected_lines();
         return;
     }
 
@@ -149,21 +151,13 @@ pub fn on_mouse_down(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     }
 
     // Handle a click on a line
-    if let Some(selected_line) = map
-        .line_at_node(mouse_pos)
-        .cloned()
+    let selected_lines = map
+        .lines_at_node(mouse_pos)
+        .into_iter()
         .map(|l| SelectedLine::new(&l, &map, mouse_pos, Some(mouse_pos)))
-    {
-        map_state.set_selected_line(selected_line);
-        for edge in map.get_edges() {
-            if edge
-                .get_nodes()
-                .contains(&mouse_pos)
-            {
-                edge.print_info();
-                break;
-            }
-        }
+        .collect::<Vec<_>>();
+    if !selected_lines.is_empty() {
+        map_state.set_selected_lines(selected_lines);
     }
 
     // Select the clicked edge, unless this was a double click.

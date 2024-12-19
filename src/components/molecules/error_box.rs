@@ -6,7 +6,10 @@ use wasm_bindgen::{
     JsCast,
 };
 
-use crate::components::ErrorState;
+use crate::{
+    components::ErrorState,
+    Error,
+};
 
 /// A pop-up box for displaying errors.
 #[component]
@@ -15,7 +18,7 @@ pub fn ErrorBox() -> impl IntoView {
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
 
     let on_click = move |_| {
-        error_state.update(|state| state.clear_error());
+        error_state.update(ErrorState::clear_error);
     };
 
     let has_error = move || {
@@ -27,11 +30,11 @@ pub fn ErrorBox() -> impl IntoView {
         let err = error_state
             .get()
             .get_error()
-            .map(|e| e.to_user_friendly_string());
+            .map(Error::to_user_friendly_string);
 
         if err.is_some() {
             let f = Closure::wrap(Box::new(move || {
-                error_state.update(|state| state.clear_error());
+                error_state.update(ErrorState::clear_error);
             }) as Box<dyn Fn()>);
             window()
                 .set_timeout_with_callback_and_timeout_and_arguments_0(

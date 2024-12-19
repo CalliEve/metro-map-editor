@@ -264,10 +264,12 @@ impl Map {
     }
 
     /// Get the line that goes through the given grid node.
-    pub fn line_at_node(&self, node: GridNode) -> Option<&Line> {
+    pub fn lines_at_node(&self, node: GridNode) -> Vec<Line> {
         self.lines
             .values()
-            .find(|l| l.visits_node(self, node))
+            .filter(|l| l.visits_node(self, node))
+            .cloned()
+            .collect::<Vec<_>>()
     }
 
     /// Get the edge located on the given grid node.

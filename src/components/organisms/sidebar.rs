@@ -71,7 +71,7 @@ pub fn Sidebar() -> impl IntoView {
         map_state.update(|state| {
             state.clear_all_selections();
             let line = SelectedLine::new_line(state.get_mut_map());
-            state.set_selected_line(line);
+            state.set_selected_lines(vec![line]);
         });
     };
 
