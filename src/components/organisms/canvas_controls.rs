@@ -95,8 +95,6 @@ pub fn CanvasControls() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
-    let history_state =
-        use_context::<HistoryState>().expect("to have found the global history state");
     let (executor, _) = signal_local(
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
@@ -228,20 +226,20 @@ pub fn CanvasControls() -> impl IntoView {
             let current_map = map_state
                 .get_map()
                 .clone();
-            if let Some(map) = history_state.undo(current_map) {
+            if let Some(map) = HistoryState::undo(current_map) {
                 map_state.set_map_no_history(map);
             }
-        })
+        });
     };
     let redo = move |_| {
         map_state.update(|map_state| {
             let current_map = map_state
                 .get_map()
                 .clone();
-            if let Some(map) = history_state.redo(current_map) {
+            if let Some(map) = HistoryState::redo(current_map) {
                 map_state.set_map_no_history(map);
             }
-        })
+        });
     };
 
     // Run the algorithm on the entire map.

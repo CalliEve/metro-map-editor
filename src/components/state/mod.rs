@@ -24,11 +24,9 @@ pub fn StateProvider(
     /// The contents of the page that will have access to the global state.
     children: Children,
 ) -> impl IntoView {
-    let history_state = history::HistoryState::new();
     let map_state = RwSignal::new(MapState::new(Map::new()));
     let error_state = RwSignal::new(error::ErrorState::new());
 
-    provide_context(history_state);
     provide_context(map_state);
     provide_context(error_state);
 

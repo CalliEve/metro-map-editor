@@ -77,7 +77,7 @@ where
             )
     });
     // Clone to satisfy lifetimes and moves.
-    let button_label = edit_label.clone();
+    let button_label = edit_label;
 
     let text_for_effect = text.clone();
     Effect::new(move |_| {
@@ -99,7 +99,7 @@ where
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
                     {text.get()}
-                    <Button text={button_label.clone()} smaller=true on_click=Box::new(on_click)>
+                    <Button text={button_label} smaller=true on_click=Box::new(on_click)>
                         "edit"
                     </Button>
                 </span>
@@ -109,14 +109,14 @@ where
                     type="text"
                     maxlength="100"
                     class="grow peer block min-h-[auto] w-full rounded border-b-2 rounded-md border-solid border-blue-400 bg-transparent px-3 py-[0.32rem] leading-[1.6] outline-none transition-all duration-200 ease-linear peer-focus:text-primary motion-reduce:transition-none dark:text-white dark:placeholder:text-neutral-300 dark:autofill:shadow-autofill dark:peer-focus:text-primary dark:border-blue-600 focus:border-blue-600 dark:focus:border-blue-800"
-                    id={id.clone()}
+                    id={id}
                     on:input=move |ev| set_text_input(event_target_value(&ev))
                     prop:value=move || text_input.get()
                     on:keydown=on_submit />
                 <label
-                    for={id.clone()}
+                    for={id}
                     class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate pt-[0.37rem] leading-[1.6] text-neutral-500 peer-focus:text-primary -translate-y-[0.9rem] scale-[0.8] dark:text-neutral-400 dark:peer-focus:text-primary"
-                    >{edit_label.clone()}
+                    >{edit_label}
                 </label>
                 <Button text="finish editing" smaller=true on_click=Box::new(on_done)>
                     "done"

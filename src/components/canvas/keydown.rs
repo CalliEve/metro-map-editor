@@ -11,11 +11,7 @@ use crate::{
 /// Listener for the [keydown] event on the canvas.
 ///
 /// [keydown]: https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
-pub fn on_keydown(
-    map_state_signal: &RwSignal<MapState>,
-    history_signal: HistoryState,
-    ev: &KeyboardEvent,
-) {
+pub fn on_keydown(map_state_signal: &RwSignal<MapState>, ev: &KeyboardEvent) {
     if ev.key() == "Escape" {
         map_state_signal.update(|map_state| {
             map_state.clear_all_selections();
@@ -30,7 +26,7 @@ pub fn on_keydown(
 
     if ev.key() == "z" && ev.ctrl_key() {
         map_state_signal.update(|map_state| {
-            if let Some(map) = history_signal.undo(
+            if let Some(map) = HistoryState::undo(
                 map_state
                     .get_map()
                     .clone(),
@@ -42,7 +38,7 @@ pub fn on_keydown(
 
     if ev.key() == "Z" && ev.ctrl_key() {
         map_state_signal.update(|map_state| {
-            if let Some(map) = history_signal.redo(
+            if let Some(map) = HistoryState::redo(
                 map_state
                     .get_map()
                     .clone(),

@@ -83,7 +83,7 @@ fn LineInfo(
             if i > 0 {view!{
                 <hr class="my-0.5"/>
             }.into_any()} else {
-                view!{}.into_any()}
+                ().into_any()}
         }
         <p class="text-md font-semibold"><b>"Name:\n"</b>
             <TextWithEdit

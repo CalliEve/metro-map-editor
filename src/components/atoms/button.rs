@@ -153,7 +153,7 @@ pub fn Button(
     let hover_class =
         "hidden group-hover:block rounded text-xs absolute z-10 width-fit p-1.5 bg-neutral-800 text-center bottom-[110%] right-0 whitespace-pre";
 
-    let text_for_children = text.clone();
+    let text_for_children = text;
     let children_signal = move || {
         children
             .clone()
@@ -178,7 +178,7 @@ pub fn Button(
                 {children_signal}
                 <Show when=move || has_children>
                     <span class=hover_class>
-                        {text.clone()}
+                        {text}
                     </span>
                 </Show>
             </>

@@ -19,7 +19,6 @@ use wasm_bindgen::{
 
 use crate::components::{
     ErrorState,
-    HistoryState,
     MapState,
 };
 
@@ -55,8 +54,6 @@ pub fn Canvas() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
-    let history_state =
-        use_context::<HistoryState>().expect("to have found the global history state");
 
     // ensures we know the size of the canvas and that one page resizing, the canvas
     // is also resized.
@@ -67,11 +64,7 @@ pub fn Canvas() -> impl IntoView {
             DOCUMENT_LOADED.store(true, Ordering::Release);
             let on_resize = Closure::<dyn Fn()>::new(move || update_canvas_size(&map_state));
             let on_keydown = Closure::<dyn Fn(JsValue)>::new(move |ev: JsValue| {
-                on_keydown(
-                    &map_state,
-                    history_state,
-                    ev.unchecked_ref(),
-                );
+                on_keydown(&map_state, ev.unchecked_ref());
             });
             window().set_onresize(Some(
                 on_resize

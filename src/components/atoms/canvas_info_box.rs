@@ -3,25 +3,23 @@
 use leptos::{
     html::Div,
     prelude::*,
+    text_prop::TextProp,
 };
 
 use crate::MapState;
 
 /// A generic canvas info box that others can be based upon.
-#[allow(clippy::needless_pass_by_value)] // cannot be a reference because of the `Fn` trait
 #[component]
-pub fn CanvasInfoBox<S>(
+pub fn CanvasInfoBox(
     /// The title of the info box,
-    title: S,
+    #[prop(into)]
+    title: TextProp,
     /// If the info box should be shown.
     click_position: Signal<Option<(f64, f64)>>,
     /// The body of the info box if applicable.
     #[prop(optional)]
     children: Option<Children>,
-) -> impl IntoView
-where
-    S: ToString + 'static,
-{
+) -> impl IntoView {
     let info_box_ref: NodeRef<Div> = NodeRef::new();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
@@ -78,7 +76,7 @@ where
                 class="absolute w-80 max-w-2xl max-h-full">
                 // title
                 <div class=move || String::from("text-lg px-2 pb-0.5 font-semibold bg-white shadow dark:bg-gray-700") + if has_children { " rounded-t-lg" } else {" rounded-lg"}>
-                    <h2>{title.to_string()}</h2>
+                    <h2>{move || title.get()}</h2>
                 </div>
                 <div
                     aria-hidden={move || if has_children {"false"} else {"true"}}
