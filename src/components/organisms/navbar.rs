@@ -1,6 +1,6 @@
 //! Contains the [`Navbar`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     components::{
@@ -25,8 +25,8 @@ use crate::{
 /// Also contains the modal for uploading a file.
 #[component]
 pub fn Navbar() -> impl IntoView {
-    let (show_file_modal, set_show_file_modal) = create_signal(false);
-    let (show_settings_modal, set_show_settings_modal) = create_signal(false);
+    let (show_file_modal, set_show_file_modal) = signal(false);
+    let (show_settings_modal, set_show_settings_modal) = signal(false);
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =

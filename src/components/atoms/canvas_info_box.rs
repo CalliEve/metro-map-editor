@@ -1,6 +1,9 @@
 //! Contains the [`CanvasInfoBox`] component.
 
-use leptos::*;
+use leptos::{
+    html::Div,
+    prelude::*,
+};
 
 use crate::MapState;
 
@@ -19,7 +22,7 @@ pub fn CanvasInfoBox<S>(
 where
     S: ToString + 'static,
 {
-    let info_box_ref: NodeRef<html::Div> = create_node_ref();
+    let info_box_ref: NodeRef<Div> = NodeRef::new();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
@@ -68,7 +71,7 @@ where
             class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 w-full md:inset-0 h-[calc(100%-0.125rem)] max-h-full"
             style:pointer-events="none">
             <div
-                _ref=info_box_ref
+                node_ref=info_box_ref
                 style:pointer-events="auto"
                 style:top=top
                 style:left=left
@@ -84,7 +87,7 @@ where
                     <hr/>
                     // content
                     <div>
-                        {children.map_or(Fragment::from(view!{<div></div>}.into_view()), |c| c())}
+                        {children.map_or(view!{<div></div>}.into_any(), |c| c())}
                     </div>
                 </div>
             </div>

@@ -1,7 +1,10 @@
 //! Contains the [`TextWithEdit`] component.
 
-use ev::KeyboardEvent;
-use leptos::*;
+use leptos::{
+    prelude::*,
+    text_prop::TextProp,
+};
+use web_sys::KeyboardEvent;
 
 use crate::components::atoms::Button;
 
@@ -20,15 +23,15 @@ pub fn TextWithEdit<F>(
     edit_label: Option<TextProp>,
 ) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + Send + Sync + 'static,
 {
-    let (editing, set_editing) = create_signal(false);
-    let (text_input, set_text_input) = create_signal(String::new());
+    let (editing, set_editing) = signal(false);
+    let (text_input, set_text_input) = signal(String::new());
 
     // Generate the id for the input element and label.
     let edit_label_for_id = edit_label.clone();
     let text_for_id = text.clone();
-    let id = MaybeSignal::derive(move || {
+    let id = Signal::derive(move || {
         edit_label_for_id
             .clone()
             .map_or_else(
@@ -62,7 +65,7 @@ where
 
     // If the edit_label is not provided, use the text as the label.
     let text_for_edit_label = text.clone();
-    let edit_label = MaybeSignal::derive(move || {
+    let edit_label = Signal::derive(move || {
         edit_label
             .as_ref()
             .map_or_else(
@@ -77,7 +80,7 @@ where
     let button_label = edit_label.clone();
 
     let text_for_effect = text.clone();
-    create_effect(move |_| {
+    Effect::new(move |_| {
         if text_input
             .get()
             .is_empty()
@@ -95,7 +98,7 @@ where
             when=move || editing.get()
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
-                    {text.clone()}
+                    {text.get()}
                     <Button text={button_label.clone()} smaller=true on_click=Box::new(on_click)>
                         "edit"
                     </Button>

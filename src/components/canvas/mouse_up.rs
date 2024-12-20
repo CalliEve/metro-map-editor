@@ -1,8 +1,8 @@
 //! Contains the mouseup event handler for the [`Canvas`] component.
 
-use leptos::{
+use leptos::prelude::{
     RwSignal,
-    SignalUpdate,
+    Update,
 };
 use web_sys::UiEvent;
 

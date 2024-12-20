@@ -6,7 +6,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-leptos = { version = "0.6.15", features = ["csr", "nightly"] }
+leptos = { version = "0.7.1", features = ["csr", "nightly"] }
 web-sys = { version = "0.3.76", features = [
     "KeyboardEvent",
     "HtmlCanvasElement",
@@ -20,6 +20,7 @@ web-sys = { version = "0.3.76", features = [
     "CssStyleDeclaration",
     "Element",
     "Window",
+    "FocusEvent",
 ] }
 js-sys = "0.3.76"
 wasm-bindgen = { version = "0.2.99" }
@@ -32,7 +33,7 @@ serde = { version = "1", features = ["derive"] }
 csscolorparser = "0.7"
 rand = "0.8"
 priority-queue = "2.1"
-ordered-float = "4.4"
+ordered-float = "4.6"
 itertools = "0.13"
 leptos_workers = "0.2.2"
 futures-core = "0.3"

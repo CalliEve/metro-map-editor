@@ -6,10 +6,12 @@
 // This otherwise gets triggered by one in the wasm worker.
 #![allow(unexpected_cfgs)]
 
-use ev::KeyboardEvent;
 use futures_util::StreamExt;
-use html::Div;
-use leptos::*;
+use leptos::{
+    ev::keydown,
+    html::Div,
+    prelude::*,
+};
 use leptos_workers::{
     executors::{
         AbortHandle,
@@ -21,6 +23,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use web_sys::KeyboardEvent;
 
 use crate::{
     algorithm::{
@@ -37,6 +40,7 @@ use crate::{
         },
         CanvasState,
         ErrorState,
+        HistoryState,
         MapState,
     },
     models::Map,
@@ -86,20 +90,22 @@ fn run_algorithm(req: AlgorithmRequest) -> impl leptos_workers::Stream<Item = Al
 /// The canvas and the controls overlayed on it.
 #[component]
 pub fn CanvasControls() -> impl IntoView {
-    let container_ref = create_node_ref::<Div>();
+    let container_ref = NodeRef::<Div>::new();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
-    let (executor, _) = create_signal(
+    let history_state =
+        use_context::<HistoryState>().expect("to have found the global history state");
+    let (executor, _) = signal_local(
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
     let (abort_handle, set_abort_handle) =
-        create_signal(Option::<(AbortHandle<AlgorithmWorker>, Map)>::None);
+        signal_local(Option::<(AbortHandle<AlgorithmWorker>, Map)>::None);
 
-    create_effect(move |_| {
+    Effect::new(move |_| {
         window_event_listener(
-            ev::keydown,
+            keydown,
             move |keyevent: KeyboardEvent| {
                 map_state.update(|state| {
                     state.update_canvas_state(|canvas| {
@@ -170,7 +176,7 @@ pub fn CanvasControls() -> impl IntoView {
     };
 
     // Dispatch the algorithm request.
-    let algorithm_req = create_action(move |req: &AlgorithmRequest| {
+    let algorithm_req = Action::new_local(move |req: &AlgorithmRequest| {
         map_state.update(|state| {
             state.clear_all_selections();
         });
@@ -216,6 +222,27 @@ pub fn CanvasControls() -> impl IntoView {
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_in));
     let zoom_out =
         move |_| map_state.update(|state| state.update_canvas_state(CanvasState::zoom_out));
+
+    let undo = move |_| {
+        map_state.update(|map_state| {
+            let current_map = map_state
+                .get_map()
+                .clone();
+            if let Some(map) = history_state.undo(current_map) {
+                map_state.set_map_no_history(map);
+            }
+        })
+    };
+    let redo = move |_| {
+        map_state.update(|map_state| {
+            let current_map = map_state
+                .get_map()
+                .clone();
+            if let Some(map) = history_state.redo(current_map) {
+                map_state.set_map_no_history(map);
+            }
+        })
+    };
 
     // Run the algorithm on the entire map.
     let run_algorithm = move |_| {
@@ -279,7 +306,7 @@ pub fn CanvasControls() -> impl IntoView {
         {
             if let Some((handle, original_map)) = abort_handle.get() {
                 handle.abort();
-                algorithm_req.set_pending(false);
+                algorithm_req.clear();
                 map_state.update(|state| {
                     state.set_map(original_map);
                 });
@@ -316,7 +343,7 @@ pub fn CanvasControls() -> impl IntoView {
     });
 
     view! {
-    <div _ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
+    <div node_ref=container_ref id="canvas-container" class="grow flex self-stretch relative">
         <Canvas/>
         <div class=algorithm_button_class>
             <Show
@@ -366,6 +393,20 @@ pub fn CanvasControls() -> impl IntoView {
         </div>
         <div class="absolute right-5 bottom-5">
             <Button text="zoom out" on_click=Box::new(zoom_out) overlay=true>-</Button>
+        </div>
+        <div class="absolute left-5 bottom-5">
+            <Button text="undo last map change" on_click=Box::new(undo) overlay=true>
+                <svg class="text-blue-500 -m-1" width="20" height="20" viewBox="0 0 512 512" stroke-width="2.1" stroke="currentColor" fill="currentColor">
+                    <path d="M212.3 224.3H12c-6.6 0-12-5.4-12-12V12C0 5.4 5.4 0 12 0h48c6.6 0 12 5.4 12 12v78.1C117.8 39.3 184.3 7.5 258.2 8c136.9 1 246.4 111.6 246.2 248.5C504 393.3 393.1 504 256.3 504c-64.1 0-122.5-24.3-166.5-64.2-5.1-4.6-5.3-12.6-.5-17.4l34-34c4.5-4.5 11.7-4.7 16.4-.5C170.8 415.3 211.6 432 256.3 432c97.3 0 176-78.7 176-176 0-97.3-78.7-176-176-176-58.5 0-110.3 28.5-142.3 72.3h98.3c6.6 0 12 5.4 12 12v48c0 6.6-5.4 12-12 12z"/>
+                </svg>
+            </Button>
+        </div>
+        <div class="absolute left-20 bottom-5">
+            <Button text="redo last map change" on_click=Box::new(redo) overlay=true>
+                <svg class="text-blue-500 -m-1 scale-x-[-1]" width="20" height="20" viewBox="0 0 512 512" stroke-width="2.1" stroke="currentColor" fill="currentColor">
+                    <path d="M212.3 224.3H12c-6.6 0-12-5.4-12-12V12C0 5.4 5.4 0 12 0h48c6.6 0 12 5.4 12 12v78.1C117.8 39.3 184.3 7.5 258.2 8c136.9 1 246.4 111.6 246.2 248.5C504 393.3 393.1 504 256.3 504c-64.1 0-122.5-24.3-166.5-64.2-5.1-4.6-5.3-12.6-.5-17.4l34-34c4.5-4.5 11.7-4.7 16.4-.5C170.8 415.3 211.6 432 256.3 432c97.3 0 176-78.7 176-176 0-97.3-78.7-176-176-176-58.5 0-110.3 28.5-142.3 72.3h98.3c6.6 0 12 5.4 12 12v48c0 6.6-5.4 12-12 12z"/>
+                </svg>
+            </Button>
         </div>
         <StationInfoBox/>
         <EdgeInfoBox/>

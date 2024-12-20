@@ -1,6 +1,6 @@
 //! Contains the [`StationInfoBox`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     components::atoms::{
@@ -53,11 +53,6 @@ pub fn StationInfoBox() -> impl IntoView {
             .get()
             .get_clicked_on_station()
             .map_or(String::new(), |s| {
-                logging::log!(
-                    "Name of station: {}: {}",
-                    s.get_id(),
-                    s.get_name()
-                );
                 if s.get_name()
                     .is_empty()
                 {

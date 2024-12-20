@@ -4,9 +4,8 @@ use std::borrow::Borrow;
 
 use leptos::{
     ev::MouseEvent,
-    *,
+    prelude::*,
 };
-use leptos_dom::Text;
 
 /// The type of the on click event handler.
 type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
@@ -16,7 +15,7 @@ type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 pub fn Button(
     /// The text displayed on the button.
     #[prop(into)]
-    text: MaybeSignal<String>,
+    text: Signal<String>,
     /// Gets called when the button is clicked.
     on_click: OnButtonClick,
     /// If false the button is filled-in with one color, else just the border
@@ -159,15 +158,12 @@ pub fn Button(
         children
             .clone()
             .map_or(
-                Fragment::from(
-                    Text::new(
-                        text_for_children
-                            .borrow()
-                            .get()
-                            .into(),
-                    )
-                    .into_view(),
-                ),
+                AnyView::from(Fragment::from(
+                    text_for_children
+                        .borrow()
+                        .get()
+                        .into_any(),
+                )),
                 |c| c(),
             )
     };
@@ -176,7 +172,7 @@ pub fn Button(
         <button
             type="button"
             class=class_func
-            focus=active
+            autofocus=active
             on:click=on_click>
             <>
                 {children_signal}

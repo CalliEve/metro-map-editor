@@ -14,6 +14,7 @@ pub use pages::Home;
 pub use state::{
     CanvasState,
     ErrorState,
+    HistoryState,
     MapState,
     StateProvider,
 };

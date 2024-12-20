@@ -1,6 +1,6 @@
 //! Contains the [`SettingsModal`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     algorithm::LogType,
@@ -22,7 +22,7 @@ pub fn SettingsModal<C>(
     on_close: C,
 ) -> impl IntoView
 where
-    C: Fn() + Clone + 'static,
+    C: Fn() + Send + Clone + 'static,
 {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");

@@ -1,7 +1,10 @@
 //! Contains non-event functions used by the [`Canvas`] component.
 
-use ev::UiEvent;
-use leptos::*;
+use leptos::{
+    logging,
+    prelude::*,
+};
+use web_sys::UiEvent;
 
 use crate::{
     models::{

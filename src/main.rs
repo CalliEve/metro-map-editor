@@ -2,7 +2,7 @@
 //! This file contains the main entry point for the application and starts the
 //! editor on the web.
 
-use leptos::*;
+use leptos::prelude::*;
 use metro_map_editor::*;
 
 fn main() {

@@ -1,6 +1,6 @@
 //! Contains the [`FileDownloader`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 use wasm_bindgen::{
     JsCast,
     JsValue,

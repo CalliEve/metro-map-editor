@@ -1,7 +1,6 @@
 //! Contains the mousedown event handler for the [`Canvas`] component.
 
-use ev::UiEvent;
-use leptos::*;
+use web_sys::UiEvent;
 
 use super::other::canvas_click_pos;
 use crate::{

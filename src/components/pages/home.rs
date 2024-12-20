@@ -1,6 +1,6 @@
 //! Contains the [`Home`] page component
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::components::{
     molecules::ErrorBox,

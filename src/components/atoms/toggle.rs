@@ -1,6 +1,9 @@
 //! Contains the [`Toggle`] component.
 
-use leptos::*;
+use leptos::{
+    html::Input,
+    prelude::*,
+};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 
@@ -17,9 +20,9 @@ pub fn Toggle<F, V>(
 ) -> impl IntoView
 where
     F: Fn(bool) + 'static,
-    V: (Fn() -> bool) + Copy + 'static,
+    V: (Fn() -> bool) + Copy + Send + 'static,
 {
-    let input_ref: NodeRef<html::Input> = create_node_ref();
+    let input_ref: NodeRef<Input> = NodeRef::new();
 
     let id = text
         .to_lowercase()
@@ -70,7 +73,7 @@ where
         type="checkbox"
         class=input_class
         id={id.clone()}
-        _ref=input_ref
+        node_ref=input_ref
         on:input=parse_input
         checked=move || value.is_some_and(|v| v())
         prop:value=move || value.map(|v| v()) />

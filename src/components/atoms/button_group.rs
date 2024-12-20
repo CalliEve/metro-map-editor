@@ -1,8 +1,11 @@
 //! Contains the [`ButtonGroup`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
-use super::button::ButtonProps;
+use super::button::{
+    Button,
+    ButtonProps,
+};
 
 /// A group of buttons
 #[component]
@@ -17,6 +20,13 @@ pub fn ButtonGroup(
         [&>*:not(:only-child):first-child]:rounded-r-none \
         [&>*:not(:only-child):last-child]:rounded-l-none \
         [&>*:not(:only-child):last-child]:ml-0";
+
+    let children = AnyView::from(
+        children
+            .into_iter()
+            .map(|c| Button(c).into_any())
+            .collect::<Fragment>(),
+    );
 
     view! {
         <div class=class>

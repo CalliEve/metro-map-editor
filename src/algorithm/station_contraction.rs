@@ -394,6 +394,8 @@ pub fn expand_stations(
             super::LogType::Debug,
         );
 
+        // FIXME: the order of stations can still flip!
+
         reinsert_stations(
             map,
             &edge,

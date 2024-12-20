@@ -1,6 +1,6 @@
 //! Contains the [`NumberInput`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 /// An input html element for number input.
 #[component]
@@ -24,7 +24,7 @@ pub fn NumberInput<F, V>(
 ) -> impl IntoView
 where
     F: Fn(f64) + 'static,
-    V: (Fn() -> f64) + Copy + 'static,
+    V: (Fn() -> f64) + Copy + Send + 'static,
 {
     let id = text
         .to_lowercase()

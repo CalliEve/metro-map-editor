@@ -2,11 +2,17 @@
 
 use leptos::{
     html::Canvas,
-    *,
+    prelude::{
+        Get,
+        NodeRef,
+    },
 };
 use web_sys::HtmlCanvasElement;
 
-use super::CanvasState;
+use super::{
+    history::push_past_map,
+    CanvasState,
+};
 use crate::{
     algorithm::{
         drawing::redraw_canvas,
@@ -122,11 +128,25 @@ impl MapState {
 
     /// A mutable getter method for the [`Map`].
     pub fn get_mut_map(&mut self) -> &mut Map {
+        push_past_map(
+            self.map
+                .clone(),
+        );
         &mut self.map
     }
 
     /// A setter method for the [`Map`].
     pub fn set_map(&mut self, map: Map) {
+        push_past_map(
+            self.map
+                .clone(),
+        );
+        self.map = map;
+    }
+
+    /// A setter method for the [`Map`] without the redo/undo history getting
+    /// updated.
+    pub fn set_map_no_history(&mut self, map: Map) {
         self.map = map;
     }
 

@@ -9,7 +9,7 @@ use std::sync::atomic::{
 
 use leptos::{
     html::Canvas as HtmlCanvas,
-    *,
+    prelude::*,
 };
 use wasm_bindgen::{
     closure::Closure,
@@ -19,6 +19,7 @@ use wasm_bindgen::{
 
 use crate::components::{
     ErrorState,
+    HistoryState,
     MapState,
 };
 
@@ -49,22 +50,28 @@ static DOCUMENT_LOADED: AtomicBool = AtomicBool::new(false);
 /// This is where the map is drawn on and the user can interact with the map.
 #[component]
 pub fn Canvas() -> impl IntoView {
-    let canvas_ref = create_node_ref::<HtmlCanvas>();
+    let canvas_ref = NodeRef::<HtmlCanvas>::new();
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
+    let history_state =
+        use_context::<HistoryState>().expect("to have found the global history state");
 
     // ensures we know the size of the canvas and that one page resizing, the canvas
     // is also resized.
-    create_effect(move |_| {
+    Effect::new(move |_| {
         update_canvas_size(&map_state);
 
         if !DOCUMENT_LOADED.load(Ordering::Relaxed) {
             DOCUMENT_LOADED.store(true, Ordering::Release);
             let on_resize = Closure::<dyn Fn()>::new(move || update_canvas_size(&map_state));
             let on_keydown = Closure::<dyn Fn(JsValue)>::new(move |ev: JsValue| {
-                on_keydown(&map_state, ev.unchecked_ref());
+                on_keydown(
+                    &map_state,
+                    history_state,
+                    ev.unchecked_ref(),
+                );
             });
             window().set_onresize(Some(
                 on_resize
@@ -82,7 +89,7 @@ pub fn Canvas() -> impl IntoView {
     });
 
     // redraw the canvas if the map state changes.
-    create_effect(move |_| {
+    Effect::new(move |_| {
         let canvas_node = &canvas_ref
             .get()
             .expect("should be loaded now");
@@ -101,7 +108,7 @@ pub fn Canvas() -> impl IntoView {
     view! {
         <div class="absolute grow overflow-hidden bg-zinc-50 dark:bg-neutral-700 text-black dark:text-white">
             <canvas
-                _ref=canvas_ref
+                node_ref=canvas_ref
 
                 on:mousedown=move |ev| map_state.update(|state| on_mouse_down(state, ev.as_ref(), ev.shift_key()))
                 on:mouseup=move |ev| map_state.update(|state| on_mouse_up(state, error_state, ev.as_ref(), ev.shift_key()))

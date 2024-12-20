@@ -1,6 +1,6 @@
 //! Contains the [`EdgeInfoBox`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     components::atoms::{
@@ -27,7 +27,7 @@ fn LineInfo(
 ) -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
-    let (line, set_line) = create_signal(line);
+    let (line, set_line) = signal(line);
 
     let edit_line_color = move |line_id: LineID, new_color: String| {
         if let Ok(color) = parse_color(&new_color) {
@@ -82,8 +82,8 @@ fn LineInfo(
         {
             if i > 0 {view!{
                 <hr class="my-0.5"/>
-            }.into_view()} else {
-                view!{}.into_view()}
+            }.into_any()} else {
+                view!{}.into_any()}
         }
         <p class="text-md font-semibold"><b>"Name:\n"</b>
             <TextWithEdit

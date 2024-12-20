@@ -1,7 +1,7 @@
 //! Contains the mousemove event handler for the [`Canvas`] component.
 
-use ev::UiEvent;
-use leptos::*;
+use leptos::prelude::*;
+use web_sys::UiEvent;
 
 use super::other::canvas_click_pos;
 use crate::{

@@ -1,6 +1,6 @@
 //! Contains the [`Sidebar`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     components::{

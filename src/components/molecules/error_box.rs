@@ -1,6 +1,6 @@
 //! Contains the [`ErrorBox`] component.
 
-use leptos::*;
+use leptos::prelude::*;
 use wasm_bindgen::{
     prelude::Closure,
     JsCast,
