@@ -45,13 +45,10 @@ impl FileType {
 
 /// Gets the file uploaded to the input element by the user and passes its
 /// contents to the provided `on_submit` callback function.
-fn get_file<S>(input: &HtmlInputElement, on_submit: S)
+fn get_file<S>(input: &HtmlInputElement, on_submit: S, error_state: RwSignal<ErrorState>)
 where
     S: Fn(FileType, String) + 'static,
 {
-    let error_state =
-        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
-
     let Some(file) = input
         .files()
         .and_then(|l| l.item(0))
@@ -105,6 +102,9 @@ where
     S: Fn(FileType, String) + Send + 'static + Copy,
     C: Fn() + 'static,
 {
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
+
     let input_ref: NodeRef<Input> = NodeRef::new();
 
     view! {
@@ -125,7 +125,7 @@ where
             </div>
             // footer
             <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                <Button text="Upload File" on_click=Box::new(move |_| get_file(&input_ref.get().unwrap(), on_submit))/>
+                <Button text="Upload File" on_click=Box::new(move |_| get_file(&input_ref.get().unwrap(), on_submit, error_state))/>
             </div>
         </Modal>
     }

@@ -329,8 +329,7 @@ impl Edge {
         if let Some(from) = map.get_station(self.get_from()) {
             if from
                 .get_pos()
-                .get_neighbors()
-                .contains(&node)
+                .is_neighbor_of(&node)
             {
                 return Some((None, Some(self.get_from())));
             }
@@ -339,8 +338,7 @@ impl Edge {
         if let Some(to) = map.get_station(self.get_to()) {
             if to
                 .get_pos()
-                .get_neighbors()
-                .contains(&node)
+                .is_neighbor_of(&node)
             {
                 return Some((Some(self.get_to()), None));
             }

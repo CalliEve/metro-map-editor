@@ -39,9 +39,23 @@ pub fn draw_edge(
     state: CanvasState,
     height_offset: f64,
 ) {
+    let mut steps = steps;
     let from_pos = from.to_canvas_pos(state);
     let to_pos = to.to_canvas_pos(state);
     let has_offset = height_offset.abs() > f64::EPSILON;
+
+    #[allow(unused_assignments)] // It is used to keep the borrow going
+    let mut steps_vec = Vec::new();
+    if let Some(start) = steps.first() {
+        if !from.is_neighbor_of(start) {
+            steps_vec = steps
+                .iter()
+                .rev()
+                .copied()
+                .collect::<Vec<GridNode>>();
+            steps = steps_vec.as_ref();
+        }
+    }
 
     // The position of the start node on the canvas, based on the direction it is
     // leaving the station from

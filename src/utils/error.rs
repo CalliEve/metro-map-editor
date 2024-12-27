@@ -6,7 +6,6 @@ use std::{
     sync::Arc,
 };
 
-use leptos::logging;
 use ordered_float::FloatIsNan;
 use serde::{
     de::Error as DeError,
@@ -36,11 +35,6 @@ impl Error {
     /// Creates a new [`Error::Other`] error with the given message.
     pub fn other<T: Display>(e: T) -> Self {
         Self::Other(e.to_string())
-    }
-
-    /// Prints the error to the console.
-    pub fn print_error(self) {
-        logging::error!("{}", self);
     }
 
     /// Returns the type of the error as a string.
@@ -236,8 +230,7 @@ macro_rules! unwrap_or_return {
             Ok(v) => v,
             Err(e) => {
                 let err = $crate::Error::from(e);
-                err.clone()
-                    .print_error();
+                leptos::logging::error!("{}", err);
                 $state.update(|state| state.set_error(err));
                 return;
             },

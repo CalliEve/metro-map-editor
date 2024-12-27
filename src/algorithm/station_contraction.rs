@@ -18,8 +18,8 @@ use crate::{
     },
     utils::{
         line_sections::{
-            get_line_section_parts,
             trace_line_section,
+            LineSection,
         },
         Result,
     },
@@ -28,42 +28,39 @@ use crate::{
 
 /// Resolves a cycle of two stations in a line section by taking out the
 /// starting edge from the line section.
-fn resolve_two_station_cycle(
-    mut line_section: Vec<Edge>,
-    mut start: StationID,
-    mut middles: Vec<StationID>,
-) -> (Vec<Edge>, StationID, Vec<StationID>) {
-    for edge in &line_section.clone() {
-        if edge.get_from() == start {
-            line_section.retain(|e| e != edge);
-            start = edge.get_to();
+fn resolve_two_station_cycle(mut line_section: LineSection) -> LineSection {
+    for edge in &line_section
+        .edges
+        .clone()
+    {
+        if edge.get_from() == line_section.ends[0] {
+            line_section
+                .edges
+                .retain(|e| e != edge);
+            line_section.ends[0] = edge.get_to();
             break;
-        } else if edge.get_to() == start {
-            line_section.retain(|e| e != edge);
-            start = edge.get_from();
+        } else if edge.get_to() == line_section.ends[0] {
+            line_section
+                .edges
+                .retain(|e| e != edge);
+            line_section.ends[0] = edge.get_from();
             break;
         }
     }
 
-    middles.retain(|id| *id != start);
-    (line_section, start, middles)
+    line_section
+        .middles
+        .retain(|id| *id != line_section.ends[0]);
+    line_section
 }
 
 /// Resolves a line section that is a cycle by taking the station with the most
 /// edges connected out of the cycle together with the edges it is connected
 /// to.
-fn resolve_cycle(
-    map: &Map,
-    mut line_section: Vec<Edge>,
-    mut middles: Vec<StationID>,
-) -> (
-    Vec<Edge>,
-    Vec<StationID>,
-    Vec<StationID>,
-) {
+fn resolve_cycle(map: &Map, mut line_section: LineSection) -> LineSection {
     // Find the station with the most edges connected to it.
-    let mut biggest_station = (middles[0], 0);
-    for edge in &line_section {
+    let mut biggest_station = (line_section.middles[0], 0);
+    for edge in &line_section.edges {
         let start = edge.get_from();
         let end = edge.get_to();
         let start_station = map
@@ -103,20 +100,34 @@ fn resolve_cycle(
     // Take out the biggest station and the edges it is connected to, this will
     // ensure the cycle will now have at least 3 stations in it after contraction.
     let mut ends = Vec::new();
-    middles.retain(|id| *id != biggest_station.0);
-    for edge in &line_section.clone() {
+    line_section
+        .middles
+        .retain(|id| *id != biggest_station.0);
+    for edge in &line_section
+        .edges
+        .clone()
+    {
         if edge.get_from() == biggest_station.0 {
-            line_section.retain(|e| e != edge);
+            line_section
+                .edges
+                .retain(|e| e != edge);
             ends.push(edge.get_to());
-            middles.retain(|id| *id != edge.get_to());
+            line_section
+                .middles
+                .retain(|id| *id != edge.get_to());
         } else if edge.get_to() == biggest_station.0 {
-            line_section.retain(|e| e != edge);
+            line_section
+                .edges
+                .retain(|e| e != edge);
             ends.insert(0, edge.get_from());
-            middles.retain(|id| *id != edge.get_from());
+            line_section
+                .middles
+                .retain(|id| *id != edge.get_from());
         }
     }
+    line_section.ends = ends;
 
-    (line_section, ends, middles)
+    line_section
 }
 
 /// Check if the station can be contracted into an edge between its neighboring
@@ -164,35 +175,59 @@ pub fn contract_stations(
 
     while let Some(edge) = unchecked_edges.next() {
         let mut line_section = trace_line_section(map, edge.get_id(), true);
-        let (mut ends, mut middles) = get_line_section_parts(&line_section);
-        if ends.is_empty() {
-            if middles.len() <= 3 {
+
+        if line_section
+            .ends
+            .first()
+            == line_section
+                .ends
+                .last()
+        {
+            if line_section
+                .middles
+                .len()
+                <= 3
+            {
                 // Just skip, we need at least 4 stations to contract part of a cycle.
                 continue;
             }
             logging::log!("Line section has no ends, resolving cycle");
-            (line_section, ends, middles) = resolve_cycle(map, line_section, middles);
-        } else if ends.len() != 2 {
+            line_section = resolve_cycle(map, line_section);
+        } else if line_section
+            .ends
+            .len()
+            != 2
+        {
             panic!(
                 "Line section does not have two ends, but instead {}",
-                ends.len()
+                line_section
+                    .ends
+                    .len()
             );
         }
 
-        let mut start = ends[0];
-        let end = ends[1];
+        let mut start = line_section.ends[0];
+        let end = line_section.ends[1];
         if map
             .get_edge_id_between_if_exists(start, end)
             .is_some()
         {
             // Edge already exists, so we have to resolve the two station cycle this would
             // form.
-            (line_section, start, middles) =
-                resolve_two_station_cycle(line_section, start, middles);
+            line_section = resolve_two_station_cycle(line_section);
+            start = line_section.ends[0];
         }
 
         // Check for other edge cases preventing contraction.
-        if !can_contract_into(settings, map, start, end, middles.len()) {
+        if !can_contract_into(
+            settings,
+            map,
+            start,
+            end,
+            line_section
+                .middles
+                .len(),
+        ) {
             continue;
         }
 
@@ -203,9 +238,10 @@ pub fn contract_stations(
             .get_mut_edge(new_edge_id)
             .unwrap();
 
-        new_edge.extend_contracted_stations(&middles);
+        new_edge.extend_contracted_stations(&line_section.middles);
 
-        let middle_stations = middles
+        let middle_stations = line_section
+            .middles
             .iter()
             .map(|id| {
                 map.get_station(*id)
@@ -222,7 +258,11 @@ pub fn contract_stations(
         // Remove the edges that we contracted from our list of unchecked edges, as we
         // checked them by contracting them.
         unchecked_edges = unchecked_edges
-            .filter(|e| !line_section.contains(e))
+            .filter(|e| {
+                !line_section
+                    .edges
+                    .contains(e)
+            })
             .collect::<Vec<_>>()
             .into_iter();
     }

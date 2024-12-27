@@ -94,6 +94,11 @@ impl GridNode {
             Self(self.0 - 1, self.1),
         ]
     }
+
+    /// Check if this node is a neighbor of another node.
+    pub fn is_neighbor_of(&self, other: &GridNode) -> bool {
+        (self.0 - other.0).abs() <= 1 && (self.1 - other.1).abs() <= 1
+    }
 }
 
 impl From<(i32, i32)> for GridNode {

@@ -9,10 +9,7 @@ use crate::{
         GridNode,
         SelectedStation,
     },
-    utils::line_sections::{
-        get_line_section_parts,
-        trace_line_section,
-    },
+    utils::line_sections::trace_line_section,
     MapState,
 };
 
@@ -33,10 +30,9 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
     if let Some(edge_id) = map.edge_at_node(mouse_pos) {
         let line_section = trace_line_section(map, edge_id, false);
 
-        let (_, middles) = get_line_section_parts(&line_section);
-
         map_state.set_selected_stations(
-            middles
+            line_section
+                .middles
                 .into_iter()
                 .map(|s| {
                     let mut selected = SelectedStation::new(
@@ -76,6 +72,7 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
 
         map_state.set_selected_edges(
             line_section
+                .edges
                 .into_iter()
                 .map(|e| e.get_id())
                 .chain(

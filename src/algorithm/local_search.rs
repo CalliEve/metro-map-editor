@@ -208,8 +208,7 @@ pub async fn local_search(
         if station.get_pos() != station.get_original_pos()
             && !station
                 .get_pos()
-                .get_neighbors()
-                .contains(&station.get_original_pos())
+                .is_neighbor_of(&station.get_original_pos())
         {
             neighborhood.insert(0, station.get_original_pos());
         }

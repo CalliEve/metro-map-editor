@@ -18,12 +18,6 @@ pub fn on_keydown(map_state_signal: &RwSignal<MapState>, ev: &KeyboardEvent) {
         });
     }
 
-    leptos::logging::log!(
-        "Key pressed: {}, ctrl: {}",
-        ev.key(),
-        ev.ctrl_key()
-    );
-
     if ev.key() == "z" && ev.ctrl_key() {
         map_state_signal.update(|map_state| {
             if let Some(map) = HistoryState::undo(

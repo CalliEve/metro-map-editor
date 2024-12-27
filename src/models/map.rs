@@ -321,7 +321,7 @@ impl Map {
             let own_id = self
                 .get_edge_id_between_if_exists(edge.get_from(), edge.get_to())
                 .ok_or(Error::other(format!(
-                    "Edge going from {} to {} in partial not found in full map.\nEdges of {}: {:?}\nEdges of {}: {:?}", // FIXME: this gets triggered? Do some stations switch around in expand??
+                    "Edge going from {} to {} in partial not found in full map.\nEdges of {}: {:?}\nEdges of {}: {:?}",
                     edge.get_from(),
                     edge.get_to(),
                     edge.get_from(),

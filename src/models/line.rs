@@ -213,8 +213,7 @@ impl Line {
                 {
                     if station
                         .get_pos()
-                        .get_neighbors()
-                        .contains(&combinations[0].1[0])
+                        .is_neighbor_of(&combinations[0].1[0])
                     {
                         let mut temp = combinations[0]
                             .1
@@ -236,8 +235,7 @@ impl Line {
                 {
                     if station
                         .get_pos()
-                        .get_neighbors()
-                        .contains(&combinations[1].1[0])
+                        .is_neighbor_of(&combinations[1].1[0])
                     {
                         nodes.append(
                             &mut combinations[1]
@@ -380,8 +378,7 @@ impl Line {
             if let Some(station) = map.get_station(self.stations[0]) {
                 if station
                     .get_pos()
-                    .get_neighbors()
-                    .contains(&node)
+                    .is_neighbor_of(&node)
                 {
                     return (Some(station.get_id()), None);
                 }
@@ -448,7 +445,8 @@ impl Line {
             .any(|e| {
                 map.get_station(e)
                     .expect("edge contains invalid station id")
-                    .is_neighbor(node)
+                    .get_pos()
+                    .is_neighbor_of(&node)
             })
     }
 

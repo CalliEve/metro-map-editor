@@ -216,13 +216,6 @@ impl Station {
         self.cost += cost;
     }
 
-    /// If the given node is a neighboring grid node to the station.
-    pub fn is_neighbor(&self, node: GridNode) -> bool {
-        self.get_pos()
-            .get_neighbors()
-            .contains(&node)
-    }
-
     /// Add an edge to the station.
     pub fn add_edge(&mut self, edge: EdgeID) {
         if self

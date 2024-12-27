@@ -158,7 +158,9 @@ pub fn CanvasControls() -> impl IntoView {
             IDManager::from_data(resp.id_manager_data);
         } else {
             map_state.update(|state| {
-                if let Some(map) = state
+                if let Some((_, before_map)) = abort_handle.get_untracked() {
+                    state.set_map(before_map);
+                } else if let Some(map) = state
                     .get_last_loaded()
                     .cloned()
                 {
@@ -187,7 +189,9 @@ pub fn CanvasControls() -> impl IntoView {
                 .expect("failed to start algorithm worker");
             set_abort_handle(Some((
                 abort_handle,
-                req.map
+                map_state
+                    .get_untracked()
+                    .get_map()
                     .clone(),
             )));
 
@@ -213,6 +217,8 @@ pub fn CanvasControls() -> impl IntoView {
                     handle_algorithm_response(resp, req.partial);
                 }
             }
+
+            set_abort_handle(None);
         }
     });
 
@@ -298,17 +304,13 @@ pub fn CanvasControls() -> impl IntoView {
 
     // Abort the algorithm.
     let abort_algorithm = move |_| {
-        if algorithm_req
-            .pending()
-            .get()
-        {
-            if let Some((handle, original_map)) = abort_handle.get() {
-                handle.abort();
-                algorithm_req.clear();
-                map_state.update(|state| {
-                    state.set_map(original_map);
-                });
-            }
+        if let Some((handle, original_map)) = abort_handle.get_untracked() {
+            handle.abort();
+            algorithm_req.clear();
+            map_state.update(|state| {
+                state.set_map(original_map);
+            });
+            set_abort_handle(None);
         }
     };
 
@@ -316,9 +318,9 @@ pub fn CanvasControls() -> impl IntoView {
     let algorithm_button_class = move || {
         let mut class = "absolute right-5 top-5 group".to_owned();
 
-        if algorithm_req
-            .pending()
+        if abort_handle
             .get()
+            .is_some()
         {
             class += " is-calculating";
         }
@@ -363,12 +365,12 @@ pub fn CanvasControls() -> impl IntoView {
                     </Button>
             </Show>
         </div>
-        <Show when=move || algorithm_req.pending().get()>
+        <Show when=move || abort_handle.get().is_some()>
             <div class="absolute right-5 top-24">
                 <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true><span class="text-red-300">x</span></Button>
             </div>
         </Show>
-        <Show when=move || !algorithm_req.pending().get()>
+        <Show when=move || abort_handle.get().is_none()>
             <div class="absolute right-5 top-24">
                 <Button text="recalculate with\nreal-time updates" on_click=Box::new(run_stream_algorithm) overlay=true>
                     <svg class="text-blue-500 -ml-1 mt-1 h-6 w-6"  width="24" height="24" viewBox="0 0 28 28" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">

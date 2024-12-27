@@ -27,8 +27,8 @@ pub fn StateProvider(
     let map_state = RwSignal::new(MapState::new(Map::new()));
     let error_state = RwSignal::new(error::ErrorState::new());
 
-    provide_context(map_state);
-    provide_context(error_state);
+    provide_context::<RwSignal<MapState>>(map_state);
+    provide_context::<RwSignal<ErrorState>>(error_state);
 
     view! {
         {children()}
