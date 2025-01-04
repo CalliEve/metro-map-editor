@@ -21,8 +21,20 @@ pub fn redraw_canvas<'a, C>(canvas: C, state: &MapState)
 where
     C: Into<CanvasContext<'a>>,
 {
-    // Get a 2d canvas rendering context
+    // Get a canvas rendering context
     let context: CanvasContext = canvas.into();
+
+    // If we're offscreen, then this is for an image of the map to get downloaded,
+    // so we only need to draw the map and no grid.
+    if !context.is_onscreen() {
+        let map = state
+            .get_map()
+            .without_checkpoints();
+
+        map.draw(&context, state.get_canvas_state(), 1.0);
+
+        return;
+    }
 
     draw_grid(&context, state.get_canvas_state());
 

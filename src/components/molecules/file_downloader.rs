@@ -23,7 +23,7 @@ use crate::{
     utils::json::encode_map,
 };
 
-/// A modal that lets the user download a file representing the map.
+/// A button that lets the user download a file representing the map.
 #[component]
 pub fn FileDownloader() -> impl IntoView {
     let map_state =

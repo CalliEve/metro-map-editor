@@ -114,17 +114,7 @@ pub fn map_to_json(graph: &Map, state: CanvasState) -> JSONMap {
         edges: Vec::new(),
     };
 
-    let mut graph = graph.clone();
-    let all_stations = graph
-        .get_stations()
-        .into_iter()
-        .cloned()
-        .collect::<Vec<_>>();
-    for station in all_stations {
-        if station.is_checkpoint() {
-            graph.remove_station(station.get_id());
-        }
-    }
+    let graph = graph.without_checkpoints();
 
     // Add stations
     json_map.stations = graph

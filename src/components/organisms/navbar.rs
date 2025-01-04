@@ -9,6 +9,7 @@ use crate::{
             FileDownloader,
             FileModal,
             FileType,
+            MapExporter,
             SettingsModal,
         },
         ErrorState,
@@ -61,6 +62,7 @@ pub fn Navbar() -> impl IntoView {
         </div>
         <div class="flex flex-row items-end space-x-3" >
             <Button text="Advanced Settings" outlined=true can_focus=true on_click=Box::new(move |_| set_show_settings_modal(true))/>
+            <MapExporter/>
             <FileDownloader/>
             <Button text="Upload File" outlined=true can_focus=true on_click=Box::new(move |_| set_show_file_modal(true))/>
         </div>

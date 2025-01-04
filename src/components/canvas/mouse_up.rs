@@ -133,8 +133,8 @@ pub fn on_mouse_up(
         }
 
         if added_station {
+            map_state.clear_all_selections();
             map_state.set_map(map);
-            map_state.clear_selected_lines();
             return;
         }
 

@@ -2,10 +2,7 @@
 //! to the html canvas.
 
 #[cfg(all(not(test), not(feature = "benchmarking")))]
-use std::{
-    borrow::Cow,
-    ops::Deref,
-};
+use std::borrow::Cow;
 #[cfg(any(test, feature = "benchmarking"))]
 use std::{
     cell::RefCell,
@@ -22,15 +19,25 @@ use wasm_bindgen::{
 };
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 use web_sys::js_sys::Uint8Array;
-use web_sys::HtmlCanvasElement;
+use web_sys::{
+    HtmlCanvasElement,
+    OffscreenCanvas,
+};
 
-/// A wrapper around the [`web_sys::CanvasRenderingContext2d`]. This struct
-/// provides the ability to mock and unit-test the drawing functions.
+#[cfg(all(not(test), not(feature = "benchmarking")))]
+enum InnerCanvasContext<'a> {
+    OffScreen(Cow<'a, web_sys::OffscreenCanvasRenderingContext2d>),
+    OnScreen(Cow<'a, web_sys::CanvasRenderingContext2d>),
+}
+
+/// A wrapper around the [`web_sys::CanvasRenderingContext2d`] or [`web_sys::].
+/// This struct provides the ability to mock and unit-test the drawing
+/// functions.
 pub struct CanvasContext<'a> {
     /// The inner [`web_sys::CanvasRenderingContext2d`] object wrapped by this
     /// struct.
     #[cfg(all(not(test), not(feature = "benchmarking")))]
-    inner: Cow<'a, web_sys::CanvasRenderingContext2d>,
+    inner: InnerCanvasContext<'a>,
     #[cfg(any(test, feature = "benchmarking"))]
     inner: PhantomData<&'a ()>,
     #[cfg(any(test, feature = "benchmarking"))]
@@ -41,7 +48,7 @@ pub struct CanvasContext<'a> {
 impl From<web_sys::CanvasRenderingContext2d> for CanvasContext<'static> {
     fn from(context: web_sys::CanvasRenderingContext2d) -> Self {
         Self {
-            inner: Cow::Owned(context),
+            inner: InnerCanvasContext::OnScreen(Cow::Owned(context)),
         }
     }
 }
@@ -67,7 +74,23 @@ impl<'a> From<&'a HtmlCanvasElement> for CanvasContext<'a> {
             .expect("Failed to convert to CanvasRenderingContext2d");
 
         Self {
-            inner: Cow::Owned(context),
+            inner: InnerCanvasContext::OnScreen(Cow::Owned(context)),
+        }
+    }
+}
+
+#[cfg(all(not(test), not(feature = "benchmarking")))]
+impl<'a> From<&'a OffscreenCanvas> for CanvasContext<'a> {
+    fn from(canvas: &'a OffscreenCanvas) -> Self {
+        let context = canvas
+            .get_context("2d")
+            .expect("Failed to get 2d context")
+            .expect("offscreen 2d context is null")
+            .dyn_into::<web_sys::OffscreenCanvasRenderingContext2d>()
+            .expect("Failed to convert to OffscreenCanvasRenderingContext2d");
+
+        Self {
+            inner: InnerCanvasContext::OffScreen(Cow::Owned(context)),
         }
     }
 }
@@ -82,11 +105,21 @@ impl<'a> From<&'a HtmlCanvasElement> for CanvasContext<'a> {
     }
 }
 
+#[cfg(any(test, feature = "benchmarking"))]
+impl<'a> From<&'a OffscreenCanvas> for CanvasContext<'a> {
+    fn from(_: &'a OffscreenCanvas) -> Self {
+        Self {
+            inner: PhantomData,
+            recorder: RefCell::new(HashMap::new()),
+        }
+    }
+}
+
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 impl<'a> From<&'a web_sys::CanvasRenderingContext2d> for CanvasContext<'a> {
     fn from(context: &'a web_sys::CanvasRenderingContext2d) -> Self {
         Self {
-            inner: Cow::Borrowed(context),
+            inner: InnerCanvasContext::OnScreen(Cow::Borrowed(context)),
         }
     }
 }
@@ -102,26 +135,59 @@ impl<'a> From<&'a web_sys::CanvasRenderingContext2d> for CanvasContext<'a> {
 }
 
 #[cfg(all(not(test), not(feature = "benchmarking")))]
-impl AsRef<web_sys::CanvasRenderingContext2d> for CanvasContext<'_> {
-    fn as_ref(&self) -> &web_sys::CanvasRenderingContext2d {
-        &self.inner
-    }
-}
+macro_rules! impl_canvas_context_method {
+    ($method:ident($($arg:ident: $arg_ty:ty),*) -> $res:ty) => {
+        pub fn $method(&self, $($arg: $arg_ty),*) -> $res {
+            match &self.inner {
+                InnerCanvasContext::OffScreen(context) => {
+                    context.$method($($arg),*)
+                },
+                InnerCanvasContext::OnScreen(context) => {
+                    context.$method($($arg),*)
+                },
+            }
+        }
 
-#[cfg(all(not(test), not(feature = "benchmarking")))]
-impl Deref for CanvasContext<'_> {
-    type Target = web_sys::CanvasRenderingContext2d;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
     }
 }
 
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 impl CanvasContext<'_> {
+    impl_canvas_context_method!(move_to(x: f64, y: f64) -> ());
+
+    impl_canvas_context_method!(line_to(x: f64, y: f64) -> ());
+
+    impl_canvas_context_method!(stroke() -> ());
+
+    impl_canvas_context_method!(begin_path() -> ());
+
+    impl_canvas_context_method!(set_line_width(f: f64) -> ());
+
+    impl_canvas_context_method!(set_stroke_style_str(s: &str) -> ());
+
+    impl_canvas_context_method!(set_global_alpha(a: f64) -> ());
+
+    impl_canvas_context_method!(rect(x: f64, y: f64, width: f64, height: f64) -> ());
+
+    impl_canvas_context_method!(arc(x: f64, y: f64, radius: f64, start_angle: f64, end_angle: f64) -> Result<(), JsValue>);
+
+    impl_canvas_context_method!(fill() -> ());
+
+    impl_canvas_context_method!(set_fill_style_str(style: &str) -> ());
+
     pub fn set_line_dash(&self, segments: &[u8]) -> Result<(), JsValue> {
-        self.inner
-            .set_line_dash(&Uint8Array::from(segments))
+        let array = Uint8Array::from(segments);
+        match &self.inner {
+            InnerCanvasContext::OffScreen(context) => context.set_line_dash(&array),
+            InnerCanvasContext::OnScreen(context) => context.set_line_dash(&array),
+        }
+    }
+
+    pub fn is_onscreen(&self) -> bool {
+        match &self.inner {
+            InnerCanvasContext::OffScreen(_) => false,
+            InnerCanvasContext::OnScreen(_) => true,
+        }
     }
 }
 
@@ -132,6 +198,10 @@ impl<'a> CanvasContext<'a> {
             inner: PhantomData,
             recorder: RefCell::new(HashMap::new()),
         }
+    }
+
+    pub fn is_onscreen(&self) -> bool {
+        true
     }
 
     pub fn move_to(&self, x: f64, y: f64) {

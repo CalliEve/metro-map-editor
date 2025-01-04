@@ -387,6 +387,17 @@ impl Map {
         }
     }
 
+    /// Return the map with all checkpoints removed.
+    pub fn without_checkpoints(&self) -> Self {
+        let mut map = self.clone();
+        for station in self.get_stations() {
+            if station.is_checkpoint() {
+                map.remove_station(station.get_id());
+            }
+        }
+        map
+    }
+
     /// Use the A* algorithm to calculate the edges between all stations
     /// quickly.
     pub fn quickcalc_edges(&mut self) {
