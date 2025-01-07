@@ -38,6 +38,7 @@ use crate::{
             EdgeInfoBox,
             StationInfoBox,
         },
+        state::InteractionState,
         CanvasState,
         ErrorState,
         HistoryState,
@@ -95,6 +96,8 @@ pub fn CanvasControls() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
+    let interaction_state = use_context::<RwSignal<InteractionState>>()
+        .expect("to have found the global interaction state");
     let (executor, _) = signal_local(
         PoolExecutor::<AlgorithmWorker>::new(1).expect("failed to start web-worker pool"),
     );
@@ -136,7 +139,7 @@ pub fn CanvasControls() -> impl IntoView {
     });
 
     // Handle the response from the algorithm.
-    let handle_algorithm_response = move |resp: AlgorithmResponse, partial: bool| {
+    let handle_algorithm_response = move |resp: AlgorithmResponse, partial: bool, midway: bool| {
         if resp.success
             || map_state
                 .get_untracked()
@@ -144,7 +147,18 @@ pub fn CanvasControls() -> impl IntoView {
                 .output_on_fail
         {
             map_state.update(|state| {
-                if partial {
+                if partial && midway {
+                    let mut temp_map = state
+                        .get_map()
+                        .clone();
+
+                    unwrap_or_return!(
+                        error_state,
+                        temp_map.update_from_partial(&resp.map)
+                    );
+
+                    state.set_map_no_history(temp_map);
+                } else if partial {
                     unwrap_or_return!(
                         error_state,
                         state
@@ -152,19 +166,26 @@ pub fn CanvasControls() -> impl IntoView {
                             .update_from_partial(&resp.map)
                     );
                 } else {
-                    state.set_map(resp.map);
+                    if midway {
+                        state.set_map_no_history(resp.map);
+                    } else {
+                        if let Some((_, before_map)) = abort_handle.get_untracked() {
+                            state.set_map_no_history(before_map);
+                        }
+                        state.set_map(resp.map);
+                    }
                 }
             });
             IDManager::from_data(resp.id_manager_data);
         } else {
             map_state.update(|state| {
                 if let Some((_, before_map)) = abort_handle.get_untracked() {
-                    state.set_map(before_map);
+                    state.set_map_no_history(before_map);
                 } else if let Some(map) = state
                     .get_last_loaded()
                     .cloned()
                 {
-                    state.set_map(map);
+                    state.set_map_no_history(map);
                 }
             });
         }
@@ -194,6 +215,10 @@ pub fn CanvasControls() -> impl IntoView {
                     .get_map()
                     .clone(),
             )));
+            interaction_state.update(|state| {
+                state.set_busy(true);
+                state.set_cursor("wait");
+            });
 
             // Handle the responses from the algorithm.
             // This is done in a fold to ensure only the last response is handled later, but
@@ -201,7 +226,7 @@ pub fn CanvasControls() -> impl IntoView {
             let last = resp_stream
                 .inspect(|resp| {
                     if req.midway_updates {
-                        handle_algorithm_response(resp.clone(), req.partial);
+                        handle_algorithm_response(resp.clone(), req.partial, true);
                     }
                 })
                 .fold(
@@ -212,13 +237,15 @@ pub fn CanvasControls() -> impl IntoView {
 
             // If we got a response and it wasn't handled by the midway handler, handle it
             // now.
-            if !req.midway_updates {
-                if let Some(resp) = last {
-                    handle_algorithm_response(resp, req.partial);
-                }
+            if let Some(resp) = last {
+                handle_algorithm_response(resp, req.partial, false);
             }
 
             set_abort_handle(None);
+            interaction_state.update(|state| {
+                state.set_busy(false);
+                state.set_cursor("default");
+            });
         }
     });
 
@@ -237,6 +264,7 @@ pub fn CanvasControls() -> impl IntoView {
             }
         });
     };
+    let cannot_undo = Signal::derive(move || map_state.with(|_| HistoryState::cannot_undo()));
     let redo = move |_| {
         map_state.update(|map_state| {
             let current_map = map_state
@@ -247,6 +275,7 @@ pub fn CanvasControls() -> impl IntoView {
             }
         });
     };
+    let cannot_redo = Signal::derive(move || map_state.with(|_| HistoryState::cannot_redo()));
 
     // Run the algorithm on the entire map.
     let run_algorithm = move |_| {
@@ -349,7 +378,7 @@ pub fn CanvasControls() -> impl IntoView {
             <Show
                 when=has_parts_selected
                 fallback=move || view!{
-                    <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true bigger=true>
+                    <Button text="recalculate map" on_click=Box::new(run_algorithm) overlay=true bigger=true never_too_busy=true>
                         <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin group-[.is-calculating]:cursor-wait"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z"/>
                             <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
@@ -357,7 +386,7 @@ pub fn CanvasControls() -> impl IntoView {
                         </svg>
                     </Button>
                 }>
-                <Button text="recalculate selected parts" on_click=Box::new(run_partial_algorithm) overlay=true bigger=true>
+                <Button text="recalculate selected parts" on_click=Box::new(run_partial_algorithm) overlay=true bigger=true never_too_busy=true>
                         <svg class="h-8 w-8 text-blue-500 group-[.is-calculating]:animate-reverse-spin group-[.is-calculating]:cursor-wait"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z"/>
                             <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -5v5h5" />
@@ -367,7 +396,7 @@ pub fn CanvasControls() -> impl IntoView {
         </div>
         <Show when=move || abort_handle.get().is_some()>
             <div class="absolute right-5 top-24">
-                <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true><span class="text-red-300">x</span></Button>
+                <Button text="abort" on_click=Box::new(abort_algorithm) overlay=true never_too_busy=true><span class="text-red-300">x</span></Button>
             </div>
         </Show>
         <Show when=move || abort_handle.get().is_none()>
@@ -395,14 +424,14 @@ pub fn CanvasControls() -> impl IntoView {
             <Button text="zoom out" on_click=Box::new(zoom_out) overlay=true>-</Button>
         </div>
         <div class="absolute left-5 bottom-5">
-            <Button text="undo last map change" on_click=Box::new(undo) overlay=true>
+            <Button text="undo last map change" on_click=Box::new(undo) overlay=true disabled=cannot_undo>
                 <svg class="text-blue-500 -m-1" width="20" height="20" viewBox="0 0 512 512" stroke-width="2.1" stroke="currentColor" fill="currentColor">
                     <path d="M212.3 224.3H12c-6.6 0-12-5.4-12-12V12C0 5.4 5.4 0 12 0h48c6.6 0 12 5.4 12 12v78.1C117.8 39.3 184.3 7.5 258.2 8c136.9 1 246.4 111.6 246.2 248.5C504 393.3 393.1 504 256.3 504c-64.1 0-122.5-24.3-166.5-64.2-5.1-4.6-5.3-12.6-.5-17.4l34-34c4.5-4.5 11.7-4.7 16.4-.5C170.8 415.3 211.6 432 256.3 432c97.3 0 176-78.7 176-176 0-97.3-78.7-176-176-176-58.5 0-110.3 28.5-142.3 72.3h98.3c6.6 0 12 5.4 12 12v48c0 6.6-5.4 12-12 12z"/>
                 </svg>
             </Button>
         </div>
         <div class="absolute left-20 bottom-5">
-            <Button text="redo last map change" on_click=Box::new(redo) overlay=true>
+            <Button text="redo last map change" on_click=Box::new(redo) overlay=true disabled=cannot_redo>
                 <svg class="text-blue-500 -m-1 scale-x-[-1]" width="20" height="20" viewBox="0 0 512 512" stroke-width="2.1" stroke="currentColor" fill="currentColor">
                     <path d="M212.3 224.3H12c-6.6 0-12-5.4-12-12V12C0 5.4 5.4 0 12 0h48c6.6 0 12 5.4 12 12v78.1C117.8 39.3 184.3 7.5 258.2 8c136.9 1 246.4 111.6 246.2 248.5C504 393.3 393.1 504 256.3 504c-64.1 0-122.5-24.3-166.5-64.2-5.1-4.6-5.3-12.6-.5-17.4l34-34c4.5-4.5 11.7-4.7 16.4-.5C170.8 415.3 211.6 432 256.3 432c97.3 0 176-78.7 176-176 0-97.3-78.7-176-176-176-58.5 0-110.3 28.5-142.3 72.3h98.3c6.6 0 12 5.4 12 12v48c0 6.6-5.4 12-12 12z"/>
                 </svg>

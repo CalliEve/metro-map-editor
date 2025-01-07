@@ -7,6 +7,8 @@ use leptos::{
     prelude::*,
 };
 
+use crate::components::state::InteractionState;
+
 /// The type of the on click event handler.
 type OnButtonClick = Box<dyn Fn(MouseEvent) + 'static>;
 
@@ -43,12 +45,29 @@ pub fn Button(
     /// If focus can be held on the button.
     #[prop(optional)]
     can_focus: bool,
+    /// Even if busy, the button should not be disabled.
+    #[prop(optional)]
+    never_too_busy: bool,
+    /// If the button is disabled.
+    #[prop(optional)]
+    #[prop(into)]
+    disabled: Signal<bool>,
     /// The children of the button, if any.
     /// If present, the button will show the text on hover.
     #[prop(optional)]
     children: Option<ChildrenFn>,
 ) -> impl IntoView {
+    let interaction_state = use_context::<RwSignal<InteractionState>>()
+        .expect("to have found the global interaction state");
+
     let has_children = children.is_some();
+    let is_disabled = move || {
+        disabled.get()
+            || (!never_too_busy
+                && interaction_state
+                    .get()
+                    .is_busy())
+    };
 
     let color = if danger {
         "red"
@@ -147,6 +166,11 @@ pub fn Button(
                     &format!(" focus:bg-{color}-{base_active} dark:focus:bg-{color}-{dark_active}");
             }
         }
+
+        if is_disabled() {
+            class += " cursor-not-allowed opacity-50";
+        }
+
         class
     };
 
@@ -173,6 +197,7 @@ pub fn Button(
             type="button"
             class=class_func
             autofocus=active
+            disabled=is_disabled
             on:click=on_click>
             <>
                 {children_signal}

@@ -76,6 +76,15 @@ impl HistoryState {
         Some(map)
     }
 
+    /// Returns if there is no map in the past stack that can be reverted to.
+    pub fn cannot_undo() -> bool {
+        PAST_STACK
+            .lock()
+            .unwrap()
+            .stack
+            .is_empty()
+    }
+
     /// Returns the last map that was undone.
     pub fn redo(current: Map) -> Option<Map> {
         let map = FUTURE_STACK
@@ -87,6 +96,15 @@ impl HistoryState {
             .unwrap()
             .push(current);
         Some(map)
+    }
+
+    /// Returns if there is no map in the future stack that can be redone.
+    pub fn cannot_redo() -> bool {
+        FUTURE_STACK
+            .lock()
+            .unwrap()
+            .stack
+            .is_empty()
     }
 }
 

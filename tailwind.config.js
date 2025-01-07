@@ -9,7 +9,9 @@ module.exports = {
       ["400", "500", "600", "700", "800", "900", "950"].map((n) => `${s}-${n}`)
     )
     .flatMap((s) => ["", "hover:", "active:", "focus:"].map((m) => `${m}${s}`))
-    .flatMap((s) => ["", "dark:"].map((m) => `${m}${s}`)),
+    .flatMap((s) => ["", "dark:"].map((m) => `${m}${s}`)).concat(
+      ["cursor-default", "cursor-wait", "cursor-grabbing"]
+    ),
   theme: {
     extend: {
       boxShadow: {

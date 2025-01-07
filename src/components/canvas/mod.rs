@@ -18,6 +18,7 @@ use wasm_bindgen::{
 };
 
 use crate::components::{
+    state::InteractionState,
     ErrorState,
     MapState,
 };
@@ -54,6 +55,8 @@ pub fn Canvas() -> impl IntoView {
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
     let error_state =
         use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
+    let interaction_state = use_context::<RwSignal<InteractionState>>()
+        .expect("to have found the global interaction state");
 
     // ensures we know the size of the canvas and that one page resizing, the canvas
     // is also resized.
@@ -92,6 +95,16 @@ pub fn Canvas() -> impl IntoView {
             .get_size();
         canvas_node.set_height(s.0 as u32);
         canvas_node.set_width(s.1 as u32);
+
+        let is_dragging = map_state
+            .get()
+            .get_drag_offset()
+            .is_some();
+        if is_dragging {
+            interaction_state.update(|state| state.set_cursor("grabbing"));
+        } else {
+            interaction_state.update(|state| state.set_cursor("default"));
+        }
 
         map_state
             .get()

@@ -29,10 +29,10 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <div class="flex flex-col h-screen max-w-screen">
-            <StateProvider>
+        <StateProvider>
+            <div class="flex flex-col h-screen max-w-screen">
                 <Home/>
-            </StateProvider>
-        </div>
+            </div>
+        </StateProvider>
     }
 }
