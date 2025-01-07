@@ -1,6 +1,11 @@
 //! Contains the local search algorithm for optimising the location of a
 //! station.
 
+use std::collections::{
+    HashMap,
+    VecDeque,
+};
+
 use ordered_float::NotNan;
 
 use super::{
@@ -16,6 +21,7 @@ use crate::{
         GridNode,
         Map,
         Station,
+        StationID,
     },
     utils::{
         IDManager,
@@ -178,13 +184,14 @@ pub async fn local_search(
     occupied: &mut OccupiedNodes,
     midway_updater: Updater,
 ) {
-    let all_stations = map
+    let mut last_version = HashMap::<StationID, Station>::new();
+    let mut all_stations = map
         .get_stations()
         .into_iter()
         .cloned()
-        .collect::<Vec<_>>();
+        .collect::<VecDeque<_>>();
 
-    for station in all_stations {
+    while let Some(station) = all_stations.pop_front() {
         if station
             .get_edges()
             .len()
@@ -250,7 +257,10 @@ pub async fn local_search(
         );
 
         let best = best.unwrap();
-        map.add_station(best.station);
+        map.add_station(
+            best.station
+                .clone(),
+        );
         for edge in best.edges {
             map.add_edge(edge);
         }
@@ -258,6 +268,13 @@ pub async fn local_search(
 
         if let Updater::Updater(updater) = midway_updater.clone() {
             updater(map.clone(), IDManager::to_data()).await;
+        }
+
+        if settings.iterative_local_search
+            && last_version.get(&station.get_id()) != Some(&best.station)
+        {
+            last_version.insert(station.get_id(), station);
+            all_stations.push_back(best.station);
         }
     }
 }

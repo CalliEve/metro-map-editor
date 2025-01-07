@@ -71,6 +71,8 @@ pub struct AlgorithmSettings {
     /// Whether to abort the local search early if the cost is not improving.
     /// Only put to false for experiments like the heatmap.
     pub early_local_search_abort: bool,
+    /// Whether to use iterative local search or exit after the first iteration.
+    pub iterative_local_search: bool,
 }
 
 impl AlgorithmSettings {
@@ -106,6 +108,7 @@ impl Default for AlgorithmSettings {
             allow_station_relocation: true,
             output_on_fail: false,
             early_local_search_abort: true,
+            iterative_local_search: false,
         }
     }
 }

@@ -80,6 +80,15 @@ where
                                 settings.output_on_fail = b;
                             }));
                     }/>
+                <Toggle
+                    text="Iterate the local search until no more improvement is found."
+                    value=move || map_state.get().get_algorithm_settings().iterative_local_search
+                    on_input=move |b| {
+                        map_state
+                            .update(|state| state.update_algorithm_settings(|settings| {
+                                settings.iterative_local_search = b;
+                            }));
+                    }/>
                 <NumberInput
                     text="Set canvas grid size."
                     min=2.0
