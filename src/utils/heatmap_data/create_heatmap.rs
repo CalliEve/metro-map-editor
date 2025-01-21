@@ -12,7 +12,7 @@ use super::models::{
     StationHeatMap,
 };
 use crate::{
-    algorithm::{
+    algorithms::{
         total_distance,
         try_station_pos,
         AlgorithmSettings,

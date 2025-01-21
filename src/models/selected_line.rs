@@ -8,12 +8,10 @@ use super::{
     StationID,
 };
 use crate::{
-    algorithm::{
-        drawing::{
-            draw_edge,
-            CanvasContext,
-        },
+    algorithms::{
+        draw_edge,
         run_a_star,
+        CanvasContext,
     },
     components::CanvasState,
 };

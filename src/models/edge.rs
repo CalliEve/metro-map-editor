@@ -19,13 +19,11 @@ use super::{
     StationID,
 };
 use crate::{
-    algorithm::{
-        drawing::{
-            calc_label_pos,
-            draw_edge,
-            CanvasContext,
-        },
+    algorithms::{
+        calc_label_pos,
+        draw_edge,
         run_a_star,
+        CanvasContext,
     },
     components::CanvasState,
     utils::IDManager,

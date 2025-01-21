@@ -3,7 +3,7 @@
 use leptos::prelude::*;
 
 use crate::{
-    algorithm::LogType,
+    algorithms::LogType,
     components::atoms::{
         Button,
         Modal,

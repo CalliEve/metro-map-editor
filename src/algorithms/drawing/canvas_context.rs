@@ -24,15 +24,19 @@ use web_sys::{
     OffscreenCanvas,
 };
 
+/// Either a [`web_sys::CanvasRenderingContext2d`] or
+/// [`web_sys::OffscreenCanvasRenderingContext2d`].
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 enum InnerCanvasContext<'a> {
+    /// An offscreen canvas context.
     OffScreen(Cow<'a, web_sys::OffscreenCanvasRenderingContext2d>),
+    /// An onscreen canvas context.
     OnScreen(Cow<'a, web_sys::CanvasRenderingContext2d>),
 }
 
-/// A wrapper around the [`web_sys::CanvasRenderingContext2d`] or [`web_sys::].
-/// This struct provides the ability to mock and unit-test the drawing
-/// functions.
+/// A wrapper around the [`web_sys::CanvasRenderingContext2d`] or
+/// [`web_sys::OffscreenCanvasRenderingContext2d`]. This struct provides the
+/// ability to mock and unit-test the drawing functions.
 pub struct CanvasContext<'a> {
     /// The inner [`web_sys::CanvasRenderingContext2d`] object wrapped by this
     /// struct.
@@ -134,6 +138,7 @@ impl<'a> From<&'a web_sys::CanvasRenderingContext2d> for CanvasContext<'a> {
     }
 }
 
+/// Creates a method for both the onscreen and offscreen canvas context.
 #[cfg(all(not(test), not(feature = "benchmarking")))]
 macro_rules! impl_canvas_context_method {
     ($method:ident($($arg:ident: $arg_ty:ty),*) -> $res:ty) => {

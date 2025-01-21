@@ -9,7 +9,7 @@ use serde::{
 };
 
 use crate::{
-    algorithm::OccupiedNode,
+    algorithms::OccupiedNode,
     models::{
         GridNode,
         StationID,

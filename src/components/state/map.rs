@@ -14,8 +14,8 @@ use super::{
     CanvasState,
 };
 use crate::{
-    algorithm::{
-        drawing::redraw_canvas,
+    algorithms::{
+        redraw_canvas,
         AlgorithmSettings,
     },
     models::{

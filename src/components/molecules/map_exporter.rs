@@ -10,7 +10,7 @@ use web_sys::{
 };
 
 use crate::{
-    algorithm::drawing::redraw_canvas,
+    algorithms::redraw_canvas,
     components::{
         atoms::Button,
         MapState,
@@ -23,7 +23,7 @@ pub fn MapExporter() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
 
-    let export_map = Action::new_local(move |_| {
+    let export_map = Action::new_local(move |()| {
         async move {
             let blob_promise = {
                 let state = map_state.get_untracked();

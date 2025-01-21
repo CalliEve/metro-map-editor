@@ -3,12 +3,15 @@
 
 use super::{
     edge_dijkstra::edge_dijkstra,
-    log_print,
-    occupation::OccupiedNodes,
     AlgorithmSettings,
     Updater,
 };
 use crate::{
+    algorithms::{
+        log_print,
+        LogType,
+        OccupiedNodes,
+    },
     models::{
         Edge,
         GridNode,
@@ -179,7 +182,7 @@ pub async fn route_edges(
                 from_nodes,
                 to_nodes
             ),
-            super::LogType::Debug,
+            LogType::Debug,
         );
 
         let (start, nodes, end, cost) = edge_dijkstra(
@@ -203,7 +206,7 @@ pub async fn route_edges(
                 from_station.get_pos(),
                 to_station.get_pos(),
             ),
-            super::LogType::Debug,
+            LogType::Debug,
         );
 
         if nodes

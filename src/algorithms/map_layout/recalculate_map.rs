@@ -11,19 +11,22 @@ use leptos::logging;
 
 use super::{
     local_search::local_search,
-    occupation::OccupiedNodes,
     order_edges::order_edges,
-    randomize_edges,
     route_edges::route_edges,
     station_contraction::{
         contract_stations,
         expand_stations,
     },
-    unsettle_map,
     AlgorithmSettings,
 };
 use crate::{
-    algorithm::log_print,
+    algorithms::{
+        log_print,
+        randomize_edges,
+        unsettle_map,
+        LogType,
+        OccupiedNodes,
+    },
     models::{
         Edge,
         Map,
@@ -74,7 +77,7 @@ async fn attempt_edge_routing(
             log_print(
                 settings,
                 &format!("Failed to route edges: {e}"),
-                super::LogType::Error,
+                LogType::Error,
             );
 
             if attempt >= settings.edge_routing_attempts {
@@ -122,7 +125,7 @@ pub async fn recalculate_map(
                 .len(),
             occupied.len(),
         ),
-        super::LogType::Debug,
+        LogType::Debug,
     );
 
     let contracted_stations = contract_stations(settings, map);
@@ -140,7 +143,7 @@ pub async fn recalculate_map(
                 .map(|s| s.get_id())
                 .collect::<Vec<_>>(),
         ),
-        super::LogType::Debug,
+        LogType::Debug,
     );
 
     unsettle_map(map);
@@ -154,7 +157,7 @@ pub async fn recalculate_map(
     log_print(
         settings,
         &format!("Ordered {} edges", edges.len()),
-        super::LogType::Debug,
+        LogType::Debug,
     );
 
     if let Updater::Updater(updater) = midway_updater.clone() {
@@ -177,7 +180,7 @@ pub async fn recalculate_map(
     log_print(
         settings,
         "Routed edges, commencing local search",
-        super::LogType::Debug,
+        LogType::Debug,
     );
 
     if settings.local_search {
@@ -193,7 +196,7 @@ pub async fn recalculate_map(
     log_print(
         settings,
         "Finished local search, re-adding contracted stations",
-        super::LogType::Debug,
+        LogType::Debug,
     );
 
     // Skip this step if heatmap is enabled as we need to keep the contracted
@@ -213,7 +216,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        algorithm::{
+        algorithms::{
             occupation::OccupiedNodes,
             LogType,
         },

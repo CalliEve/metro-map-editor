@@ -18,7 +18,7 @@ use super::{
     Map,
 };
 use crate::{
-    algorithm::drawing::{
+    algorithms::{
         calc_label_pos,
         CanvasContext,
     },

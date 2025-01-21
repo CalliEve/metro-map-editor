@@ -3,6 +3,7 @@
 use leptos::prelude::*;
 
 use crate::{
+    algorithms::straighten_line,
     components::{
         atoms::{
             Button,
@@ -10,6 +11,7 @@ use crate::{
             ButtonProps,
         },
         state::ActionType,
+        ErrorState,
         MapState,
     },
     models::{
@@ -19,6 +21,7 @@ use crate::{
         SelectedStation,
         Station,
     },
+    unwrap_or_return,
 };
 
 /// The sidebar component with all the tools on there for editing the canvas.
@@ -26,6 +29,8 @@ use crate::{
 pub fn Sidebar() -> impl IntoView {
     let map_state =
         use_context::<RwSignal<MapState>>().expect("to have found the global map state");
+    let error_state =
+        use_context::<RwSignal<ErrorState>>().expect("to have found the global error state");
 
     let action_selected = move |action| {
         Signal::derive(move || {
@@ -122,6 +127,50 @@ pub fn Sidebar() -> impl IntoView {
     };
     let unlock_selected = action_selected(ActionType::Unlock);
 
+    let straighten_line = move |_| {
+        map_state.update(|state| {
+            let selected_stations = state
+                .get_selected_stations()
+                .iter()
+                .map(SelectedStation::get_station)
+                .cloned()
+                .collect::<Vec<_>>();
+            let selected_edges = state
+                .get_selected_edges()
+                .iter()
+                .map(|id| {
+                    state
+                        .get_map()
+                        .get_edge(*id)
+                        .unwrap()
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            state.clear_all_selections();
+
+            unwrap_or_return!(
+                error_state,
+                straighten_line(
+                    state.get_algorithm_settings(),
+                    state.get_mut_map(),
+                    &selected_edges,
+                    &selected_stations,
+                )
+            );
+        });
+    };
+    let cannot_straighten = move || {
+        let state = map_state.get();
+        state
+            .get_selected_stations()
+            .len()
+            < 2
+            || state
+                .get_selected_edges()
+                .is_empty()
+    };
+
     view! {
         <div id="sidebar" class="h-full w-full flex flex-col gap-y-4 bg-zinc-100 py-2 shadow-right shadow-dark-mild dark:shadow-black dark:bg-neutral-750 text-black dark:text-white px-2">
             <Button
@@ -172,7 +221,7 @@ pub fn Sidebar() -> impl IntoView {
                         .danger(true)
                         .build(),
                 ]}/>
-                <ButtonGroup
+            <ButtonGroup
                 children={vec![
                     ButtonProps::builder()
                         .text("Add Checkpoint")
@@ -186,6 +235,10 @@ pub fn Sidebar() -> impl IntoView {
                         .danger(true)
                         .build(),
                 ]}/>
+            <Button
+                on_click=Box::new(straighten_line)
+                disabled=Signal::derive(cannot_straighten)
+                text="straighten selected" />
         </div>
     }
 }

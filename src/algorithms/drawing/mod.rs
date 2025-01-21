@@ -1,7 +1,6 @@
 //! This module contains all functions for drawing the [`crate::models::Map`] to
 //! the canvas.
 
-mod calc_direction;
 mod canvas_context;
 mod closest_corner;
 mod draw_edge;

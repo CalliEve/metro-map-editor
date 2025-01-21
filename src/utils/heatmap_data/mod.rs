@@ -1,11 +1,13 @@
 use std::path::Path;
 
+use futures_util::FutureExt;
+
 use super::{
     graphml,
     json,
 };
 use crate::{
-    algorithm::recalculate_map,
+    algorithms::recalculate_map,
     CanvasState,
     MapState,
 };
@@ -72,7 +74,14 @@ pub fn run_heatmap() {
     settings.local_search = false;
     settings.early_local_search_abort = false;
 
-    let occupied = recalculate_map(settings, &mut map).unwrap();
+    let occupied = recalculate_map(
+        settings,
+        &mut map,
+        crate::algorithms::Updater::NoUpdates,
+    )
+    .now_or_never()
+    .expect("was not yet done with map recalculation")
+    .unwrap();
 
     let heatmap = create_heatmap::create_heatmap(settings, &map, &occupied);
 

@@ -18,10 +18,10 @@ use priority_queue::PriorityQueue;
 
 use super::{
     cost_calculation::calc_node_cost,
-    occupation::OccupiedNodes,
     AlgorithmSettings,
 };
 use crate::{
+    algorithms::OccupiedNodes,
     models::{
         Edge,
         GridNode,

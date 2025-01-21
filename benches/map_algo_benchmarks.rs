@@ -8,7 +8,7 @@ use criterion::{
 };
 use futures_util::FutureExt;
 use metro_map_editor::{
-    algorithm::{
+    algorithms::{
         recalculate_map,
         run_a_star,
         Updater,

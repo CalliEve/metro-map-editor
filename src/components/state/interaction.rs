@@ -1,5 +1,7 @@
 //! Contains the [`InteractionState`] struct and its methods.
 
+use std::fmt::Display;
+
 /// Stores the current state of the user interaction.
 /// This is for keeping track of the cursor state on the canvas and if the
 /// application is busy.
@@ -21,7 +23,7 @@ impl InteractionState {
     }
 
     /// Set the cursor to a new value.
-    pub fn set_cursor<S: ToString>(&mut self, cursor: S) {
+    pub fn set_cursor<T: Display>(&mut self, cursor: T) {
         self.cursor = cursor.to_string();
     }
 

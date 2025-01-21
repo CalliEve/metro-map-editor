@@ -1,9 +1,12 @@
 //! Contains tools to determine the direction of an edge.
 
-use crate::utils::equal_pixel;
+use crate::{
+    models::GridNode,
+    utils::equal_pixel,
+};
 
 /// Represents the direction the edge is moving.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EdgeDirection {
     /// The edge is moving up.
     Up,
@@ -23,6 +26,23 @@ pub enum EdgeDirection {
     DiagUpLeft,
     /// The edge is not moving.
     Equal,
+}
+
+impl EdgeDirection {
+    /// Returns the opposite direction.
+    pub fn flip(self) -> EdgeDirection {
+        match self {
+            EdgeDirection::Up => EdgeDirection::Down,
+            EdgeDirection::DiagUpRight => EdgeDirection::DiagDownLeft,
+            EdgeDirection::Right => EdgeDirection::Left,
+            EdgeDirection::DiagDownRight => EdgeDirection::DiagUpLeft,
+            EdgeDirection::Down => EdgeDirection::Up,
+            EdgeDirection::DiagDownLeft => EdgeDirection::DiagUpRight,
+            EdgeDirection::Left => EdgeDirection::Right,
+            EdgeDirection::DiagUpLeft => EdgeDirection::DiagDownRight,
+            EdgeDirection::Equal => EdgeDirection::Equal,
+        }
+    }
 }
 
 /// Calculates the direction the edge is moving.
@@ -45,6 +65,26 @@ pub fn calc_direction(from_x: f64, from_y: f64, to_x: f64, to_y: f64) -> EdgeDir
         EdgeDirection::DiagUpLeft
     } else {
         EdgeDirection::Equal
+    }
+}
+
+/// Calculates the direction the edge is moving based on the start and end node.
+pub fn node_direction(start: GridNode, end: GridNode) -> EdgeDirection {
+    to_direction(end.0 - start.0, end.1 - start.1)
+}
+
+/// Converts the given horizontal and vertical difference values to a direction.
+fn to_direction(horizontal: i32, vertical: i32) -> EdgeDirection {
+    match (horizontal, vertical) {
+        (0, ..=-1) => EdgeDirection::Up,
+        (1.., ..=-1) => EdgeDirection::DiagUpRight,
+        (1.., 0) => EdgeDirection::Right,
+        (1.., 1..) => EdgeDirection::DiagDownRight,
+        (0, 1..) => EdgeDirection::Down,
+        (..=-1, 1..) => EdgeDirection::DiagDownLeft,
+        (..=-1, 0) => EdgeDirection::Left,
+        (..=-1, ..=-1) => EdgeDirection::DiagUpLeft,
+        (0, 0) => EdgeDirection::Equal,
     }
 }
 

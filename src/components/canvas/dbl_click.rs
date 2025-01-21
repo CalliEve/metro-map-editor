@@ -34,6 +34,7 @@ pub fn on_dbl_click(map_state: &mut MapState, ev: &UiEvent, shift_key: bool) {
             line_section
                 .middles
                 .into_iter()
+                .chain(line_section.ends)
                 .map(|s| {
                     let mut selected = SelectedStation::new(
                         map.get_station(s)

@@ -6,8 +6,8 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-leptos = { version = "0.7.1", features = ["csr", "nightly"] }
-web-sys = { version = "0.3.76", features = [
+leptos = { version = "0.7.4", features = ["csr", "nightly"] }
+web-sys = { version = "0.3.77", features = [
     "KeyboardEvent",
     "HtmlCanvasElement",
     "HtmlInputElement",
@@ -25,8 +25,8 @@ web-sys = { version = "0.3.76", features = [
     "OffscreenCanvas",
     "ImageEncodeOptions",
 ] }
-js-sys = "0.3.76"
-wasm-bindgen = { version = "0.2.99" }
+js-sys = "0.3.77"
+wasm-bindgen = { version = "0.2.100" }
 console_log = "1"
 log = "0.4"
 console_error_panic_hook = "0.1"
@@ -37,7 +37,7 @@ csscolorparser = "0.7"
 rand = "0.8"
 priority-queue = "2.1"
 ordered-float = "4.6"
-itertools = "0.13"
+itertools = "0.14"
 leptos_workers = "0.2.2"
 futures-core = "0.3"
 futures-util = "0.3"

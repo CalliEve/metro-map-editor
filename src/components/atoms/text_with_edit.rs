@@ -45,9 +45,9 @@ where
             .replace(' ', "_")
     });
 
-    let on_click = move |_| {
-        set_editing(true);
-    };
+    // let on_click = move |_| {
+    //     set_editing(true);
+    // };
 
     // Listeners for when the edit is being submitted.
     let on_done = move |_| {
@@ -77,7 +77,7 @@ where
             )
     });
     // Clone to satisfy lifetimes and moves.
-    let button_label = edit_label;
+    // let button_label = edit_label;
 
     let text_for_effect = text.clone();
     Effect::new(move |_| {
@@ -99,9 +99,10 @@ where
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
                     {text.get()}
-                    <Button text={button_label} smaller=true on_click=Box::new(on_click)>
-                        "edit"
-                    </Button>
+                    // FIXME: why is this button causing a panic?!?
+                    // <Button text={button_label} smaller=true on_click=Box::new(on_click)>
+                    //     "edit"
+                    // </Button>
                 </span>
             }>
             <div class="relative my-2 flex flex-row" data-twe-input-wrapper-init>

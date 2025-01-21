@@ -1,7 +1,7 @@
 //! Contains functions to help with placing labels on the canvas.
 
 use crate::{
-    algorithm::drawing::calc_direction::{
+    algorithms::calc_direction::{
         calc_direction,
         EdgeDirection,
     },

@@ -10,12 +10,15 @@ use ordered_float::NotNan;
 
 use super::{
     edge_dijkstra::edge_dijkstra,
-    log_print,
-    occupation::OccupiedNodes,
     recalculate_map::Updater,
     AlgorithmSettings,
 };
 use crate::{
+    algorithms::{
+        log_print,
+        LogType,
+        OccupiedNodes,
+    },
     models::{
         Edge,
         GridNode,
@@ -253,7 +256,7 @@ pub async fn local_search(
                     .station
                     .get_pos()
             ),
-            super::LogType::Debug,
+            LogType::Debug,
         );
 
         let best = best.unwrap();

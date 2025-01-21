@@ -5,11 +5,12 @@ use std::collections::HashMap;
 
 use leptos::logging;
 
-use super::{
-    log_print,
-    AlgorithmSettings,
-};
+use super::AlgorithmSettings;
 use crate::{
+    algorithms::{
+        log_print,
+        LogType,
+    },
     models::{
         Edge,
         Map,
@@ -431,7 +432,7 @@ pub fn expand_stations(
                     .len(),
                 station_locs
             ),
-            super::LogType::Debug,
+            LogType::Debug,
         );
 
         // FIXME: the order of stations can still flip!

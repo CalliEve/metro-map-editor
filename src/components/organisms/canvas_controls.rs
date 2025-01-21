@@ -26,7 +26,7 @@ use serde::{
 use web_sys::KeyboardEvent;
 
 use crate::{
-    algorithm::{
+    algorithms::{
         AlgorithmExecutor,
         AlgorithmResponse,
         AlgorithmSettings,
@@ -165,15 +165,13 @@ pub fn CanvasControls() -> impl IntoView {
                             .get_mut_map()
                             .update_from_partial(&resp.map)
                     );
+                } else if midway {
+                    state.set_map_no_history(resp.map);
                 } else {
-                    if midway {
-                        state.set_map_no_history(resp.map);
-                    } else {
-                        if let Some((_, before_map)) = abort_handle.get_untracked() {
-                            state.set_map_no_history(before_map);
-                        }
-                        state.set_map(resp.map);
+                    if let Some((_, before_map)) = abort_handle.get_untracked() {
+                        state.set_map_no_history(before_map);
                     }
+                    state.set_map(resp.map);
                 }
             });
             IDManager::from_data(resp.id_manager_data);

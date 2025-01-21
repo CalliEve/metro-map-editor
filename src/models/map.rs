@@ -17,8 +17,8 @@ use super::{
     Station,
 };
 use crate::{
-    algorithm::{
-        drawing::CanvasContext,
+    algorithms::{
+        CanvasContext,
         OccupiedNodes,
     },
     components::CanvasState,
@@ -40,10 +40,23 @@ pub struct Map {
 impl Map {
     /// Creates a new, empty map.
     pub fn new() -> Self {
+        Self::from_inner(
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
+        )
+    }
+
+    /// Creates a new map with the given inner values.
+    pub fn from_inner(
+        stations: HashMap<StationID, Station>,
+        lines: HashMap<LineID, Line>,
+        edges: HashMap<EdgeID, Edge>,
+    ) -> Self {
         Self {
-            stations: HashMap::new(),
-            lines: HashMap::new(),
-            edges: HashMap::new(),
+            stations,
+            lines,
+            edges,
         }
     }
 
@@ -342,6 +355,30 @@ impl Map {
         }
 
         Ok(())
+    }
+
+    /// Get all nodes occupied by stations and edges.
+    pub fn get_occupied_nodes(&self) -> OccupiedNodes {
+        let mut occupied = OccupiedNodes::new();
+        for station in self.get_stations() {
+            occupied.insert(
+                station.get_pos(),
+                station
+                    .get_id()
+                    .into(),
+            );
+        }
+        for edge in self.get_edges() {
+            for node in edge.get_nodes() {
+                occupied.insert(
+                    *node,
+                    edge.get_id()
+                        .into(),
+                );
+            }
+        }
+
+        occupied
     }
 
     /// Get the nodes that are occupied by locked stations and edges.

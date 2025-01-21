@@ -26,6 +26,11 @@ pub struct GridNode(
 );
 
 impl GridNode {
+    /// Create a new [`GridNode`] with the given x and y coordinates.
+    pub fn new(x: i32, y: i32) -> Self {
+        Self(x, y)
+    }
+
     /// Create the [`GridNode`] from the given canvas coordinate and the state
     /// of the canvas.
     pub fn from_canvas_pos(canvas_pos: (f64, f64), state: CanvasState) -> Self {

@@ -18,7 +18,7 @@ use super::{
     Station,
 };
 use crate::{
-    algorithm::drawing::CanvasContext,
+    algorithms::CanvasContext,
     components::CanvasState,
     utils::IDManager,
 };

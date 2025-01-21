@@ -3,17 +3,17 @@
 
 use core::f64;
 
-use super::{
-    log_print,
-    node_outside_grid,
-    occupation::{
+use super::AlgorithmSettings;
+use crate::{
+    algorithms::{
+        diagonal_occupied,
+        log_print,
+        node_outside_grid,
+        overlap_amount,
+        LogType,
         OccupiedNode,
         OccupiedNodes,
     },
-    overlap_amount,
-    AlgorithmSettings,
-};
-use crate::{
     models::{
         Edge,
         EdgeID,
@@ -166,7 +166,7 @@ fn station_approach_available(
                         edge.opposite(station.get_id())
                             .unwrap(),
                     ),
-                    super::LogType::Warn,
+                    LogType::Warn,
                 );
                 return Ok(false);
             }
@@ -194,7 +194,7 @@ fn station_approach_available(
                         angle,
                         cost
                     ),
-                    super::LogType::Warn,
+                    LogType::Warn,
                 );
                 return Ok(false);
             }
@@ -243,47 +243,6 @@ fn calc_angle_cost(first: GridNode, second: GridNode, third: GridNode, round: bo
             "found invalid angle of {angle} between {first}, {second}, {third}",
         ))
     })
-}
-
-/// Returns if the diagonal squared described by the given two nodes is already
-/// occupied by an edge.
-fn diagonal_occupied(
-    map: &Map,
-    first: GridNode,
-    second: GridNode,
-    occupied: &OccupiedNodes,
-) -> bool {
-    if let Some(diag_one) = occupied.get(&GridNode::from((first.0, second.1))) {
-        if let Some(diag_two) = occupied.get(&GridNode::from((second.0, first.1))) {
-            // if both diagonal nodes are occupied by same edge, the diagonal is occupied.
-            if diag_one == diag_two {
-                return true;
-            }
-
-            // if one of the diagonal nodes is a station, we check if the edge on the other
-            // diagonal node is connected to it, if so, the diagonal is occupied.
-            if let Some(station_id) = diag_one.get_station_id() {
-                return map
-                    .get_station(station_id)
-                    .zip(diag_two.get_edge_id())
-                    .is_some_and(|(s, edge_id)| {
-                        s.get_edges()
-                            .contains(&edge_id)
-                    });
-            }
-
-            if let Some(station_id) = diag_two.get_station_id() {
-                return map
-                    .get_station(station_id)
-                    .zip(diag_one.get_edge_id())
-                    .is_some_and(|(s, edge_id)| {
-                        s.get_edges()
-                            .contains(&edge_id)
-                    });
-            }
-        }
-    }
-    false
 }
 
 /// Calculate the cost of the node attached to the given station on the path
@@ -442,10 +401,7 @@ pub fn calc_node_cost(
             return Ok(f64::INFINITY);
         }
 
-        if previous[0].0 - node.0 != 0
-            && previous[0].1 - node.1 != 0
-            && diagonal_occupied(map, previous[0], node, occupied)
-        {
+        if diagonal_occupied(map, previous[0], node, occupied) {
             return Ok(f64::INFINITY);
         }
 
@@ -460,10 +416,7 @@ pub fn calc_node_cost(
         .map(|c| c + settings.move_cost); // standard cost of a move
     }
 
-    if previous[1].0 - node.0 != 0
-        && previous[1].1 - node.1 != 0
-        && diagonal_occupied(map, previous[1], node, occupied)
-    {
+    if diagonal_occupied(map, previous[1], node, occupied) {
         return Ok(f64::INFINITY);
     }
 
@@ -740,148 +693,6 @@ mod tests {
         let third_45 = GridNode::from((2, 1));
         let result_45 = calc_angle_cost(first_45, second_45, third_45, false);
         assert_eq!(result_45, Ok(5.0));
-    }
-
-    #[test]
-    fn test_diagonal_occupied() {
-        let mut map = Map::new();
-        let mut occupied = OccupiedNodes::new();
-
-        let top_left = GridNode::from((0, 0));
-        let top_right = GridNode::from((1, 0));
-        let bottom_left = GridNode::from((0, 1));
-        let bottom_right = GridNode::from((1, 1));
-
-        let edge = Edge::new(0.into(), 1.into(), None);
-        let edge_id = edge.get_id();
-        let mut station = Station::new(GridNode::from((0, 0)), None);
-        let station_id = station.get_id();
-        station.add_edge(edge_id);
-        map.add_station(station);
-
-        assert!(!diagonal_occupied(
-            &map,
-            bottom_left,
-            top_right,
-            &occupied
-        ));
-        assert!(!diagonal_occupied(
-            &map,
-            top_left,
-            bottom_right,
-            &occupied
-        ));
-        assert!(!diagonal_occupied(
-            &map,
-            bottom_right,
-            top_left,
-            &occupied
-        ));
-        assert!(!diagonal_occupied(
-            &map,
-            top_right,
-            bottom_left,
-            &occupied
-        ));
-
-        occupied.insert(top_left, edge_id.into());
-        occupied.insert(bottom_right, edge_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_left,
-            top_right,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_right,
-            bottom_left,
-            &occupied
-        ));
-
-        occupied.clear();
-        occupied.insert(top_right, edge_id.into());
-        occupied.insert(bottom_left, edge_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_right,
-            top_left,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_left,
-            bottom_right,
-            &occupied
-        ));
-
-        occupied.insert(top_left, edge_id.into());
-        occupied.insert(bottom_right, station_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_left,
-            top_right,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_right,
-            bottom_left,
-            &occupied
-        ));
-
-        occupied.clear();
-        occupied.insert(top_right, edge_id.into());
-        occupied.insert(bottom_left, station_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_right,
-            top_left,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_left,
-            bottom_right,
-            &occupied
-        ));
-
-        occupied.insert(top_left, station_id.into());
-        occupied.insert(bottom_right, edge_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_left,
-            top_right,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_right,
-            bottom_left,
-            &occupied
-        ));
-
-        occupied.clear();
-        occupied.insert(top_right, station_id.into());
-        occupied.insert(bottom_left, edge_id.into());
-
-        assert!(diagonal_occupied(
-            &map,
-            bottom_right,
-            top_left,
-            &occupied
-        ));
-        assert!(diagonal_occupied(
-            &map,
-            top_left,
-            bottom_right,
-            &occupied
-        ));
     }
 
     #[test]

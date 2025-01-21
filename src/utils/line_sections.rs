@@ -1,7 +1,16 @@
+use std::collections::HashMap;
+
+use itertools::Itertools;
+
+use super::{
+    Error,
+    Result,
+};
 use crate::models::{
     Edge,
     EdgeID,
     Map,
+    Station,
     StationID,
 };
 
@@ -114,4 +123,121 @@ fn follow_line_section(
     }
 
     section
+}
+
+/// Get the line section from the given stations and edges. The stations should
+/// all be part of one continuous line section.
+pub fn to_line_section(stations: &[Station], edges: &[Edge]) -> Result<LineSection> {
+    let mut section = LineSection {
+        edges: Vec::new(),
+        ends: Vec::new(),
+        middles: Vec::new(),
+    };
+
+    let edge_map = edges
+        .iter()
+        .map(|e| (e.get_id(), e.clone()))
+        .collect::<HashMap<_, _>>();
+    let station_map = stations
+        .iter()
+        .map(|s| (s.get_id(), s.clone()))
+        .collect::<HashMap<_, _>>();
+
+    for station in stations {
+        let mut count = 0;
+        for edge in station.get_edges() {
+            if edge_map.contains_key(edge) {
+                count += 1;
+            }
+        }
+
+        if count == 1 {
+            section
+                .ends
+                .push(station.get_id());
+        }
+    }
+
+    if section
+        .ends
+        .len()
+        != 2
+    {
+        return Err(Error::other(
+            "Given selection is not one line section or contains a cycle.",
+        ));
+    }
+
+    let mut current_station = station_map
+        .get(&section.ends[0])
+        .expect("Start station not found.")
+        .clone();
+    let edge_id = *current_station
+        .get_edges()
+        .iter()
+        .find(|e| edge_map.contains_key(e))
+        .expect("Start edge not found.");
+    let mut current_edge = edge_map
+        .get(&edge_id)
+        .expect("Start edge not found.")
+        .clone();
+
+    section
+        .edges
+        .push(current_edge.clone());
+    section
+        .middles
+        .clear();
+
+    while let Some((next_station, next_edge)) = get_next_edge_station(
+        &station_map,
+        &edge_map,
+        current_station.get_id(),
+        &current_edge,
+    ) {
+        current_station = next_station;
+        current_edge = next_edge;
+
+        section
+            .edges
+            .push(current_edge.clone());
+
+        if section.ends[1] == current_station.get_id() {
+            break;
+        }
+
+        section
+            .middles
+            .push(current_station.get_id());
+    }
+
+    section.edges = section
+        .edges
+        .into_iter()
+        .unique_by(Edge::get_id)
+        .collect();
+
+    Ok(section)
+}
+
+/// Get the next station and edge in the line section.
+/// Used for traversing a line section.
+fn get_next_edge_station(
+    station_map: &HashMap<StationID, Station>,
+    edge_map: &HashMap<EdgeID, Edge>,
+    station_id: StationID,
+    edge: &Edge,
+) -> Option<(Station, Edge)> {
+    let opposite = edge.opposite(station_id)?;
+
+    let next_station = station_map.get(&opposite)?;
+
+    let next_id = *next_station
+        .get_edges()
+        .iter()
+        .find(|e| **e != edge.get_id() && edge_map.contains_key(*e))?;
+
+    let next_edge = edge_map.get(&next_id)?;
+
+    Some((next_station.clone(), next_edge.clone()))
 }

@@ -28,7 +28,7 @@
 
 // Import the necessary modules, these are more public than would be expected,
 // but this is needed to access them for testing.
-pub mod algorithm;
+pub mod algorithms;
 pub mod models;
 pub mod utils;
 

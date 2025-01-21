@@ -7,7 +7,7 @@ use criterion::{
     Criterion,
 };
 use metro_map_editor::{
-    algorithm::drawing::{
+    algorithms::{
         draw_edge,
         CanvasContext,
     },

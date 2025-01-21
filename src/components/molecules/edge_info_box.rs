@@ -80,16 +80,19 @@ fn LineInfo(
 
     view! {
         {
-            if i > 0 {view!{
-                <hr class="my-0.5"/>
-            }.into_any()} else {
-                ().into_any()}
+            if i > 0 {
+                view!{
+                    <hr class="my-0.5"/>
+                }.into_any()
+            } else {
+                ().into_any()
+            }
         }
         <p class="text-md font-semibold"><b>"Name:\n"</b>
             <TextWithEdit
-                    edit_label={"Edit line name".to_owned()}
-                    text=line_name
-                    on_edit=move |s| edit_line_name(line_id(), s)/>
+                edit_label={"Edit line name".to_owned()}
+                text=line_name
+                on_edit=move |s| edit_line_name(line_id(), s)/>
         </p>
         <p class="text-md font-semibold">
             <b>"Color:\n"</b>

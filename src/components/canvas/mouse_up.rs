@@ -237,8 +237,15 @@ pub fn on_mouse_up(
 
     // Handle the box-select selecting things.
     if let Some((start_canvas, end_canvas)) = map_state.get_box_select() {
-        let start = GridNode::from_canvas_pos(start_canvas, canvas_state);
-        let end = GridNode::from_canvas_pos(end_canvas, canvas_state);
+        let mut start = GridNode::from_canvas_pos(start_canvas, canvas_state);
+        let mut end = GridNode::from_canvas_pos(end_canvas, canvas_state);
+
+        if start.0 > end.0 {
+            std::mem::swap(&mut start.0, &mut end.0);
+        }
+        if start.1 > end.1 {
+            std::mem::swap(&mut start.1, &mut end.1);
+        }
 
         let mut selected_stations = Vec::new();
         let mut selected_edges = Vec::new();
