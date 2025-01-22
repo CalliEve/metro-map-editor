@@ -247,12 +247,6 @@ pub fn create_straight_edge(
         }
 
         if next.manhattan_distance_to(end) > current.manhattan_distance_to(end) {
-            leptos::logging::warn!(
-                "Line does not reach end; start {} end {} direction {:?}",
-                start,
-                end,
-                direction
-            );
             return Err(Error::other("Line does not reach end"));
         }
 
@@ -265,12 +259,6 @@ pub fn create_straight_edge(
 
         iter += 1;
         if iter > max_iter {
-            leptos::logging::warn!(
-                "Max iter. Line does not reach end; start {} end {} direction {:?}",
-                start,
-                end,
-                direction
-            );
             return Err(Error::other("Max iterations reached"));
         }
     }

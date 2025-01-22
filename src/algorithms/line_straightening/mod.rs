@@ -50,7 +50,6 @@ pub fn straighten_line(
         .get_station(line_section.ends[1])
         .expect("end station not found");
 
-    leptos::logging::log!("Getting edge candidates");
     let edge_candidates = create_edge_candidates(
         map,
         &occupied,
@@ -62,12 +61,6 @@ pub fn straighten_line(
     let result = edge_candidates
         .into_iter()
         .filter_map(|(start, mut nodes, end)| {
-            leptos::logging::log!(
-                "Trying straight line from {:?} to {:?}",
-                start,
-                end
-            );
-
             let Ok(mut attached_stations) = attach_stations(map, &line_section, &nodes) else {
                 return None;
             };
@@ -87,24 +80,21 @@ pub fn straighten_line(
             "No straight line possible",
         ))?;
 
-    leptos::logging::log!("Updating map");
+    let mut temp_map = map.clone();
     update_map(
-        map,
+        &mut temp_map,
         &result.0,
         &mut occupied,
         &line_section.edges,
     )?;
-
-    leptos::logging::log!("Recalculating adjacent edges");
     recalculate_adjacent_edges(
         settings,
-        map,
+        &mut temp_map,
         &result.0,
         occupied,
         &line_section.edges,
     )?;
-
-    leptos::logging::log!("Straightening done");
+    *map = temp_map;
 
     Ok(())
 }

@@ -85,17 +85,11 @@ pub fn recalculate_adjacent_edges(
             .get_station(*id)
             .cloned()
             .expect("station not found");
-        leptos::logging::log!(
-            "Recalculating edges for station {:?}",
-            station.get_id()
-        );
 
         for edge_id in station.get_edges() {
             if updated_edges.contains(edge_id) {
-                leptos::logging::log!("- Already updated edge {:?}", edge_id);
                 continue;
             }
-            leptos::logging::log!("- Recalculating edge {:?}", edge_id);
 
             let edge = map
                 .get_edge(*edge_id)
@@ -113,7 +107,6 @@ pub fn recalculate_adjacent_edges(
                 occupied.remove(node);
             }
 
-            leptos::logging::log!("Running dijkstra");
             let (_, nodes, ..) = edge_dijkstra(
                 settings,
                 map,

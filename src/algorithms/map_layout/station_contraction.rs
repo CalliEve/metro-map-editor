@@ -3,8 +3,6 @@
 
 use std::collections::HashMap;
 
-use leptos::logging;
-
 use super::AlgorithmSettings;
 use crate::{
     algorithms::{
@@ -192,7 +190,6 @@ pub fn contract_stations(
                 // Just skip, we need at least 4 stations to contract part of a cycle.
                 continue;
             }
-            logging::log!("Line section has no ends, resolving cycle");
             line_section = resolve_cycle(map, line_section);
         } else if line_section
             .ends

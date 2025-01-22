@@ -66,11 +66,12 @@ pub fn attach_stations(
             let mut index = get_nearest_node(station, &new_nodes);
 
             let before_count = between_stations.len();
+            let after_count = station_count - i - 1;
+
             if before_count >= index {
                 index = before_count + 1;
             }
-            let after_count = station_count - i - 1;
-            if station_count - after_count <= index {
+            if index + after_count >= new_nodes.len() {
                 index -= index - (station_count - after_count) + 1;
             }
             if before_count >= index {
@@ -120,11 +121,11 @@ fn get_nearest_node(station: &Station, nodes: &[GridNode]) -> usize {
         .expect("no nodes")
 }
 
-/// Spreads the stations evenly over the given nodes.
+/// Spreads the stations equidistantly over the given nodes.
 fn spread_evenly(stations: &[StationID], nodes: &[GridNode]) -> HashMap<StationID, GridNode> {
     let mut updated = HashMap::new();
 
-    let mut between_count = (nodes.len() as f64 / (stations.len() as f64 + 2.0)).round() as usize;
+    let mut between_count = (nodes.len() as f64 / (stations.len() as f64 + 1.0)).round() as usize;
     between_count = between_count.saturating_sub(1);
 
     let mut station_iter = stations.iter();
