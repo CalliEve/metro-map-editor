@@ -9,6 +9,8 @@ This project is being made as part of my master thesis / graduation project at t
 
 Try it out over at the deployed [site].
 
+See the [docs] for a guide on how to use the editor.
+
 ## Deploy it yourself
 
 ### Prerequisites:
@@ -41,6 +43,7 @@ These heatmap data can then be used in `research_notebooks/heatmaps.ipynb` to ge
 [TU/e]: https://www.tue.nl/en/
 [ALGO]: https://algo.win.tue.nl/
 [site]: https://calli.dev/university/metro-map
+[docs]: docs/README.md
 [Rust]: https://www.rust-lang.org/learn/get-started
 [NPM]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 [trunk]: https://trunkrs.dev/

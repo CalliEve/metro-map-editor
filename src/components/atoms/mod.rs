@@ -3,6 +3,7 @@
 mod button;
 mod button_group;
 mod canvas_info_box;
+mod link_icon;
 mod modal;
 mod number_input;
 mod text_with_edit;
@@ -14,6 +15,10 @@ pub use button::{
 };
 pub use button_group::ButtonGroup;
 pub use canvas_info_box::CanvasInfoBox;
+pub use link_icon::{
+    Link,
+    LinkIcon,
+};
 pub use modal::Modal;
 pub use number_input::NumberInput;
 pub use text_with_edit::TextWithEdit;

@@ -4,7 +4,11 @@ use leptos::prelude::*;
 
 use crate::{
     components::{
-        atoms::Button,
+        atoms::{
+            Button,
+            Link,
+            LinkIcon,
+        },
         molecules::{
             FileDownloader,
             FileModal,
@@ -60,7 +64,9 @@ pub fn Navbar() -> impl IntoView {
         <div class="ms-2">
           <a class="text-2xl font-extrabold text-black dark:text-white" href="#">Metro Map Editor</a>
         </div>
-        <div class="flex flex-row items-end space-x-3" >
+        <div class="flex flex-row items-center space-x-3" >
+            <LinkIcon link=Link::Docs />
+            <LinkIcon link=Link::GitHub />
             <Button text="Advanced Settings" outlined=true can_focus=true on_click=Box::new(move |_| set_show_settings_modal(true))/>
             <MapExporter/>
             <FileDownloader/>
