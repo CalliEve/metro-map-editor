@@ -45,9 +45,9 @@ where
             .replace(' ', "_")
     });
 
-    // let on_click = move |_| {
-    //     set_editing(true);
-    // };
+    let on_click = move |_| {
+        set_editing(true);
+    };
 
     // Listeners for when the edit is being submitted.
     let on_done = move |_| {
@@ -77,7 +77,7 @@ where
             )
     });
     // Clone to satisfy lifetimes and moves.
-    // let button_label = edit_label;
+    let button_label = edit_label;
 
     let text_for_effect = text.clone();
     Effect::new(move |_| {
@@ -99,10 +99,9 @@ where
             fallback=move || view!{
                 <span class="flex justify-between max-h-5">
                     {text.get()}
-                    // FIXME: why is this button causing a panic?!?
-                    // <Button text={button_label} smaller=true on_click=Box::new(on_click)>
-                    //     "edit"
-                    // </Button>
+                    <Button text={button_label} smaller=true on_click=Box::new(on_click) never_too_busy=true>
+                        "edit"
+                    </Button>
                 </span>
             }>
             <div class="relative my-2 flex flex-row" data-twe-input-wrapper-init>
@@ -119,7 +118,7 @@ where
                     class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate pt-[0.37rem] leading-[1.6] text-neutral-500 peer-focus:text-primary -translate-y-[0.9rem] scale-[0.8] dark:text-neutral-400 dark:peer-focus:text-primary"
                     >{edit_label}
                 </label>
-                <Button text="finish editing" smaller=true on_click=Box::new(on_done)>
+                <Button text="finish editing" smaller=true on_click=Box::new(on_done) never_too_busy=true>
                     "done"
                 </Button>
             </div>

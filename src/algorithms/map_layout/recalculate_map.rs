@@ -57,7 +57,7 @@ async fn attempt_edge_routing(
     mut edges: Vec<Edge>,
     midway_updater: Updater,
 ) -> Result<()> {
-    let mut attempt = 0;
+    let mut attempt: u64 = 0;
     let mut found = false;
 
     while !found {
@@ -80,14 +80,14 @@ async fn attempt_edge_routing(
                 LogType::Error,
             );
 
-            if attempt >= settings.edge_routing_attempts {
+            if attempt >= settings.edge_routing_attempts as u64 {
                 *map = alg_map;
                 return Err(Error::other(
                     "Reached max amount of retries when routing edges.",
                 ));
             }
 
-            randomize_edges(&mut edges);
+            randomize_edges(&mut edges, attempt);
         } else {
             found = true;
             *map = alg_map;

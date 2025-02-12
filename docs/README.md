@@ -79,6 +79,9 @@ Then, click on the node on the canvas where you want to place it.
 To move a station, click on the station and while continuing to hold the mouse clicked, drag the station to its new location.
 When multiple stations have been selected, click and hold on one to drag and move all selected stations together.
 
+Clicking on a station without moving it, brings up a box with information like the name of the station.
+That name can also be edited in this box.
+
 Lastly, to remove a station, click on the "remove station" button on the left, before clicking on the station to remove.
 Hold shift while clicking on stations to remove, to remove multiple stations at once.
 
@@ -94,8 +97,12 @@ To the algorithm and in other interactions they will also act exactly like norma
 
 To add a line, click on the "add line" button on the left, before clicking on a station.
 This will add the station to the map and adds the station as the first (and currently only) station on the line.
+
 Click on a node adjacent to a station that the line ends on (aka, it is connected to the station by only one edge), before dragging the line onto another station, to extend the line to that station.
 Click on a node that a line travels through between two stations, then drag the line onto another station, to insert that station between the first two.
+
+Clicking on an edge without moving it, brings up a box with information like the name of all the lines going through that edge.
+It also allows for editing the names and colors of all those lines.
 
 Click on the "remove line" button on the left, before clicking on a line, to remove it from the map altogether.
 

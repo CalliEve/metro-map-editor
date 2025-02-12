@@ -2,8 +2,9 @@
 
 use leptos::logging;
 use rand::{
+    rngs::SmallRng,
     seq::SliceRandom,
-    thread_rng,
+    SeedableRng,
 };
 use serde::{
     Deserialize,
@@ -35,8 +36,10 @@ pub fn unsettle_map(map: &mut Map) {
 }
 
 /// Randomizes the order of the edges in the given vector.
-pub fn randomize_edges(edges: &mut [Edge]) {
-    let mut rng = thread_rng();
+/// Attempt will be used as the seed for the random number generator when
+/// shuffeling.
+pub fn randomize_edges(edges: &mut [Edge], attempt: u64) {
+    let mut rng = SmallRng::seed_from_u64(attempt);
     edges.shuffle(&mut rng);
 }
 

@@ -57,16 +57,21 @@ pub fn Button(
     #[prop(optional)]
     children: Option<ChildrenFn>,
 ) -> impl IntoView {
-    let interaction_state = use_context::<RwSignal<InteractionState>>()
-        .expect("to have found the global interaction state");
+    // let interaction_state = use_context::<RwSignal<InteractionState>>()
+    //     .expect("to have found the global interaction state");
 
     let has_children = children.is_some();
     let is_disabled = move || {
+        if never_too_busy {
+            return disabled.get();
+        }
+
+        let interaction_state = use_context::<RwSignal<InteractionState>>()
+            .expect("to have found the global interaction state");
         disabled.get()
-            || (!never_too_busy
-                && interaction_state
-                    .get()
-                    .is_busy())
+            || interaction_state
+                .get()
+                .is_busy()
     };
 
     let color = if danger {
