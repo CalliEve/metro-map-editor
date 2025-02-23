@@ -2,7 +2,7 @@
 name = "metro-map-editor"
 authors = ["Calli <me@calli.dev>"]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [dependencies]
@@ -36,9 +36,9 @@ serde = { version = "1", features = ["derive"] }
 csscolorparser = "0.7"
 rand = { version = "0.9", default-features = false, features = ["small_rng"] }
 priority-queue = "2.1"
-ordered-float = "4.6"
+ordered-float = "5.0"
 itertools = "0.14"
-leptos_workers = "0.2.2"
+leptos_workers = "0.3.0"
 futures-core = "0.3"
 futures-util = "0.3"
 futures-test = "0.3"

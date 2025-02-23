@@ -131,7 +131,10 @@ pub fn edge_dijkstra(
         // list of to_nodes we have visited so far. We are done once we have visited all
         // to_nodes.
         if let Some(to_cost) = to_nodes.get(&current.node) {
-            to_visited.push((current.clone(), current.cost + to_cost));
+            to_visited.push((
+                current.clone(),
+                current.cost + NotNan::new(*to_cost).expect("cost to target node is NaN"),
+            ));
             if to_visited.len() == to_nodes.len() {
                 break;
             }
